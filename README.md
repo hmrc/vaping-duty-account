@@ -1,8 +1,47 @@
+# Vaping Duty Account
+This is a backend microservice for the Vaping Duty service.
 
-# vaping-duty-account
+Frontend: https://github.com/hmrc/vaping-duty-frontend
 
-This is a placeholder README.md for a new repository
+Stub: https://github.com/hmrc/vaping-duty-stubs
+
+## Requirements
+Written in Scala 3 with Play Framework and suitable to be run on JRE 21 or later.
+
+## Running the service
+
+### To run entirely under Service Manager
+```
+sm2 --start VAPING_DUTY_ALL
+```
+
+### To run locally
+Launch as if running entirely under service manager above.
+
+Stop the backend service running under Service Manager:
+```
+sm2 --stop VAPING_DUTY_ACCOUNT
+```
+
+Start the service running locally:
+```
+sbt run
+```
+
+## Test the application
+
+To run the full set of test suites with coverage reports:
+
+```
+sbt runAllChecks
+```
+To run the unit test suites with coverage reports:
+
+```
+sbt runLocalChecks
+```
 
 ### License
 
-This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
+This code is open source software licensed under the [Apache 2.0 License].
+
