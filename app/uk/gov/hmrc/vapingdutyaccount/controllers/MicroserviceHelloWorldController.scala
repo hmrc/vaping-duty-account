@@ -27,6 +27,8 @@ class MicroserviceHelloWorldController @Inject()(
 ) extends BackendController(cc):
 
   val hello: Action[AnyContent] =
-    Action:
+    Action {
       implicit request =>
         Ok("Hello world")
+    }
+}
