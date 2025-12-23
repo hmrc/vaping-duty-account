@@ -15,6 +15,9 @@ lazy val microservice = Project("vaping-duty-account", file("."))
   )
   .settings(CodeCoverageSettings.settings: _*)
 
+addCommandAlias("runAllChecks", ";clean;compile;coverage;test;it/test;scalastyle;coverageReport")
+addCommandAlias("runLocalChecks", ";clean;compile;coverage;test;scalastyle;coverageReport")
+
 lazy val it = project
   .enablePlugins(PlayScala)
   .dependsOn(microservice % "test->test")
