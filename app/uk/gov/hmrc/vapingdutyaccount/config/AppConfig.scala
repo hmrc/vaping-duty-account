@@ -18,8 +18,73 @@ package uk.gov.hmrc.vapingdutyaccount.config
 
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import scala.concurrent.duration.FiniteDuration
 
 @Singleton
-class AppConfig @Inject()(config: Configuration) {
+class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig) {
   val appName: String = config.get[String]("appName")
+
+  private val subscriptionHost: String = servicesConfig.baseUrl("subscription")
+  lazy val subscriptionClientId: String = getConfStringAndThrowIfNotFound("subscription.clientId")
+  lazy val subscriptionSecret: String = getConfStringAndThrowIfNotFound("subscription.secret")
+  private lazy val subscriptionGetSubscriptionUrlPrefix = getConfStringAndThrowIfNotFound(
+    "subscription.url.subscriptionSummary"
+  )
+
+  val emailVerificationStubsEnabled: Boolean = config.get[Boolean]("features.email-verification-stub")
+
+  private val stubsHost: String = servicesConfig.baseUrl("vaping-duty-stubs")
+  private val emailVerificationHost: String = servicesConfig.baseUrl("email-verification")
+  private lazy val emailVerificationGetVerifiedEmailsPrefix = getConfStringAndThrowIfNotFound(
+    "email-verification.url.getVerifiedEmails"
+  )
+
+  private val submitPreferencesHost: String = servicesConfig.baseUrl("submit-preferences")
+  lazy val submitPreferencesClientId = getConfStringAndThrowIfNotFound("submit-preferences.clientId")
+  lazy val submitPreferencesSecret = getConfStringAndThrowIfNotFound("submit-preferences.secret")
+  private lazy val submitPreferencesUrlPrefix = getConfStringAndThrowIfNotFound(
+    "submit-preferences.url.submitPreferences"
+  )
+
+  val idType: String = config.get[String]("downstream-apis.idType")
+  val regime: String = config.get[String]("downstream-apis.regime")
+
+  val cryptoKey: String = config.get[String]("crypto.key")
+  val cryptoEnabled: Boolean = config.get[Boolean]("crypto.isEnabled")
+
+  val enrolmentServiceName: String = config.get[String]("enrolment.serviceName")
+  val enrolmentIdentifierKey: String = config.get[String]("enrolment.identifierKey")
+
+  val dbTimeToLiveInSeconds: Int = 1200
+
+  def getSubscriptionUrl(vpdId: String): String =
+    s"$subscriptionHost$subscriptionGetSubscriptionUrlPrefix/$regime/$idType/$vpdId"
+
+  def getVerifiedEmailsUrl(credId: String): String =
+    if (emailVerificationStubsEnabled) {
+      s"$stubsHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
+    } else {
+      s"$emailVerificationHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
+    }
+
+  def submitPreferencesUrl(vpdId: String): String =
+    s"$submitPreferencesHost$submitPreferencesUrlPrefix/$regime/$idType/$vpdId"
+
+  private[config] def getConfStringAndThrowIfNotFound(key: String) =
+    servicesConfig.getConfString(key, throw new RuntimeException(s"Could not find services config key '$key'"))
+
+  // API retry attempts
+  lazy val retryAttempts: Int = config.get[Int]("microservice.services.retry.retry-attempts")
+  lazy val retryAttemptsPost: Int = config.get[Int]("microservice.services.retry.retry-attempts-post")
+  lazy val retryAttemptsDelay: FiniteDuration =
+    config.get[FiniteDuration]("microservice.services.retry.retry-attempts-delay")
+
+  // Circuit breaker
+  lazy val maxFailures: Int = config.get[Int]("microservice.services.circuit-breaker.max-failures")
+  lazy val callTimeout: FiniteDuration =
+    config.get[FiniteDuration]("microservice.services.circuit-breaker.call-timeout")
+  lazy val resetTimeout: FiniteDuration =
+    config.get[FiniteDuration]("microservice.services.circuit-breaker.reset-timeout")
 }
