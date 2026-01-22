@@ -39,7 +39,7 @@ class EmailVerificationConnector @Inject()(
                           (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, GetVerificationStatusResponse]] =
     
       logger.info(s"Fetching email verification list for credId $credId")
-
+      println("URL!!!!!!!!!!!!!!!" + config.getVerifiedEmailsUrl(credId))
       httpClient
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
         .execute[Either[UpstreamErrorResponse, HttpResponse]]

@@ -42,6 +42,7 @@ class SubmitPreferencesController @Inject() (
   def submitContactPreferences(vpdId: String): Action[JsValue] =
     (authorise(parse.json) andThen checkVpdId(vpdId)).async { implicit request =>
       withJsonBody[PaperlessPreferenceSubmission] { contactPreferenceSubmission =>
+
         submitPreferencesConnector
           .submitContactPreferences(contactPreferenceSubmission, vpdId)
           .map(_.fold(

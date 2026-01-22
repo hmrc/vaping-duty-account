@@ -37,7 +37,7 @@ class EmailVerificationController @Inject() (
     with Logging {
 
   def getEmailVerification(credId: String): Action[AnyContent] = authorise.async { implicit request =>
-    
+    println("%%%%%%%%%%%%%%%%%" + credId)
     emailVerificationConnector.getEmailVerification(credId).flatMap {
       case Left(errorResponse: ErrorResponse)                    => Future.successful(InternalServerError(s"Error: ${errorResponse.message}"))
       case Right(successResponse: GetVerificationStatusResponse) => Future.successful(Ok(Json.toJson(successResponse)))

@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount
+package uk.gov.hmrc.vapingdutyaccount.models
 
-import play.api.{Configuration, Environment}
-import play.api.inject.{Binding, Module => AppModule}
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, BaseAuthorisedAction}
+import play.api.libs.json.{Json, OFormat}
 
-import java.time.Clock
+case class UserDetails(vpdId: String, userId: String)
 
-class Module extends AppModule {
-
-  override def bindings(
-                         environment: Environment,
-                         configuration: Configuration
-                       ): Seq[Binding[_]] =
-      bind[Clock].toInstance(Clock.systemDefaultZone) ::
-      bind[AuthorisedAction].to(classOf[BaseAuthorisedAction]) ::
-      Nil
+object UserDetails {
+  implicit val returnAndUserDetailsFormat: OFormat[UserDetails] = Json.format[UserDetails]
 }

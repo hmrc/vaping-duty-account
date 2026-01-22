@@ -1,5 +1,4 @@
-import sbt.Keys.libraryDependencies
-import sbt._
+import sbt.*
 
 object AppDependencies {
 
@@ -8,12 +7,15 @@ object AppDependencies {
 
   val compile = Seq(
     "uk.gov.hmrc"             %% "bootstrap-backend-play-30"  % bootstrapVersion,
-    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-play-30"         % hmrcMongoVersion
+    "uk.gov.hmrc.mongo"       %% "hmrc-mongo-play-30"         % hmrcMongoVersion,
+    "uk.gov.hmrc"             %% "crypto-json-play-30"        % "8.4.0"
   )
 
   val test = Seq(
     "uk.gov.hmrc"             %% "bootstrap-test-play-30"     % bootstrapVersion            % Test,
     "uk.gov.hmrc.mongo"       %% "hmrc-mongo-test-play-30"    % hmrcMongoVersion            % Test,
+    "org.scalatestplus" %% "scalacheck-1-17"         % "3.2.18.0" % Test
+
   )
 
   val it = Seq.empty

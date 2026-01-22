@@ -1,7 +1,12 @@
 # microservice specific routes
 
-GET        /hello-world             uk.gov.hmrc.vapingdutyaccount.controllers.MicroserviceHelloWorldController.hello
+
+POST         /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.UserAnswersController.createUserAnswers()
+PUT          /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.UserAnswersController.set()
+GET          /user-answers/:vpdId                uk.gov.hmrc.vapingdutyaccount.controllers.UserAnswersController.getUserAnswers(vpdId: String)
+
+GET          /hello-world                        uk.gov.hmrc.vapingdutyaccount.controllers.MicroserviceHelloWorldController.hello
 
 GET          /get-email-verification/:credId     uk.gov.hmrc.vapingdutyaccount.controllers.EmailVerificationController.getEmailVerification(credId: String)
 
-PUT          /submit-preferences/:vpdId         uk.gov.hmrc.vapingdutyaccount.controllers.SubmitPreferencesController.submitContactPreferences(vpdId: String)
+PUT          /submit-preferences/:vpdId          uk.gov.hmrc.vapingdutyaccount.controllers.SubmitPreferencesController.submitContactPreferences(vpdId: String)
