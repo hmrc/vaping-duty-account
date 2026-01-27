@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models
+package uk.gov.hmrc.vapingdutyaccount.models.contactPreference
 
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
@@ -22,6 +22,7 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.crypto.json.JsonEncryption
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.vapingdutyaccount.models.*
 
 import java.time.{Clock, Instant}
 

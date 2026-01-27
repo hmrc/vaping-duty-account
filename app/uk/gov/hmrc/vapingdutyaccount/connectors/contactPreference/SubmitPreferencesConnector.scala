@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.connectors
+package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.pattern.retry
@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
 import uk.gov.hmrc.vapingdutyaccount.models.*
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

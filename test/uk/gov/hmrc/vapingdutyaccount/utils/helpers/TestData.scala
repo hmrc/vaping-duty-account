@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.utils.helpers
 import play.api.libs.json.{JsObject, Json, OFormat}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.vapingdutyaccount.models.*
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, GetVerificationStatusResponse, GetVerificationStatusResponseEmailAddressDetails, PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess, SubscriptionContactPreferences, SubscriptionSummary, SubscriptionSummaryBackend, UserAnswers}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*

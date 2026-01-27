@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.connectors
+package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.Logging
 import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND}
-import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.models.GetVerificationStatusResponse
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

@@ -20,10 +20,10 @@ import org.mongodb.scala.model._
 import play.api.libs.json.Format
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
-import uk.gov.hmrc.vapingdutyaccount.models.UserAnswers
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit

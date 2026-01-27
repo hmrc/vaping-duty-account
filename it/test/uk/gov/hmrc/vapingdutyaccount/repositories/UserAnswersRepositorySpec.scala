@@ -22,9 +22,9 @@ import org.scalatest.Assertion
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
-import uk.gov.hmrc.vapingdutyaccount.models.UserAnswers
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

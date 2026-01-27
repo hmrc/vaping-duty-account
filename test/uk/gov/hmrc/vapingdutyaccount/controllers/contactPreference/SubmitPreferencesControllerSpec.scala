@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers
+package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.connectors.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.{ErrorCodes, PaperlessPreferenceSubmittedResponse}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
+import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController
+import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
 
 import scala.concurrent.Future
 

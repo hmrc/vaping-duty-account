@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.connectors
+package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.pattern.retry
 import play.api.Logging
 import play.api.http.Status.*
-import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.{ErrorCodes, SubscriptionContactPreferences, SubscriptionSummarySuccess}
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionSummarySuccess}
+import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

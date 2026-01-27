@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models
+package uk.gov.hmrc.vapingdutyaccount.models.contactPreference
 
 import play.api.libs.json.*
+import uk.gov.hmrc.vapingdutyaccount.models.JsonHelpers.{booleanReads, booleanWrites}
+import uk.gov.hmrc.vapingdutyaccount.models.JsonHelpers
 
 final case class SubscriptionSummarySuccess(success: SubscriptionContactPreferences)
 

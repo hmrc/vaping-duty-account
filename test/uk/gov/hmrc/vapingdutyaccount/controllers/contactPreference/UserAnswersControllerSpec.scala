@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers
+package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
@@ -22,7 +22,8 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.connectors.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import scala.concurrent.Future

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers
+package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import com.google.inject.Inject
 import org.apache.pekko.util.ByteString
@@ -22,11 +22,11 @@ import play.api.Logging
 import play.api.http.HttpEntity
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
-import uk.gov.hmrc.vapingdutyaccount.connectors.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckvpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.PaperlessPreferenceSubmission
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckvpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
 
 import scala.concurrent.ExecutionContext
 

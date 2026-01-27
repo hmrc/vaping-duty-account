@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers
+package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
+import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.routes
 
 class SubmitPreferencesIntegrationSpec extends ISpecBase {
   "SubmitPreferences when" - {

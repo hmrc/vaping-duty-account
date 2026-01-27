@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.connectors
+package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
-import uk.gov.hmrc.vapingdutyaccount.models.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 class EmailVerificationConnectorSpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "email-verification"

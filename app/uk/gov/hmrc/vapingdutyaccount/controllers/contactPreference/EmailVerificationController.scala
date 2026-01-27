@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers
+package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import com.google.inject.Inject
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.*
-import uk.gov.hmrc.vapingdutyaccount.connectors.EmailVerificationConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.vapingdutyaccount.models.GetVerificationStatusResponse
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
