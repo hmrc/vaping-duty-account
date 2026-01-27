@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       )
 
       val addedUserAnswers = repository.add(userAnswers).futureValue
-      val addedRecord      = find(Filters.equal("_id", vpdId)).futureValue.headOption.value
+      val addedRecord      = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       verifyUserAnswerResult(addedRecord, expectedAddedUserAnswers)
@@ -72,7 +72,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
 
       repository.add(userAnswers).futureValue
       val addedUserAnswers = repository.add(userAnswers).futureValue
-      val addedRecord      = find(Filters.equal("_id", vpdId)).futureValue.headOption.value
+      val addedRecord      = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       verifyUserAnswerResult(addedRecord, expectedAddedUserAnswers)
@@ -98,7 +98,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       )
 
       val setResult     = repository.set(updatedResult).futureValue
-      val updatedRecord = find(Filters.equal("_id", vpdId)).futureValue.headOption.value
+      val updatedRecord = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       setResult        mustEqual UpdateSuccess

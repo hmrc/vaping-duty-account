@@ -51,6 +51,11 @@ class UserAnswersRepository @Inject() (
           IndexOptions()
             .name("lastUpdatedIdx")
             .expireAfter(appConfig.dbTimeToLiveInSeconds, TimeUnit.SECONDS)
+        ),
+        IndexModel(
+          Indexes.ascending("vpdId"),
+          IndexOptions()
+            .name("vpdId")
         )
       ),
       extraCodecs = Seq.empty,

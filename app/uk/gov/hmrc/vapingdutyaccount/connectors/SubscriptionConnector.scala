@@ -54,9 +54,7 @@ class SubscriptionConnector @Inject()(
         Future.successful(Left(ErrorCodes.unexpectedResponse))
       }
 
-  private def call(
-    vpdId: String
-  )(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
+  private def call(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
     circuitBreakerProvider.get().withCircuitBreaker {
       logger.info(
         s"[SubscriptionConnector] [getSubscriptionContactPreferences] Fetching subscription summary for vpdId $vpdId"

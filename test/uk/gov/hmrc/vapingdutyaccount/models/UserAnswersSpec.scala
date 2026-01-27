@@ -30,7 +30,7 @@ class UserAnswersSpec extends SpecBase {
   "UserAnswers must" - {
     "when encryption is enabled" - {
       val jsonWithEncrpytion =
-        s"""{"_id":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessReference":true,"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"dL4kJMiwICXDMg/IDWlMa9sQF+RyJnds9bhhgmdV3Tdet8rzpkdptCfRf5gLxSH8","countryCode":"XYlyMMmfKtRG++9BeQ3mmQ=="},"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","verifiedEmailAddresses":["QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU="],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+        s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"dL4kJMiwICXDMg/IDWlMa9sQF+RyJnds9bhhgmdV3Tdet8rzpkdptCfRf5gLxSH8","countryCode":"XYlyMMmfKtRG++9BeQ3mmQ=="},"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","verifiedEmailAddresses":["QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU="],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
       implicit val crypto: Encrypter with Decrypter = SymmetricCryptoFactory.aesCrypto(appConfig.cryptoKey)
 
@@ -44,7 +44,7 @@ class UserAnswersSpec extends SpecBase {
 
     "when encryption is disabled" - {
       val jsonWithoutEncryption =
-        s"""{"_id":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessReference":true,"emailAddress":"\\"john.doe@example.com\\"","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"\\"Flat 123\\\\n1 Example Road\\\\nLondon\\\\nAB1 2CD\\"","countryCode":"\\"GB\\""},"emailAddress":"\\"john.doe@example.com\\"","verifiedEmailAddresses":["\\"john.doe@example.com\\""],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+        s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"\\"john.doe@example.com\\"","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"\\"Flat 123\\\\n1 Example Road\\\\nLondon\\\\nAB1 2CD\\"","countryCode":"\\"GB\\""},"emailAddress":"\\"john.doe@example.com\\"","verifiedEmailAddresses":["\\"john.doe@example.com\\""],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
       implicit val crypto: Encrypter with Decrypter = NoCrypto
 
@@ -77,7 +77,7 @@ class UserAnswersSpec extends SpecBase {
     "create a UserAnswers from components when the email in the system has bounced" in {
       val createdUserAnswers = UserAnswers.createUserAnswers(
         userDetails,
-        contactPreferencesEmailSelected.copy(paperlessReference = false, bouncedEmailFlag = Some(true)),
+        contactPreferencesEmailSelected.copy(paperlessPreference = false, bouncedEmail = Some(true)),
         clock
       )
       createdUserAnswers mustBe emptyUserAnswersBouncedEmail
@@ -90,7 +90,7 @@ class UserAnswersSpec extends SpecBase {
 
   "DecryptedUA must" - {
     val json =
-      s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessReference":true,"emailAddress":"john.doe@example.com","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"Flat 123\\n1 Example Road\\nLondon\\nAB1 2CD","countryCode":"GB"},"emailAddress":"john.doe@example.com","verifiedEmailAddresses":["john.doe@example.com"],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+      s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"john.doe@example.com","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"Flat 123\\n1 Example Road\\nLondon\\nAB1 2CD","countryCode":"GB"},"emailAddress":"john.doe@example.com","verifiedEmailAddresses":["john.doe@example.com"],"data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
     "serialise to json" in {
       Json.toJson(uaDecrypted).toString() mustBe json

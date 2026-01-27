@@ -17,12 +17,11 @@
 package uk.gov.hmrc.vapingdutyaccount.utils.helpers
 
 import play.api.libs.json.{JsObject, Json, OFormat}
-import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
+import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
-import java.util.UUID
 
 trait TestData extends ModelGenerators {
   val clockMillis: Long = 1718118467838L
@@ -30,8 +29,8 @@ trait TestData extends ModelGenerators {
 
   val dummyUUID = "01234567-89ab-cdef-0123-456789abcdef"
 
-  val regime: String           = "VPD"
-  val vpdId: String           = appaIdGen.sample.get
+  val regime: String           = "ZVPD"
+  val vpdId: String            = vpdIdGen.sample.get
   val userId: String           = "userId"
   val userDetails: UserDetails = UserDetails(vpdId, userId)
   val credId: String           = "TESTCREDID00000"
@@ -42,10 +41,10 @@ trait TestData extends ModelGenerators {
 
   val contactPreferencesEmailSelected: SubscriptionContactPreferences =
     SubscriptionContactPreferences(
-      paperlessReference = true,
+      paperlessPreference = true,
       emailAddress = Some(emailAddress),
-      emailVerificationFlag = Some(true),
-      bouncedEmailFlag = Some(false),
+      verifiedEmail = Some(true),
+      bouncedEmail = Some(false),
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
@@ -55,10 +54,10 @@ trait TestData extends ModelGenerators {
     )
   val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
     SubscriptionContactPreferences(
-      paperlessReference = false,
+      paperlessPreference = false,
       emailAddress = None,
-      emailVerificationFlag = None,
-      bouncedEmailFlag = None,
+      verifiedEmail = None,
+      bouncedEmail = None,
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
@@ -71,7 +70,7 @@ trait TestData extends ModelGenerators {
     vpdId = vpdId,
     userId = userId,
     subscriptionSummary = SubscriptionSummaryBackend(
-      paperlessReference = true,
+      paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
@@ -89,7 +88,7 @@ trait TestData extends ModelGenerators {
     vpdId = vpdId,
     userId = userId,
     subscriptionSummary = SubscriptionSummary(
-      paperlessReference = true,
+      paperlessPreference = true,
       emailAddress = Some(emailAddress),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
@@ -107,7 +106,7 @@ trait TestData extends ModelGenerators {
     vpdId = vpdId,
     userId = userId,
     subscriptionSummary = SubscriptionSummaryBackend(
-      paperlessReference = true,
+      paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
@@ -124,7 +123,7 @@ trait TestData extends ModelGenerators {
     vpdId = vpdId,
     userId = userId,
     subscriptionSummary = SubscriptionSummaryBackend(
-      paperlessReference = false,
+      paperlessPreference = false,
       emailAddress = None,
       emailVerification = None,
       bouncedEmail = None,
@@ -141,7 +140,7 @@ trait TestData extends ModelGenerators {
     vpdId = vpdId,
     userId = userId,
     subscriptionSummary = SubscriptionSummaryBackend(
-      paperlessReference = false,
+      paperlessPreference = false,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(true),

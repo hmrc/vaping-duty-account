@@ -50,10 +50,11 @@ trait WireMockHelper extends WireMockSupport {
       .toMap
 
   private def stripToPath(url: String) =
-    if (url.startsWith("http://") || url.startsWith("https://"))
+    if (url.startsWith("http://") || url.startsWith("https://")) {
       url.dropWhile(_ != '/').dropWhile(_ == '/').dropWhile(_ != '/')
-    else
+    } else {
       url
+    }
 
   private def urlWithParameters(url: String, parameters: Seq[(String, String)]) = {
     val queryParams = parameters.map { case (k, v) => s"$k=$v" }.mkString("&")
@@ -66,10 +67,7 @@ trait WireMockHelper extends WireMockSupport {
       WireMock.get(urlEqualTo(stripToPath(url))).willReturn(aResponse().withStatus(status).withBody(body))
     )
 
-  def stubGetFault(
-    url: String,
-    fault: Fault = Fault.EMPTY_RESPONSE
-  ): Unit =
+  def stubGetFault(url: String, fault: Fault = Fault.EMPTY_RESPONSE): Unit =
     wireMockServer.stubFor(
       WireMock.get(urlEqualTo(stripToPath(url))).willReturn(aResponse().withFault(fault))
     )
@@ -81,11 +79,7 @@ trait WireMockHelper extends WireMockSupport {
         .willReturn(aResponse().withStatus(status).withBody(body))
     )
 
-  def stubGetFaultWithParameters(
-    url: String,
-    parameters: Seq[(String, String)],
-    fault: Fault = Fault.EMPTY_RESPONSE
-  ): Unit =
+  def stubGetFaultWithParameters(url: String, parameters: Seq[(String, String)], fault: Fault = Fault.EMPTY_RESPONSE): Unit =
     wireMockServer.stubFor(
       WireMock
         .get(urlEqualTo(urlWithParameters(url, parameters)))
@@ -114,11 +108,10 @@ trait WireMockHelper extends WireMockSupport {
   def verifyGetWithParameters(url: String, parameters: Seq[(String, String)]): Unit =
     wireMockServer.verify(getRequestedFor(urlEqualTo(urlWithParameters(url, parameters))))
 
-  def verifyGetWithParametersAndHeaders(
-    url: String,
-    parameters: Seq[(String, String)] = Seq.empty,
-    headers: Seq[(String, String)] = Seq.empty
-  ): Unit = {
+  def verifyGetWithParametersAndHeaders(url: String,
+                                        parameters: Seq[(String, String)] = Seq.empty,
+                                        headers: Seq[(String, String)] = Seq.empty): Unit = {
+
     val requestPattern            = getRequestedFor(urlEqualTo(urlWithParameters(url, parameters)))
     val requestPatternWithHeaders = headers.foldLeft(requestPattern) { (pattern, header) =>
       pattern.withHeader(header._1, new EqualToPattern(header._2))

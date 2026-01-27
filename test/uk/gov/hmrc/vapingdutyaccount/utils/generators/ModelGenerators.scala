@@ -20,5 +20,5 @@ import org.scalacheck.Gen
 
 trait ModelGenerators {
 
-  def appaIdGen: Gen[String] = Gen.listOfN(10, Gen.numChar).map(id => s"XMADP${id.mkString}")
+  def vpdIdGen: Gen[String] = Gen.listOfN(10, Gen.numChar).map(id => s"XMADP${id.mkString}")
 }
