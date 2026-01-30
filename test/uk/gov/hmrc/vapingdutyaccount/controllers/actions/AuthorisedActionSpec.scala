@@ -53,7 +53,7 @@ class AuthorisedActionSpec extends AnyFreeSpec
   val state                   = "Activated"
   val enrolments              = Enrolments(Set(Enrolment(enrolment, Seq(EnrolmentIdentifier(vppaIdKey, vppaId)), state)))
   val emptyEnrolments         = Enrolments(Set.empty)
-  val enrolmentsWithoutAppaId = Enrolments(Set(Enrolment(enrolment, Seq.empty, state)))
+  val enrolmentsWithoutVpdId  = Enrolments(Set(Enrolment(enrolment, Seq.empty, state)))
   val testContent             = "Test"
   val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
@@ -131,7 +131,7 @@ class AuthorisedActionSpec extends AnyFreeSpec
           )
         )(any(), any())
       )
-        .thenReturn(Future(new ~(Some(internalId), enrolmentsWithoutAppaId)))
+        .thenReturn(Future(new ~(Some(internalId), enrolmentsWithoutVpdId)))
 
       val result: Future[Result] = authorisedAction.invokeBlock(fakeRequest, testAction)
 

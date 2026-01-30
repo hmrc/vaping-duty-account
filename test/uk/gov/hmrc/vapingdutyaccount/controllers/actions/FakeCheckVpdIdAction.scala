@@ -21,14 +21,14 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class FakeCheckAppaIdActionImpl private[actions] extends ActionRefiner[IdentifierRequest, IdentifierRequest] {
+class FakeCheckVpdIdActionImpl private[actions] extends ActionRefiner[IdentifierRequest, IdentifierRequest] {
   override protected def refine[A](request: IdentifierRequest[A]): Future[Either[Result, IdentifierRequest[A]]] =
     Future.successful(Right(request))
 
   override protected def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
 }
 
-class FakeCheckAppaIdAction extends CheckvpdIdAction()(scala.concurrent.ExecutionContext.Implicits.global) {
-  override def apply(appaId: String): ActionRefiner[IdentifierRequest, IdentifierRequest] =
-    new FakeCheckAppaIdActionImpl()
+class FakeCheckVpdIdAction extends CheckVpdIdAction()(scala.concurrent.ExecutionContext.Implicits.global) {
+  override def apply(vpdId: String): ActionRefiner[IdentifierRequest, IdentifierRequest] =
+    new FakeCheckVpdIdActionImpl()
 }

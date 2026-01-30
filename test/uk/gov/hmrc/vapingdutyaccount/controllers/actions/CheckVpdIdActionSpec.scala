@@ -22,8 +22,8 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.Future
 
-class CheckAppaIdActionSpec extends SpecBase {
-  val wrongAppaId: String                                              = vpdId + "1"
+class CheckVpdIdActionSpec extends SpecBase {
+  val wrongVpdId: String                                               = vpdId + "1"
   val fakeIdentifierRequest: IdentifierRequest[AnyContentAsEmpty.type] =
     IdentifierRequest(fakeRequest, vpdId, userId)
   val testContent                                                      = "Test"
@@ -34,18 +34,18 @@ class CheckAppaIdActionSpec extends SpecBase {
     Future(Ok(testContent))
   }
 
-  "CheckAppaIdAction must" - {
-    "succeed if appaId matches that in the enrolment" in {
-      val checkAppaIdAction = new CheckvpdIdAction
-      val result            = checkAppaIdAction(vpdId).invokeBlock(fakeIdentifierRequest, testAction)
+  "CheckVpdIdAction must" - {
+    "succeed if vpdId matches that in the enrolment" in {
+      val checkVpdIdAction = new CheckVpdIdAction
+      val result            = checkVpdIdAction(vpdId).invokeBlock(fakeIdentifierRequest, testAction)
 
       status(result)          mustBe OK
       contentAsString(result) mustBe testContent
     }
 
-    "fail if appaId doesn't match that in the enrolment" in {
-      val checkAppaIdAction = new CheckvpdIdAction
-      val result            = checkAppaIdAction(wrongAppaId).invokeBlock(fakeIdentifierRequest, testAction)
+    "fail if vpdId doesn't match that in the enrolment" in {
+      val checkVpdIdAction  = new CheckVpdIdAction
+      val result            = checkVpdIdAction(wrongVpdId).invokeBlock(fakeIdentifierRequest, testAction)
 
       status(result) mustBe UNAUTHORIZED
     }

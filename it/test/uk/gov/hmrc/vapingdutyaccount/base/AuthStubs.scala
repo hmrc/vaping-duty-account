@@ -50,14 +50,14 @@ trait AuthStubs extends WireMockHelper {
        |  "retrieve":[ "internalId", "authorisedEnrolments" ]
        |}""".stripMargin
 
-  def authOKResponse(appaId: String) =
+  def authOKResponse(vpdId: String) =
     s"""|  {
         |    "internalId": "$testAuthInternalId",
         |    "authorisedEnrolments" : [ {
         |      "key" : "HMRC-VPD-ORG",
         |      "identifiers" : [ {
         |        "key" : "ZVPD",
-        |        "value" : "$appaId"
+        |        "value" : "$vpdId"
         |      } ],
         |      "state" : "Activated",
         |      "confidenceLevel" : 50
@@ -65,8 +65,8 @@ trait AuthStubs extends WireMockHelper {
         |  }
          """.stripMargin
 
-  def stubAuthorised(appaId: String): Unit =
-    stubPost(authUrl, OK, authRequest, authOKResponse(appaId))
+  def stubAuthorised(vpdId: String): Unit =
+    stubPost(authUrl, OK, authRequest, authOKResponse(vpdId))
 
   def verifyAuthorised(): Unit =
     verifyPost(authUrl)
