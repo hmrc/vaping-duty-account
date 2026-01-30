@@ -25,7 +25,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckvpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
 
 import scala.concurrent.ExecutionContext
@@ -34,7 +34,7 @@ class SubmitPreferencesController @Inject() (
   cc: ControllerComponents,
   submitPreferencesConnector: SubmitPreferencesConnector,
   authorise: AuthorisedAction,
-  checkVpdId: CheckvpdIdAction
+  checkVpdId: CheckVpdIdAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
