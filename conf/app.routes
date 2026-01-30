@@ -4,6 +4,7 @@
 POST         /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.createUserAnswers()
 PUT          /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.set()
 GET          /user-answers/:vpdId                uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.getUserAnswers(vpdId: String)
+DELETE       /user-answers/clear/:vpdId          uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.clear(vpdId: String)
 
 GET          /hello-world                        uk.gov.hmrc.vapingdutyaccount.controllers.MicroserviceHelloWorldController.hello
 

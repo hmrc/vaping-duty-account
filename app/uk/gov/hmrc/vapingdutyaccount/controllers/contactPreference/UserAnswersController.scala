@@ -25,7 +25,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckvpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
 import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
@@ -34,20 +34,18 @@ import java.time.Clock
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserAnswersController @Inject()(
-  cc: ControllerComponents,
-  userAnswersRepository: UserAnswersRepository,
-  subscriptionConnector: SubscriptionConnector,
-  authorise: AuthorisedAction,
-  checkVpdId: CheckvpdIdAction,
-  clock: Clock
+                                       cc: ControllerComponents,
+                                       userAnswersRepository: UserAnswersRepository,
+                                       subscriptionConnector: SubscriptionConnector,
+                                       authorise: AuthorisedAction,
+                                       checkVpdId: CheckVpdIdAction,
+                                       clock: Clock
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
 
   def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[UserDetails] { userDetails =>
-
-      println(userDetails.toString + "%%%%%%%%%%%%%%%%%%%%%")
       val vpdId = userDetails.vpdId
 
       checkVpdId(vpdId).invokeBlock[JsValue](
@@ -104,4 +102,9 @@ class UserAnswersController @Inject()(
     header = ResponseHeader(errorResponse.statusCode),
     body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
   )
+
+  def clear(vpdId: String): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async { _ =>
+    userAnswersRepository.clearUserAnswersById(vpdId).map(_ => Results.NoContent)
+    
+  }
 }
