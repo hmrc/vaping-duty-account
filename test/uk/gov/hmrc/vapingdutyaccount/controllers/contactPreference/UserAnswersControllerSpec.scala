@@ -37,6 +37,7 @@ class UserAnswersControllerSpec extends SpecBase {
     mockSubscriptionConnector,
     fakeAuthorisedAction,
     fakeCheckVpdIdAction,
+    fakeCheckSignedInAction,
     clock
   )
 

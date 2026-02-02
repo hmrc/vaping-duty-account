@@ -31,7 +31,7 @@ import play.api.test.Helpers.*
 import play.api.test.{DefaultAwaitTimeout, FakeHeaders, FakeRequest, ResultExtractors}
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.RandomUUIDGenerator
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{FakeAuthorisedAction, FakeCheckVpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{FakeAuthorisedAction, FakeCheckSignedInAction, FakeCheckVpdIdAction}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
@@ -73,7 +73,8 @@ trait SpecBase
   val appConfig: AppConfig                             = app.injector.instanceOf[AppConfig]
   val bodyParsers: PlayBodyParsers                     = app.injector.instanceOf[PlayBodyParsers]
   val fakeAuthorisedAction                             = new FakeAuthorisedAction(bodyParsers)
-  val fakeCheckVpdIdAction                            = new FakeCheckVpdIdAction()
+  val fakeCheckVpdIdAction                             = new FakeCheckVpdIdAction()
+  val fakeCheckSignedInAction                          = new FakeCheckSignedInAction(bodyParsers)
 
   def fakeRequestWithJsonBody(json: JsValue): FakeRequest[JsValue] = FakeRequest("", "/", FakeHeaders(), json)
 

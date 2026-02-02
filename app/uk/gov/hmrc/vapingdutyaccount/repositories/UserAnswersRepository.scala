@@ -56,6 +56,11 @@ class UserAnswersRepository @Inject() (
           Indexes.ascending("vpdId"),
           IndexOptions()
             .name("vpdId")
+        ),
+        IndexModel(
+          Indexes.ascending("userId"),
+          IndexOptions()
+            .name("userId")
         )
       ),
       extraCodecs = Seq.empty,
@@ -67,11 +72,12 @@ class UserAnswersRepository @Inject() (
   private val replaceDontUpsert = ReplaceOptions().upsert(false)
   private val replaceUpsert     = ReplaceOptions().upsert(true)
 
-  private def byId(vpdId: String) = Filters.equal("vpdId", vpdId)
+  private def byVpdId(vpdId: String) = Filters.equal("vpdId", vpdId)
+  private def byInternalId(internalId: String) = Filters.equal("userId", internalId)
 
   def get(vpdId: String): Future[Option[UserAnswers]] =
     collection
-      .find(byId(vpdId))
+      .find(byVpdId(vpdId))
       .headOption()
 
   def set(answers: UserAnswers): Future[UpdateResult] = {
@@ -82,7 +88,7 @@ class UserAnswersRepository @Inject() (
 
     collection
       .replaceOne(
-        filter = byId(updatedAnswers.vpdId),
+        filter = byVpdId(updatedAnswers.vpdId),
         replacement = updatedAnswers,
         options = replaceDontUpsert
       )
@@ -99,7 +105,7 @@ class UserAnswersRepository @Inject() (
 
     collection
       .replaceOne(
-        filter = byId(updatedAnswers.vpdId),
+        filter = byVpdId(updatedAnswers.vpdId),
         replacement = updatedAnswers,
         options = replaceUpsert
       )
@@ -107,6 +113,6 @@ class UserAnswersRepository @Inject() (
       .map(_ => updatedAnswers)
   }
 
-  def clearUserAnswersById(vpdId: String): Future[Unit] =
-    collection.deleteOne(filter = byId(vpdId)).toFuture().map(_ => ())
+  def clearUserAnswersById(internalId: String): Future[Unit] =
+    collection.deleteOne(filter = byInternalId(internalId)).toFuture().map(_ => ())
 }

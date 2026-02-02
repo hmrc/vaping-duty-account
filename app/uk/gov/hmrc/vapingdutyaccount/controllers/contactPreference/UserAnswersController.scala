@@ -25,9 +25,9 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckSignedInAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import java.time.Clock
@@ -39,10 +39,9 @@ class UserAnswersController @Inject()(
                                        subscriptionConnector: SubscriptionConnector,
                                        authorise: AuthorisedAction,
                                        checkVpdId: CheckVpdIdAction,
+                                       checkSignedInAction: CheckSignedInAction,
                                        clock: Clock
-)(implicit ec: ExecutionContext)
-    extends BackendController(cc)
-    with Logging {
+                                      )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[UserDetails] { userDetails =>
@@ -103,8 +102,8 @@ class UserAnswersController @Inject()(
     body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
   )
 
-  def clear(vpdId: String): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async { _ =>
-    userAnswersRepository.clearUserAnswersById(vpdId).map(_ => Results.NoContent)
+  def clear(internalId: String): Action[AnyContent] = checkSignedInAction.async {
+    userAnswersRepository.clearUserAnswersById(internalId).map(_ => Results.NoContent)
     
   }
 }
