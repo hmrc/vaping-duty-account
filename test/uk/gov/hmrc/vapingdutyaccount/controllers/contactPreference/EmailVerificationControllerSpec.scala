@@ -23,7 +23,6 @@ import play.api.mvc.Result
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.EmailVerificationController
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 import scala.concurrent.Future

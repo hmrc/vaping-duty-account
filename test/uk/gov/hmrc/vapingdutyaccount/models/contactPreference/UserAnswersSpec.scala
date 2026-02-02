@@ -20,7 +20,6 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.crypto.{Decrypter, Encrypter, SymmetricCryptoFactory}
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.crypto.NoCrypto
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
 
 import java.time.Instant
 

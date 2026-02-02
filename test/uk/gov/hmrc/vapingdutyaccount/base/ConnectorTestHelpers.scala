@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.test.HttpClientV2Support
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.vapingdutyaccount.utils.helpers.{TestData, WireMockHelper}
 
-import java.time.{Clock, Instant, ZoneId}
+import java.time.Clock
 
 trait ConnectorTestHelpers extends HttpClientV2Support with WireMockHelper with TestData {
   this: Suite =>

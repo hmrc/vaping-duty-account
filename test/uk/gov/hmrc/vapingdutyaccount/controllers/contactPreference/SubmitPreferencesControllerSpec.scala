@@ -22,7 +22,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
 
