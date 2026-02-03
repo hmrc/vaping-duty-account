@@ -1,0 +1,68 @@
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.vapingdutyaccount.controllers.actions
+
+import com.google.inject.Inject
+import play.api.Logging
+import play.api.mvc.*
+import uk.gov.hmrc.auth.core.*
+import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
+import uk.gov.hmrc.auth.core.authorise.Predicate
+import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.internalId
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
+import uk.gov.hmrc.vapingdutyaccount.models.requests.SignedInRequest
+
+import scala.concurrent.{ExecutionContext, Future}
+
+/**
+ * This auth action will verify the basic requirement that the User
+ * is signed in to GovernmentGateway and does not carry out any kind
+ * of enrolment checks or verification. Use `IdentifyWith[out]EnrolmentAction`
+ * for pages which require the user to be appropriately authenticated
+ */
+
+trait CheckSignedInAction
+  extends ActionBuilder[SignedInRequest, AnyContent]
+    with ActionFunction[Request, SignedInRequest]
+    with BackendHeaderCarrierProvider
+
+class CheckSignedInActionImpl @Inject() (
+                                          override val authConnector: AuthConnector,
+                                          val parser: BodyParsers.Default
+                                        )(implicit val executionContext: ExecutionContext)
+  extends CheckSignedInAction
+    with AuthorisedFunctions
+    with BackendHeaderCarrierProvider
+    with Logging {
+
+  private def predicate: Predicate =
+    AuthProviders(GovernmentGateway)
+
+  override def invokeBlock[A](request: Request[A], block: SignedInRequest[A] => Future[Result]): Future[Result] = {
+    implicit val headerCarrier: HeaderCarrier = hc(request)
+    
+    authorised(predicate).retrieve(internalId) {
+      optInternalId => optInternalId.map(internalId => SignedInRequest(request, internalId)).
+                                     map(signedInRequest => block(signedInRequest)).
+                                     getOrElse(Future.failed(AuthorisationException.fromString("Unable to retrieve internalId.")))
+    } recoverWith { case e: AuthorisationException =>
+      logger.warn(s"Got AuthorisationException: ${e.reason}")
+      Future.successful(Results.Unauthorized)
+    }
+  }
+}
