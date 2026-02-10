@@ -79,7 +79,6 @@ trait TestData extends ModelGenerators {
       countryCode = Some(SensitiveString(countryCode))
     ),
     emailAddress = Some(SensitiveString(emailAddress)),
-    verifiedEmailAddresses = Set(SensitiveString(emailAddress)),
     data = JsObject(Seq("contactPreferenceEmail" -> Json.toJson(true))),
     startedTime = Instant.now(clock),
     lastUpdated = Instant.now(clock)
@@ -97,7 +96,6 @@ trait TestData extends ModelGenerators {
       countryCode = Some(countryCode)
     ),
     emailAddress = Some(emailAddress),
-    verifiedEmailAddresses = Set(emailAddress),
     data = JsObject(Seq("contactPreferenceEmail" -> Json.toJson(true))),
     startedTime = Instant.now(clock),
     lastUpdated = Instant.now(clock)
@@ -115,7 +113,6 @@ trait TestData extends ModelGenerators {
       countryCode = Some(SensitiveString(countryCode))
     ),
     emailAddress = None,
-    verifiedEmailAddresses = Set(SensitiveString(emailAddress)),
     startedTime = Instant.now(clock),
     lastUpdated = Instant.now(clock)
   )
@@ -132,7 +129,6 @@ trait TestData extends ModelGenerators {
       countryCode = Some(SensitiveString(countryCode))
     ),
     emailAddress = None,
-    verifiedEmailAddresses = Set.empty,
     startedTime = Instant.now(clock),
     lastUpdated = Instant.now(clock)
   )
@@ -149,7 +145,6 @@ trait TestData extends ModelGenerators {
       countryCode = Some(SensitiveString(countryCode))
     ),
     emailAddress = None,
-    verifiedEmailAddresses = Set.empty,
     startedTime = Instant.now(clock),
     lastUpdated = Instant.now(clock)
   )
