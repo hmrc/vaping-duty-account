@@ -53,7 +53,7 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
 
   val cryptoKey: String = config.get[String]("crypto.key")
   val cryptoEnabled: Boolean = config.get[Boolean]("crypto.isEnabled")
-  val dbTimeToLiveInSeconds: Long = 1200
+  val dbTimeToLiveInSeconds: Long = 900
 
   val enrolmentServiceName: String = config.get[String]("enrolment.serviceName")
   val enrolmentIdentifierKey: String = config.get[String]("enrolment.identifierKey")
