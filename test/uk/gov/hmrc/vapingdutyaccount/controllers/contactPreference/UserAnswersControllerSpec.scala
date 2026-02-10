@@ -131,7 +131,7 @@ class UserAnswersControllerSpec extends SpecBase {
   }
 
   "clear must" - {
-    "return 200 OK with the user answers that was updated" in {
+    "return 204 NO_CONTENT" in {
       when(mockUserAnswersRepository.clearUserAnswersById(any())).thenReturn(Future.successful(()))
 
       val result: Future[Result] = controller.clear(userId)(FakeRequest())
