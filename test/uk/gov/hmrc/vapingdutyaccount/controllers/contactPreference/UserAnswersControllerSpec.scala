@@ -20,6 +20,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.mvc.Result
+import play.api.test.FakeRequest
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
@@ -126,6 +127,16 @@ class UserAnswersControllerSpec extends SpecBase {
         status(result)        mustBe errorResponse.statusCode
         contentAsJson(result) mustBe Json.toJson(errorResponse)
       }
+    }
+  }
+
+  "clear must" - {
+    "return 204 NO_CONTENT" in {
+      when(mockUserAnswersRepository.clearUserAnswersById(any())).thenReturn(Future.successful(()))
+
+      val result: Future[Result] = controller.clear(userId)(FakeRequest())
+
+      status(result) mustBe NO_CONTENT
     }
   }
 }

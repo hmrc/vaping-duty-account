@@ -31,7 +31,6 @@ case class DecryptedUA(
                         userId: String,
                         subscriptionSummary: SubscriptionSummary,
                         emailAddress: Option[String],
-                        verifiedEmailAddresses: Set[String],
                         data: JsObject = Json.obj(),
                         startedTime: Instant,
                         lastUpdated: Instant,
@@ -52,7 +51,6 @@ object DecryptedUA {
         userAnswers.subscriptionSummary.countryCode.map(_.decryptedValue)
       ),
       emailAddress = userAnswers.emailAddress.map(_.decryptedValue),
-      verifiedEmailAddresses = userAnswers.verifiedEmailAddresses.map(_.decryptedValue),
       data = userAnswers.data,
       startedTime = userAnswers.startedTime,
       lastUpdated = userAnswers.lastUpdated,
@@ -64,7 +62,6 @@ object DecryptedUA {
       (__ \ "userId").format[String] and
       (__ \ "subscriptionSummary").format[SubscriptionSummary] and
       (__ \ "emailAddress").formatNullable[String] and
-      (__ \ "verifiedEmailAddresses").format[Set[String]] and
       (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
       (__ \ "startedTime").format(MongoJavatimeFormats.instantFormat) and
       (__ \ "lastUpdated").format(MongoJavatimeFormats.instantFormat) and
@@ -77,7 +74,6 @@ case class UserAnswers(vpdId: String,
                         userId: String,
                         subscriptionSummary: SubscriptionSummaryBackend,
                         emailAddress: Option[SensitiveString],
-                        verifiedEmailAddresses: Set[SensitiveString],
                         data: JsObject = Json.obj(),
                         startedTime: Instant,
                         lastUpdated: Instant,
@@ -90,8 +86,6 @@ object UserAnswers {
     clock: Clock
   ): UserAnswers = {
     val existingEmail: Option[SensitiveString] = contactPreferences.emailAddress.map(SensitiveString.apply)
-    val hasVerifiedAndValidEmail: Boolean      = existingEmail.nonEmpty &&
-      contactPreferences.verifiedEmail.contains(true) && !contactPreferences.bouncedEmail.contains(true)
 
     val correspondenceAddress: String = Seq(
       contactPreferences.addressLine1,
@@ -113,7 +107,6 @@ object UserAnswers {
         contactPreferences.country.map(SensitiveString.apply)
       ),
       emailAddress = None,
-      verifiedEmailAddresses = if (hasVerifiedAndValidEmail) existingEmail.toSet else Set.empty[SensitiveString],
       startedTime = Instant.now(clock),
       lastUpdated = Instant.now(clock)
     )
@@ -132,7 +125,6 @@ object UserAnswers {
         decryptedUA.subscriptionSummary.countryCode.map(SensitiveString.apply)
       ),
       emailAddress = decryptedUA.emailAddress.map(SensitiveString.apply),
-      verifiedEmailAddresses = decryptedUA.verifiedEmailAddresses.map(SensitiveString.apply),
       data = decryptedUA.data,
       startedTime = decryptedUA.startedTime,
       lastUpdated = decryptedUA.lastUpdated,
@@ -145,7 +137,6 @@ object UserAnswers {
         (__ \ "userId").format[String] and
         (__ \ "subscriptionSummary").format[SubscriptionSummaryBackend] and
         (__ \ "emailAddress").formatNullable[SensitiveString] and
-        (__ \ "verifiedEmailAddresses").format[Set[SensitiveString]] and
         (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
         (__ \ "startedTime").format(MongoJavatimeFormats.instantFormat) and
         (__ \ "lastUpdated").format(MongoJavatimeFormats.instantFormat) and
