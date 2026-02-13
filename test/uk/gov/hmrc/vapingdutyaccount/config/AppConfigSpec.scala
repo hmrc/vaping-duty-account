@@ -66,7 +66,7 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
       "must return the getSubscription url" in {
         appConfig.getSubscriptionUrl(
           vpdId
-        ) mustBe s"http://subscriptionhost:12345/etmp/RESTAdapter/excise/subscriptionsummary/AD/ZAD/$vpdId"
+        ) mustBe s"http://subscriptionhost:12345/etmp/RESTAdapter/excise/subscriptionsummary/$vpdId"
       }
 
       "must return the client id" in {
