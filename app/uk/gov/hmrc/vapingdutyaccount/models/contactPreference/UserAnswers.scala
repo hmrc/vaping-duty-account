@@ -47,8 +47,7 @@ object DecryptedUA {
         userAnswers.subscriptionSummary.emailAddress.map(_.decryptedValue),
         userAnswers.subscriptionSummary.emailVerification,
         userAnswers.subscriptionSummary.bouncedEmail,
-        userAnswers.subscriptionSummary.correspondenceAddress.decryptedValue,
-        userAnswers.subscriptionSummary.countryCode.map(_.decryptedValue)
+        userAnswers.subscriptionSummary.correspondenceAddress.decryptedValue
       ),
       emailAddress = userAnswers.emailAddress.map(_.decryptedValue),
       data = userAnswers.data,
@@ -91,7 +90,6 @@ object UserAnswers {
       contactPreferences.addressLine1,
       contactPreferences.addressLine2,
       contactPreferences.addressLine3,
-      contactPreferences.addressLine4,
       contactPreferences.postcode
     ).flatten.mkString("\n")
 
@@ -103,8 +101,7 @@ object UserAnswers {
         existingEmail,
         contactPreferences.verifiedEmail,
         contactPreferences.bouncedEmail,
-        SensitiveString(correspondenceAddress),
-        contactPreferences.country.map(SensitiveString.apply)
+        SensitiveString(correspondenceAddress)
       ),
       emailAddress = None,
       startedTime = Instant.now(clock),
@@ -121,8 +118,7 @@ object UserAnswers {
         decryptedUA.subscriptionSummary.emailAddress.map(SensitiveString.apply),
         decryptedUA.subscriptionSummary.emailVerification,
         decryptedUA.subscriptionSummary.bouncedEmail,
-        SensitiveString(decryptedUA.subscriptionSummary.correspondenceAddress),
-        decryptedUA.subscriptionSummary.countryCode.map(SensitiveString.apply)
+        SensitiveString(decryptedUA.subscriptionSummary.correspondenceAddress)
       ),
       emailAddress = decryptedUA.emailAddress.map(SensitiveString.apply),
       data = decryptedUA.data,
@@ -152,8 +148,7 @@ case class SubscriptionSummary(
   emailAddress: Option[String],
   emailVerification: Option[Boolean],
   bouncedEmail: Option[Boolean],
-  correspondenceAddress: String,
-  countryCode: Option[String]
+  correspondenceAddress: String
 )
 
 object SubscriptionSummary {
@@ -165,8 +160,7 @@ case class SubscriptionSummaryBackend(
   emailAddress: Option[SensitiveString],
   emailVerification: Option[Boolean],
   bouncedEmail: Option[Boolean],
-  correspondenceAddress: SensitiveString,
-  countryCode: Option[SensitiveString]
+  correspondenceAddress: SensitiveString
 )
 
 object SubscriptionSummaryBackend {
@@ -177,8 +171,7 @@ object SubscriptionSummaryBackend {
         (__ \ "emailAddress").formatNullable[SensitiveString] and
         (__ \ "emailVerification").formatNullable[Boolean] and
         (__ \ "bouncedEmail").formatNullable[Boolean] and
-        (__ \ "correspondenceAddress").format[SensitiveString] and
-        (__ \ "countryCode").formatNullable[SensitiveString]
+        (__ \ "correspondenceAddress").format[SensitiveString]
     )(SubscriptionSummaryBackend.apply, o => Tuple.fromProductTyped(o))
 
   implicit def sensitiveStringFormat(implicit crypto: Encrypter with Decrypter): Format[SensitiveString] =
