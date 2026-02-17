@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.RequestMethod
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -41,9 +42,9 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
     "email-verification.url.getVerifiedEmails"
   )
 
-  private val submitPreferencesHost: String = servicesConfig.baseUrl("submit-preferences")
-  lazy val submitPreferencesClientId = getConfStringAndThrowIfNotFound("submit-preferences.clientId")
-  lazy val submitPreferencesSecret = getConfStringAndThrowIfNotFound("submit-preferences.secret")
+  private val submitPreferencesHost: String   = servicesConfig.baseUrl("submit-preferences")
+  lazy val submitPreferencesClientId: String  = getConfStringAndThrowIfNotFound("submit-preferences.clientId")
+  lazy val submitPreferencesSecret: String    = getConfStringAndThrowIfNotFound("submit-preferences.secret")
   private lazy val submitPreferencesUrlPrefix = getConfStringAndThrowIfNotFound(
     "submit-preferences.url.submitPreferences"
   )
@@ -84,6 +85,27 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   lazy val maxFailures: Int = config.get[Int]("microservice.services.circuit-breaker.max-failures")
   lazy val callTimeout: FiniteDuration =
     config.get[FiniteDuration]("microservice.services.circuit-breaker.call-timeout")
-  lazy val resetTimeout: FiniteDuration =
+  lazy val resetTimeout: FiniteDuration = {
     config.get[FiniteDuration]("microservice.services.circuit-breaker.reset-timeout")
+  }
+
+  /**
+   * VPD Summary API
+   *
+   * Types extracted from OpenAPI specification
+   */
+  // Static info for API
+  lazy val serviceName: String = config.get[String]("service.name")
+  lazy val serviceId: String   = config.get[String]("service.id")
+
+  // "self" link returned in JSON API payload
+  lazy val vpdSummaryRESTAPIGetKey: String                 = "self"
+  def vpdSummaryRESTAPIGetHref(vpdId: String): String = s"/vpd/summary/${vpdId}"
+  lazy val vpdSummaryRESTAPIGetMethod: RequestMethod       = "GET"
+  
+  lazy val vpdSummaryRESTAPIGetContactPreferencesKey: String           = "manage-contact-preferences"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String          = "/vpd/contact-preference"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesMethod: RequestMethod = "GET"
+
+  lazy val xCorrelationId: String = "X-Correlation-Id"
 }
