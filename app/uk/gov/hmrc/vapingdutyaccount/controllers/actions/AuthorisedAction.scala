@@ -18,7 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import com.google.inject.Inject
 import play.api.Logging
-import play.api.http.Status.UNAUTHORIZED
 import play.api.libs.json.Json
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
@@ -32,9 +31,9 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{authorisedEnrolments, inter
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 trait AuthorisedAction
     extends ActionBuilder[IdentifierRequest, AnyContent]
@@ -77,10 +76,7 @@ class BaseAuthorisedAction @Inject() (
       logger.debug("Got AuthorisationException:", e)
       Unauthorized(
         Json.toJson(
-          ErrorResponse(
-            UNAUTHORIZED,
-            e.reason
-          )
+          APIErrors.Unauthorised
         )
       )
     }
