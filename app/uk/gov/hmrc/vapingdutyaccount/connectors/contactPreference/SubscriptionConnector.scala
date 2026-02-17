@@ -25,8 +25,8 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionSummarySuccess}
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,16 +68,16 @@ class SubscriptionConnector @Inject()(
           response.status match {
             case OK                   =>
               Try {
-                response.json.as[SubscriptionSummarySuccess]
+                response.json.as[SubscriptionContactPreferences]
               } match {
                 case Success(doc) =>
                   logger.info(
                     s"[SubscriptionConnector] [getSubscriptionContactPreferences] Retrieved subscription summary success for vpdId $vpdId"
                   )
-                  Future.successful(Right(doc.success))
-                case Failure(_)   =>
+                  Future.successful(Right(doc))
+                case Failure(error)   =>
                   logger.warn(
-                    s"[SubscriptionConnector] [getSubscriptionContactPreferences] Unable to parse subscription summary success for vpdId $vpdId"
+                    s"[SubscriptionConnector] [getSubscriptionContactPreferences] Unable to parse subscription summary success for vpdId $vpdId with $error"
                   )
                   Future.successful(
                     Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success"))
