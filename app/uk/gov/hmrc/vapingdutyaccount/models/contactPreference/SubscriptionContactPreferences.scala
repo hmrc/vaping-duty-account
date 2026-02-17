@@ -19,13 +19,6 @@ package uk.gov.hmrc.vapingdutyaccount.models.contactPreference
 import play.api.libs.json.*
 import uk.gov.hmrc.vapingdutyaccount.models.JsonHelpers
 
-final case class SubscriptionSummarySuccess(success: SubscriptionContactPreferences)
-
-object SubscriptionSummarySuccess {
-  implicit val subscriptionSummarySuccessFormat: OFormat[SubscriptionSummarySuccess] =
-    Json.format[SubscriptionSummarySuccess]
-}
-
 final case class SubscriptionContactPreferences(
   paperlessPreference: Boolean,
   emailAddress: Option[String],
