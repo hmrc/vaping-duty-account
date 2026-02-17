@@ -1,0 +1,132 @@
+/*
+ * Copyright 2026 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.vapingdutyaccount.controllers.summaryAPI
+
+import com.google.inject.Inject
+import play.api.Logging
+import play.api.http.ContentTypes
+import play.api.mvc.*
+import play.api.libs.json.*
+import play.api.http.Status.*
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, RequestId, SessionId}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.http
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+
+import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
+
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+
+class APIController @Inject() (
+                                config: AppConfig,
+                                cc: ControllerComponents,
+                                authorise: AuthorisedAction,
+                                subscriptionConnector: SubscriptionConnector
+                              )(implicit ec: ExecutionContext)
+                                extends BackendController(cc)
+                                  with Logging {
+  
+          given OFormat[APIError] = APIErrorFormat
+
+          /**
+            * Sends an error to the requesting service.
+            *
+            * @param request The request that initiated this response
+            * @param error The APIError that should be applied
+            */
+          def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
+            logger.info(s"[summaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
+
+            Future.successful(
+              new Status(error.code)(Json.prettyPrint(Json.toJson(error))).as(ContentTypes.JSON)
+            )
+          }
+
+          /**
+            * The VPD Summary API's GET endpoint
+            *
+            * @param vpdId the VpdId to use
+            */
+          def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async {
+            implicit request =>
+              
+              // Validates that the trailing 10 characters of a given string are digits
+              if (!vpdId.matches("\\w+\\d{10}")) { // todo: move to AppConfig
+                logger.info(s"[summaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
+                // Bad VpdId
+                this.sendError(request, APIErrors.BadRequest)
+              }
+              else {
+                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API# 1644 for SubscriptionSummary data...")
+                
+                given HeaderCarrier(
+                  // Todo: do we need to add additional headers here? SessionId is not defined.
+                  requestId = Option(RequestId(request.id.toString)),
+                )
+                
+                subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
+                  case Right(response: SubscriptionContactPreferences) => {
+                    logger.info(
+                      s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from 1644 for VpdId=[$vpdId]"
+                    )
+
+                    Future.successful(
+                      Ok(
+                        generateAPIResponse(
+                          config,
+                          code = OK,
+                          vpdId,
+                          contactMethod = ContactMethod.resolve(response.paperlessPreference),
+                          links = List(
+                            Link(
+                              key = config.vpdSummaryRESTAPIGetKey, href = config.vpdSummaryRESTAPIGetHref(vpdId), method = config.vpdSummaryRESTAPIGetMethod
+                            ),
+                            Link(
+                              key = config.vpdSummaryRESTAPIGetContactPreferencesKey, href = config.vpdSummaryRESTAPIGetContactPreferencesHref, method = config.vpdSummaryRESTAPIGetContactPreferencesMethod
+                            )
+                          ),
+                          identifier = Identifier(vpdId)
+                        )
+                      ).withHeaders(
+                        HeaderNames.xRequestId -> request.id.toString,
+                        // todo: cannot find where to get correlationId from!
+                        config.xCorrelationId -> "<todo>"
+                      )
+                    )
+                  }
+                  case Left(error: ErrorResponse)                 => { // Unable to retrieve data
+                    logger.info(
+                      s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
+                    )
+
+                    error.statusCode match {
+                      case INTERNAL_SERVER_ERROR  => this.sendError(request, APIErrors.InternalServerError)
+                      case BAD_REQUEST            => this.sendError(request, APIErrors.BadRequest)
+                      case NOT_FOUND              => this.sendError(request, APIErrors.VpdIdNotFound)
+                      case UNPROCESSABLE_ENTITY   => this.sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
+                      case _: Int                 => this.sendError(request, APIErrors.ServiceUnavailable)
+                    }
+                  }
+                }
+              }
+          }
+}
