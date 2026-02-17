@@ -59,7 +59,7 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   val enrolmentIdentifierKey: String = config.get[String]("enrolment.identifierKey")
   
   def getSubscriptionUrl(vpdId: String): String =
-    s"$subscriptionHost$subscriptionGetSubscriptionUrlPrefix/$regime/$idType/$vpdId"
+    s"$subscriptionHost$subscriptionGetSubscriptionUrlPrefix/$vpdId"
 
   def getVerifiedEmailsUrl(credId: String): String =
     if (emailVerificationStubsEnabled) {

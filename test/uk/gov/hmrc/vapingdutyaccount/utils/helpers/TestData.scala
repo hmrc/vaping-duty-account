@@ -19,7 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.utils.helpers
 import play.api.libs.json.{JsObject, Json, OFormat}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.vapingdutyaccount.models.*
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, GetVerificationStatusResponse, GetVerificationStatusResponseEmailAddressDetails, PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess, SubscriptionContactPreferences, SubscriptionSummary, SubscriptionSummaryBackend, UserAnswers}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
@@ -37,8 +37,7 @@ trait TestData extends ModelGenerators {
   val credId: String           = "TESTCREDID00000"
 
   val emailAddress          = "john.doe@example.com"
-  val correspondenceAddress = "Flat 123\n1 Example Road\nLondon\nAB1 2CD"
-  val countryCode           = "GB"
+  val correspondenceAddress = "Flat 123\n1 Example Road\nAB1 2CD"
 
   val contactPreferencesEmailSelected: SubscriptionContactPreferences =
     SubscriptionContactPreferences(
@@ -49,9 +48,7 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      addressLine4 = Some("London"),
-      postcode = Some("AB1 2CD"),
-      country = Some(countryCode)
+      postcode = Some("AB1 2CD")
     )
   val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
     SubscriptionContactPreferences(
@@ -62,9 +59,7 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      addressLine4 = Some("London"),
-      postcode = Some("AB1 2CD"),
-      country = Some(countryCode)
+      postcode = Some("AB1 2CD")
     )
 
   val userAnswers: UserAnswers = UserAnswers(
@@ -75,8 +70,7 @@ trait TestData extends ModelGenerators {
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
-      correspondenceAddress = SensitiveString(correspondenceAddress),
-      countryCode = Some(SensitiveString(countryCode))
+      correspondenceAddress = SensitiveString(correspondenceAddress)
     ),
     emailAddress = Some(SensitiveString(emailAddress)),
     data = JsObject(Seq("contactPreferenceEmail" -> Json.toJson(true))),
@@ -93,7 +87,6 @@ trait TestData extends ModelGenerators {
       emailVerification = Some(true),
       bouncedEmail = Some(false),
       correspondenceAddress = correspondenceAddress,
-      countryCode = Some(countryCode)
     ),
     emailAddress = Some(emailAddress),
     data = JsObject(Seq("contactPreferenceEmail" -> Json.toJson(true))),
@@ -109,8 +102,7 @@ trait TestData extends ModelGenerators {
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
-      correspondenceAddress = SensitiveString(correspondenceAddress),
-      countryCode = Some(SensitiveString(countryCode))
+      correspondenceAddress = SensitiveString(correspondenceAddress)
     ),
     emailAddress = None,
     startedTime = Instant.now(clock),
@@ -125,8 +117,7 @@ trait TestData extends ModelGenerators {
       emailAddress = None,
       emailVerification = None,
       bouncedEmail = None,
-      correspondenceAddress = SensitiveString(correspondenceAddress),
-      countryCode = Some(SensitiveString(countryCode))
+      correspondenceAddress = SensitiveString(correspondenceAddress)
     ),
     emailAddress = None,
     startedTime = Instant.now(clock),
@@ -141,8 +132,7 @@ trait TestData extends ModelGenerators {
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
       bouncedEmail = Some(true),
-      correspondenceAddress = SensitiveString(correspondenceAddress),
-      countryCode = Some(SensitiveString(countryCode))
+      correspondenceAddress = SensitiveString(correspondenceAddress)
     ),
     emailAddress = None,
     startedTime = Instant.now(clock),
