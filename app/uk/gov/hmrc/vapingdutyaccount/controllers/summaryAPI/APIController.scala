@@ -70,7 +70,7 @@ class APIController @Inject() (
             implicit request =>
               
               // Validates that the trailing 10 characters of a given string are digits
-              if (!vpdId.matches("\\w+\\d{10}")) { // todo: move to AppConfig
+              if (!vpdId.matches(config.vpdIdPattern)) {
                 logger.info(s"[summaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
                 // Bad VpdId
                 this.sendError(request, APIErrors.BadRequest)
