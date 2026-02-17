@@ -25,20 +25,26 @@ import java.util.Base64
 import javax.inject.Inject
 
 class HIPHeaders @Inject() (randomUUIDGenerator: RandomUUIDGenerator, appConfig: AppConfig, clock: Clock) {
-  private val correlationIdHeader: String       = "correlationId"
+  private val correlationIdHeader: String       = "correlationid"
+  private val xMessageTypeHeader: String        = "X-Message-Type"
   private val xOriginatingSystemHeader: String  = "X-Originating-System"
   private val xReceiptDateHeader: String        = "X-Receipt-Date"
+  private val xRegimeHeader: String             = "X-Regime"
   private val xTransmittingSystemHeader: String = "X-Transmitting-System"
 
   private val mdtp = "MDTP"
   private val hip  = "HIP"
-
+  private val messageType = "VPDSubscriptionDisplay"
+  private val regime = "VPD"
+  
   def subscriptionHeaders(): Seq[(String, String)] =
     Seq(
       (HeaderNames.AUTHORIZATION, authorizationForSubscription()),
       (correlationIdHeader, randomUUIDGenerator.uuid),
+      (xMessageTypeHeader, messageType),
       (xOriginatingSystemHeader, mdtp),
       (xReceiptDateHeader, DateTimeHelper.formatISOInstantSeconds(Instant.now(clock))),
+      (xRegimeHeader, regime),
       (xTransmittingSystemHeader, hip)
     )
 
