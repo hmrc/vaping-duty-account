@@ -42,8 +42,12 @@ import play.api.libs.json.{JsObject, Json, OFormat}
  *   },
  *   "contactPreference" : "POST",
  *   "links" : {
- *     "key" : {
+ *     "self" : {
  *       "href" : "url",
+ *       "method" : "GET"
+ *     },
+ *     "manage-contact-preference" : {
+ *.      "href" : "url"
  *       "method" : "GET"
  *     }
  *   }
