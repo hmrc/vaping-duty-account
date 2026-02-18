@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
-import play.api.libs.json.{JsString, Json, Writes}
+import play.api.libs.json.{Json, JsString, Writes}
 
 /**
  * A link object
@@ -38,7 +38,7 @@ import play.api.libs.json.{JsString, Json, Writes}
 final case class Link(
                        key: String,
                        href: String,
-                       method: RequestMethod
+                       method: String
                      )
 
 /**
@@ -46,7 +46,7 @@ final case class Link(
  * field on the case class constructor and prevent it from being
  * added to the resultant JSON payload.
  */
-final implicit val LinkWrites: Writes[Link] = Writes { link =>
+implicit val LinkWrites: Writes[Link] = Writes { link =>
   Json.obj(
     "href" -> JsString(link.href),
     "method" -> JsString(link.method)
