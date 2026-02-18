@@ -29,4 +29,7 @@ case class VPDSummaryConfig (
   id: String
 )
 
-implicit val VPDSummaryConfigFormats: OFormat[VPDSummaryConfig] = Json.format[VPDSummaryConfig]
+object VPDSummaryConfig {
+  given OFormat[VPDSummaryConfig] = Json.format[VPDSummaryConfig]
+}
+

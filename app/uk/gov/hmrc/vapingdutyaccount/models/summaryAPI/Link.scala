@@ -41,14 +41,16 @@ final case class Link(
                        method: String
                      )
 
-/**
- * The implicit writes for the `Link`, these will ignore the "key"
- * field on the case class constructor and prevent it from being
- * added to the resultant JSON payload.
- */
-implicit val LinkWrites: Writes[Link] = Writes { link =>
-  Json.obj(
-    "href" -> JsString(link.href),
-    "method" -> JsString(link.method)
-  )
+object Link {
+  /**
+    * Writes that ignore the "key" field on the case
+    * class constructor such that it does not get 
+    * included on the VPDSummary API response.
+    */
+  given Writes[Link] = Writes { link =>
+    Json.obj(
+      "href" -> JsString(link.href),
+      "method" -> JsString(link.method)
+    )
+  }
 }

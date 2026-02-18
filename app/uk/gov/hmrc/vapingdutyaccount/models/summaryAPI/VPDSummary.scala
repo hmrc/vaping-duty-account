@@ -58,15 +58,17 @@ case class VPDSummary (
   links: Seq[Link],
 )
 
-implicit val VPDSummaryWrites: Writes[VPDSummary] = Writes { summary => 
-  Json.obj(
-    "service" -> Json.toJson(summary.config),
-    "identifiers" -> Json.toJson(Identifier(vpdId = summary.vpdId)),
-    "contactPreference" -> Json.toJson(summary.contactMethod),
-    "links" -> Json.obj(
-      summary.links map { link =>
-        link.key -> Json.toJson(link)
-      }: _*
-    ),
-  )
+object VPDSummary {
+  given Writes[VPDSummary] = Writes { summary => 
+    Json.obj(
+      "service" -> Json.toJson(summary.config),
+      "identifiers" -> Json.toJson(Identifier(vpdId = summary.vpdId)),
+      "contactPreference" -> Json.toJson(summary.contactMethod),
+      "links" -> Json.obj(
+        summary.links map { link =>
+          link.key -> Json.toJson(link)
+        }: _*
+      ),
+    )
+  }
 }

@@ -41,8 +41,8 @@ object ContactMethod {
   def resolve(paperlessPreference: Boolean): ContactMethod = {
     if (paperlessPreference) ContactMethod.Email else ContactMethod.Post
   }
-}
 
-given Writes[ContactMethod] = Writes { e =>
-  JsString(e.toString.toUpperCase())
+  given Writes[ContactMethod] = Writes { e =>
+    JsString(e.toString.toUpperCase())
+  }
 }
