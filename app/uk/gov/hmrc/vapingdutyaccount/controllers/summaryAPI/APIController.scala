@@ -56,7 +56,7 @@ class APIController @Inject() (
             logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
             Future.successful(
-              new Status(error.code)(Json.prettyPrint(Json.toJson(error))).as(ContentTypes.JSON)
+              new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
             )
           }
 
@@ -105,7 +105,7 @@ class APIController @Inject() (
                         HeaderNames.xRequestId -> request.id.toString,
                         // todo: cannot find where to get correlationId from!
                         config.xCorrelationId -> "<todo>"
-                      )
+                      ).as(ContentTypes.JSON)
                     )
                   }
                   case Left(error: ErrorResponse)                 => { // Unable to retrieve data
