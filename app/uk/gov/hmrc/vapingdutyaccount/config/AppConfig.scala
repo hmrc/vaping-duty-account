@@ -101,11 +101,9 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
   lazy val serviceId: String   = config.get[String]("service.id")
 
   // "self" link returned in JSON API payload
-  lazy val vpdSummaryRESTAPIGetKey: String                 = "self"
   def vpdSummaryRESTAPIGetHref(vpdId: String): String      = s"/vpd/summary/${vpdId}"
   lazy val vpdSummaryRESTAPIGetMethod: String              = "GET"
   
-  lazy val vpdSummaryRESTAPIGetContactPreferencesKey: String           = "manage-contact-preferences"
   lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String          = "/vpd/contact-preference"
   lazy val vpdSummaryRESTAPIGetContactPreferencesMethod: String        = "GET"
 
