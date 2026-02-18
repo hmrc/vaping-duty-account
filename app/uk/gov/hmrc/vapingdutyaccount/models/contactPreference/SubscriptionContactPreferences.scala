@@ -20,17 +20,18 @@ import play.api.libs.json.*
 import uk.gov.hmrc.vapingdutyaccount.models.JsonHelpers
 
 final case class SubscriptionContactPreferences(
-  paperlessPreference: Boolean,
-  emailAddress: Option[String],
-  verifiedEmail: Option[Boolean],
-  bouncedEmail: Option[Boolean],
-  addressLine1: Option[String],
-  addressLine2: Option[String],
-  addressLine3: Option[String],
-  postcode: Option[String]
-)
+                                                 paperlessPreference: Boolean,
+                                                 emailAddress: Option[String],
+                                                 verifiedEmail: Option[Boolean],
+                                                 bouncedEmail: Option[Boolean],
+                                                 addressLine1: Option[String],
+                                                 addressLine2: Option[String],
+                                                 addressLine3: Option[String],
+                                                 postCode: Option[String]
+                                               )
 
 object SubscriptionContactPreferences {
+
   import JsonHelpers.{booleanReads, booleanWrites}
 
   implicit val subscriptionContactPreferencesFormat: OFormat[SubscriptionContactPreferences] =

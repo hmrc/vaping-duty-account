@@ -90,7 +90,7 @@ object UserAnswers {
       contactPreferences.addressLine1,
       contactPreferences.addressLine2,
       contactPreferences.addressLine3,
-      contactPreferences.postcode
+      contactPreferences.postCode
     ).flatten.mkString("\n")
 
     UserAnswers(
