@@ -19,7 +19,6 @@ package uk.gov.hmrc.vapingdutyaccount.config
 import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.RequestMethod
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -96,19 +95,19 @@ class AppConfig @Inject()(config: Configuration, servicesConfig: ServicesConfig)
    */
   /**The pattern that is used to test for valid VpdIds */
   lazy val vpdIdPattern: String = "(?:GB|XI)WK[0-9]{7}WK"
-
+ 
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")
   lazy val serviceId: String   = config.get[String]("service.id")
 
   // "self" link returned in JSON API payload
   lazy val vpdSummaryRESTAPIGetKey: String                 = "self"
-  def vpdSummaryRESTAPIGetHref(vpdId: String): String = s"/vpd/summary/${vpdId}"
-  lazy val vpdSummaryRESTAPIGetMethod: RequestMethod       = "GET"
+  def vpdSummaryRESTAPIGetHref(vpdId: String): String      = s"/vpd/summary/${vpdId}"
+  lazy val vpdSummaryRESTAPIGetMethod: String              = "GET"
   
   lazy val vpdSummaryRESTAPIGetContactPreferencesKey: String           = "manage-contact-preferences"
   lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String          = "/vpd/contact-preference"
-  lazy val vpdSummaryRESTAPIGetContactPreferencesMethod: RequestMethod = "GET"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesMethod: String        = "GET"
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }
