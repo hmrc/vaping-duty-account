@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
-import play.api.libs.json.{JsString, Writes}
+import play.api.libs.json.{JsString, Reads, JsSuccess, Writes}
 
 /**
  * An enum containing the type of contact method selected
+ * 
+ * @note it is important that the Reads for this enum are
+ * kept up to date with this as they are hardcoded strings.
  */
 enum ContactMethod {
   /**
@@ -44,5 +47,12 @@ object ContactMethod {
 
   given Writes[ContactMethod] = Writes { e =>
     JsString(e.toString.toUpperCase())
+  }
+
+  given Reads[ContactMethod] = Reads { e =>
+    e.toString match {
+      case "EMAIL" => JsSuccess(ContactMethod.Email)
+      case "POST"  => JsSuccess(ContactMethod.Post)
+    }
   }
 }
