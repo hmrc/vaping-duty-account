@@ -92,7 +92,7 @@ class APIController @Inject() (
                       Ok(
                         Json.toJson(
                           VPDSummary(
-                            service = VPDSummaryConfig(config.serviceName, config.serviceId),
+                            service = ServiceInfo(config.serviceName, config.serviceId),
                             identifiers = Identifier(vpdId),
                             contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
                             links = Links(
