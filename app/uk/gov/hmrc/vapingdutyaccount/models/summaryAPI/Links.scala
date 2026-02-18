@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
-import play.api.libs.json.{Json, JsString, Writes}
+import play.api.libs.json.{Json, OFormat}
 
 /**
- * A link object
- * @param key The key in which this link object will be entered into the links field of the `APIResponse`
+ * An object containing link objects.
+ * 
  * @param href The href for this link
  * @param method The request method expected to be used for this link
  *
@@ -28,29 +28,28 @@ import play.api.libs.json.{Json, JsString, Writes}
  * {{{
  *  // ...
  *   "links" : {
- *     "key" : { // <-- instance of link case class
+ *     "key" : {
  *       "href" : "url",
  *       "method" : "GET"
  *     }
  *   }
  * }}}
  */
-final case class Link(
-                       key: String,
-                       href: String,
-                       method: String
-                     )
+case class Self(href: String, method: String)
+case class ManageContactPreference(href: String, method: String)
 
-object Link {
-  /**
-    * Writes that ignore the "key" field on the case
-    * class constructor such that it does not get 
-    * included on the VPDSummary API response.
-    */
-  given Writes[Link] = Writes { link =>
-    Json.obj(
-      "href" -> JsString(link.href),
-      "method" -> JsString(link.method)
-    )
-  }
-}
+implicit val selfFormats: OFormat[Self] = Json.format[Self]
+implicit val manageContactPreferenceFormats: OFormat[ManageContactPreference] = Json.format[ManageContactPreference]
+
+
+/**
+  * The links that will be appended to the VPDSummary.
+  *
+  * @param self The link that will be sent along under the "self" field.
+  * @param manageContactPreferences The link that will be sent along under the "manage-contact-preference" field.
+  * 
+  * @see OpenAPI Specification for this API.
+  */
+case class Links(self: Self, `manage-contact-preference`: ManageContactPreference)
+
+implicit val linksFormats: OFormat[Links] = Json.format[Links]
