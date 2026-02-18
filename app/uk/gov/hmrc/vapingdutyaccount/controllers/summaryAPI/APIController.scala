@@ -26,7 +26,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, RequestId, SessionId}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
-
 import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
@@ -54,7 +53,7 @@ class APIController @Inject() (
             * @param error The APIError that should be applied
             */
           def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
-            logger.info(s"[summaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
+            logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
             Future.successful(
               new Status(error.code)(Json.prettyPrint(Json.toJson(error))).as(ContentTypes.JSON)
@@ -71,12 +70,12 @@ class APIController @Inject() (
               
               // Validates that the trailing 10 characters of a given string are digits
               if (!vpdId.matches(config.vpdIdPattern)) {
-                logger.info(s"[summaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
+                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
                 // Bad VpdId
-                this.sendError(request, APIErrors.BadRequest)
+                sendError(request, APIErrors.BadRequest)
               }
               else {
-                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API# 1644 for SubscriptionSummary data...")
+                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
                 
                 given HeaderCarrier(
                   // Todo: do we need to add additional headers here? SessionId is not defined.
@@ -91,20 +90,21 @@ class APIController @Inject() (
 
                     Future.successful(
                       Ok(
-                        generateAPIResponse(
-                          config,
-                          code = OK,
-                          vpdId,
-                          contactMethod = ContactMethod.resolve(response.paperlessPreference),
-                          links = List(
-                            Link(
-                              key = config.vpdSummaryRESTAPIGetKey, href = config.vpdSummaryRESTAPIGetHref(vpdId), method = config.vpdSummaryRESTAPIGetMethod
+                        Json.toJson(
+                          VPDSummary(
+                            config = VPDSummaryConfig(config.serviceName, config.serviceId),
+                            code = OK,
+                            vpdId,
+                            contactMethod = ContactMethod.resolve(response.paperlessPreference),
+                            links = Seq(
+                              Link(
+                                key = config.vpdSummaryRESTAPIGetKey, href = config.vpdSummaryRESTAPIGetHref(vpdId), method = config.vpdSummaryRESTAPIGetMethod
+                              ),
+                              Link(
+                                key = config.vpdSummaryRESTAPIGetContactPreferencesKey, href = config.vpdSummaryRESTAPIGetContactPreferencesHref, method = config.vpdSummaryRESTAPIGetContactPreferencesMethod
+                              )
                             ),
-                            Link(
-                              key = config.vpdSummaryRESTAPIGetContactPreferencesKey, href = config.vpdSummaryRESTAPIGetContactPreferencesHref, method = config.vpdSummaryRESTAPIGetContactPreferencesMethod
-                            )
-                          ),
-                          identifier = Identifier(vpdId)
+                          )
                         )
                       ).withHeaders(
                         HeaderNames.xRequestId -> request.id.toString,
@@ -119,11 +119,11 @@ class APIController @Inject() (
                     )
 
                     error.statusCode match {
-                      case INTERNAL_SERVER_ERROR  => this.sendError(request, APIErrors.InternalServerError)
-                      case BAD_REQUEST            => this.sendError(request, APIErrors.BadRequest)
-                      case NOT_FOUND              => this.sendError(request, APIErrors.VpdIdNotFound)
-                      case UNPROCESSABLE_ENTITY   => this.sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
-                      case _: Int                 => this.sendError(request, APIErrors.ServiceUnavailable)
+                      case INTERNAL_SERVER_ERROR  => sendError(request, APIErrors.InternalServerError)
+                      case BAD_REQUEST            => sendError(request, APIErrors.BadRequest)
+                      case NOT_FOUND              => sendError(request, APIErrors.VpdIdNotFound)
+                      case UNPROCESSABLE_ENTITY   => sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
+                      case _: Int                 => sendError(request, APIErrors.ServiceUnavailable)
                     }
                   }
                 }
