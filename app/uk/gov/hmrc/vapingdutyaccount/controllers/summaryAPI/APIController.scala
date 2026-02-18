@@ -85,7 +85,7 @@ class APIController @Inject() (
                 subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
                   case Right(response: SubscriptionContactPreferences) => {
                     logger.info(
-                      s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from 1644 for VpdId=[$vpdId]"
+                      s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
                     )
 
                     Future.successful(
