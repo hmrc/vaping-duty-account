@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{JsObject, Json, OFormat}
 
 /**
  * Generates the API response
@@ -50,25 +50,13 @@ import play.api.libs.json.{JsObject, Json, Writes}
  * }
  * }}}
  */
-case class VPDSummary (
-  config: VPDSummaryConfig,
-  code: Int,
-  vpdId: String,
-  contactMethod: ContactMethod,
-  links: Seq[Link],
+case class VPDSummary(
+  service: VPDSummaryConfig,
+  identifiers: Identifier,
+  contactPreference: ContactMethod,
+  links: Links
 )
 
 object VPDSummary {
-  given Writes[VPDSummary] = Writes { summary => 
-    Json.obj(
-      "service" -> Json.toJson(summary.config),
-      "identifiers" -> Json.toJson(Identifier(vpdId = summary.vpdId)),
-      "contactPreference" -> Json.toJson(summary.contactMethod),
-      "links" -> Json.obj(
-        summary.links map { link =>
-          link.key -> Json.toJson(link)
-        }: _*
-      ),
-    )
-  }
+  given OFormat[VPDSummary] = Json.format[VPDSummary]
 }
