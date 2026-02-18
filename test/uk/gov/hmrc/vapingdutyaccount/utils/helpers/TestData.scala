@@ -48,7 +48,7 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      postcode = Some("AB1 2CD")
+      postCode = Some("AB1 2CD")
     )
   val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
     SubscriptionContactPreferences(
@@ -59,7 +59,7 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      postcode = Some("AB1 2CD")
+      postCode = Some("AB1 2CD")
     )
 
   val userAnswers: UserAnswers = UserAnswers(
