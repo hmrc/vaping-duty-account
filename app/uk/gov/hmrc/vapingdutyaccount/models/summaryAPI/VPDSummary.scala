@@ -51,7 +51,7 @@ import play.api.libs.json.{JsObject, Json, OFormat}
  * }}}
  */
 case class VPDSummary(
-  service: VPDSummaryConfig,
+  service: ServiceInfo,
   identifiers: Identifier,
   contactPreference: ContactMethod,
   links: Links

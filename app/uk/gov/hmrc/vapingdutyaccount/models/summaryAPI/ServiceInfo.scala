@@ -24,12 +24,11 @@ import play.api.libs.json.*
   * @param serviceName The name of this service (should be taken from AppConfig)
   * @param serviceId The id of this service (should be taken from AppConfig)
   */
-case class VPDSummaryConfig (
+case class ServiceInfo (
   name: String,
   id: String
 )
 
-object VPDSummaryConfig {
-  given OFormat[VPDSummaryConfig] = Json.format[VPDSummaryConfig]
+object ServiceInfo {
+  given OFormat[ServiceInfo] = Json.format[ServiceInfo]
 }
-
