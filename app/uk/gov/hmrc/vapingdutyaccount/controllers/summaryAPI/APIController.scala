@@ -92,18 +92,13 @@ class APIController @Inject() (
                       Ok(
                         Json.toJson(
                           VPDSummary(
-                            config = VPDSummaryConfig(config.serviceName, config.serviceId),
-                            code = OK,
-                            vpdId,
-                            contactMethod = ContactMethod.resolve(response.paperlessPreference),
-                            links = Seq(
-                              Link(
-                                key = config.vpdSummaryRESTAPIGetKey, href = config.vpdSummaryRESTAPIGetHref(vpdId), method = config.vpdSummaryRESTAPIGetMethod
-                              ),
-                              Link(
-                                key = config.vpdSummaryRESTAPIGetContactPreferencesKey, href = config.vpdSummaryRESTAPIGetContactPreferencesHref, method = config.vpdSummaryRESTAPIGetContactPreferencesMethod
-                              )
-                            ),
+                            service = VPDSummaryConfig(config.serviceName, config.serviceId),
+                            identifiers = Identifier(vpdId),
+                            contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
+                            links = Links(
+                              Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
+                              ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, config.vpdSummaryRESTAPIGetContactPreferencesMethod)
+                            )
                           )
                         )
                       ).withHeaders(
