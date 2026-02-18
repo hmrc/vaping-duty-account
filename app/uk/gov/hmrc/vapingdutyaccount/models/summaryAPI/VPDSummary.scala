@@ -28,8 +28,7 @@ import play.api.libs.json.{JsObject, Json, OFormat}
  * @param links The links that will be sent in the 'links' field of the API response
  * @param identifier the identifier for this request
  * @return `JsValue`
- * @note Currently, the `identifiers` field is populated automatically as the information required
- * for thta field is already supplied in the case class.
+ * 
  * @example
  * {{{
  * {
