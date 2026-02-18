@@ -17,7 +17,6 @@
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
 import play.api.libs.json.{JsObject, Json, Writes}
-import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 
 /**
  * Generates the API response
@@ -57,7 +56,6 @@ case class VPDSummary (
   vpdId: String,
   contactMethod: ContactMethod,
   links: Seq[Link],
-  // identifier: Identifier,
 )
 
 implicit val VPDSummaryWrites: Writes[VPDSummary] = Writes { summary => 
