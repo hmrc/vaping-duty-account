@@ -34,7 +34,6 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import org.checkerframework.checker.units.qual.h
 
 class APIController @Inject() (
     config: AppConfig,
@@ -47,45 +46,12 @@ class APIController @Inject() (
 
   given OFormat[APIError] = APIErrorFormat
 
-  /**
-    * This method will extract the headers assocaited with this request
-    * specifically, `X-Reqeust-Id` and `X-Correlation-Id` and only return
-    * with the response headers when present.  
-    *
-    * @see [[HeaderNames.xRequestId]]
-    * @see [[config.xCorrelationId]]
-    */
-  private def extractHeaders(request: IdentifierRequest[_]) = {
-    val xRequestId = request.headers.get(HeaderNames.xRequestId)
-    val xCorrelationId = request.headers.get(config.xCorrelationId)
-
-    Map[String, String]() ++
-      xRequestId.map(HeaderNames.xRequestId -> _) ++
-        xCorrelationId.map(config.xCorrelationId -> _)
-  }
-
-  /** Sends an error to the requesting service.
-    *
-    * @param request
-    *   The request that initiated this response
-    * @param error
-    *   The APIError that should be applied
-    */
-  def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
-    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
-
-    Future.successful(
-      new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
-    )
-  }
-
   /** The VPD Summary API's GET endpoint
     *
     * @param vpdId
     *   the VpdId to use
     */
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
-    // Validates that the trailing 10 characters of a given string are digits
     if (!vpdId.matches(config.vpdIdPattern)) {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
       // Bad VpdId
@@ -115,7 +81,7 @@ class APIController @Inject() (
                       Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
                       ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref,
                                               config.vpdSummaryRESTAPIGetContactPreferencesMethod
-                                            )
+                                             )
                     )
                   )
                 )
@@ -140,5 +106,37 @@ class APIController @Inject() (
         }
       }
     }
+  }
+
+  /** This method will extract the headers assocaited with this request specifically, `X-Reqeust-Id` and `X-Correlation-Id` and only return
+    * with the response headers when present.
+    *
+    * @see
+    *   [[HeaderNames.xRequestId]]
+    * @see
+    *   [[config.xCorrelationId]]
+    */
+  private def extractHeaders(request: IdentifierRequest[_]) = {
+    val xRequestId     = request.headers.get(HeaderNames.xRequestId)
+    val xCorrelationId = request.headers.get(config.xCorrelationId)
+
+    Map[String, String]() ++
+      xRequestId.map(HeaderNames.xRequestId -> _) ++
+      xCorrelationId.map(config.xCorrelationId -> _)
+  }
+
+  /** Sends an error to the requesting service.
+    *
+    * @param request
+    *   The request that initiated this response
+    * @param error
+    *   The APIError that should be applied
+    */
+  def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
+    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
+
+    Future.successful(
+      new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
+    )
   }
 }
