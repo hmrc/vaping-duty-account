@@ -46,6 +46,23 @@ class APIController @Inject() (
 
   given OFormat[APIError] = APIErrorFormat
 
+  /**
+    * This method will extract the headers assocaited with this request
+    * specifically, `X-Reqeust-Id` and `X-Correlation-Id` and only return
+    * with the response headers when present.  
+    *
+    * @see [[HeaderNames.xRequestId]]
+    * @see [[config.xCorrelationId]]
+    */
+  private def extractHeaders(request: IdentifierRequest[_]) = {
+    val xRequestId = request.headers.get(HeaderNames.xRequestId)
+    val xCorrelationId = request.headers.get(config.xCorrelationId)
+
+    Map[String, String]() ++
+      xRequestId.map(HeaderNames.xRequestId -> _) ++
+        xCorrelationId.map(config.xCorrelationId -> _)
+  }
+
   /** Sends an error to the requesting service.
     *
     * @param request
@@ -76,7 +93,6 @@ class APIController @Inject() (
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
 
       given HeaderCarrier(
-        // Todo: do we need to add additional headers here? SessionId is not defined.
         requestId = Option(RequestId(request.id.toString))
       )
 
@@ -85,6 +101,8 @@ class APIController @Inject() (
           logger.info(
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
           )
+
+          // todo: wrap send in try/catch to prevent BTA from receiving errors that do not conform to APIError spec.
 
           Future.successful(
             Ok(
@@ -101,11 +119,7 @@ class APIController @Inject() (
                   )
                 )
               )
-            ).withHeaders(
-              HeaderNames.xRequestId -> request.id.toString,
-              // todo: cannot find where to get correlationId from!
-              config.xCorrelationId  -> "<todo>"
-            ).as(ContentTypes.JSON)
+            ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
           )
         }
         case Left(error: ErrorResponse)                      => { // Unable to retrieve data
@@ -118,8 +132,6 @@ class APIController @Inject() (
             case BAD_REQUEST           => sendError(request, APIErrors.BadRequest)
             case NOT_FOUND             => sendError(request, APIErrors.VpdIdNotFound)
             case UNPROCESSABLE_ENTITY  => sendError(request, APIErrors.UnprocessableEntity)
-            // todo: investigate in which cases to send the below error.
-            // case UNPROCESSABLE_ENTITY   => sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
             case _: Int                => sendError(request, APIErrors.ServiceUnavailable)
           }
         }
