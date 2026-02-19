@@ -34,6 +34,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import org.checkerframework.checker.units.qual.h
 
 class APIController @Inject() (
     config: AppConfig,
@@ -102,25 +103,27 @@ class APIController @Inject() (
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
           )
 
-          // todo: wrap send in try/catch to prevent BTA from receiving errors that do not conform to APIError spec.
-
-          Future.successful(
-            Ok(
-              Json.toJson(
-                VPDSummary(
-                  service = ServiceInfo(config.serviceName, config.serviceId),
-                  identifiers = Identifier(vpdId),
-                  contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
-                  links = Links(
-                    Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
-                    ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref,
-                                            config.vpdSummaryRESTAPIGetContactPreferencesMethod
-                                           )
+          try {
+            Future.successful(
+              Ok(
+                Json.toJson(
+                  VPDSummary(
+                    service = ServiceInfo(config.serviceName, config.serviceId),
+                    identifiers = Identifier(vpdId),
+                    contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
+                    links = Links(
+                      Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
+                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref,
+                                              config.vpdSummaryRESTAPIGetContactPreferencesMethod
+                                            )
+                    )
                   )
                 )
-              )
-            ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-          )
+              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+            )
+          } catch {
+            case _ => sendError(request, APIErrors.InternalServerError)
+          }
         }
         case Left(error: ErrorResponse)                      => { // Unable to retrieve data
           logger.info(
