@@ -22,11 +22,12 @@ import org.mockito.Mockito.when
 import org.scalactic.Prettifier
 import org.scalactic.source.Position
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.http.Status as HttpStatus
+import play.api.http.{HeaderNames as PlayHeaderNames, Status as HttpStatus}
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Result
+import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.test.*
 import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.http.HeaderNames
+import uk.gov.hmrc.http.HeaderNames as HmrcHeaderNames
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -37,7 +38,6 @@ import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 import scala.concurrent.Future
 
 class APIControllerSpec extends SpecBase with MockitoSugar {
-
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val config: AppConfig                                = mock[AppConfig]
@@ -54,14 +54,50 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
   when(config.vpdSummaryRESTAPIGetContactPreferencesHref).thenReturn("getContactPrefs.url")
   when(config.vpdSummaryRESTAPIGetContactPreferencesMethod).thenReturn("GET")
 
+  val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
+    method = "GET",
+    uri = "/",
+    headers = FakeHeaders(
+      Seq(
+        PlayHeaderNames.HOST       -> "localhost",
+        HmrcHeaderNames.xRequestId -> "a request id"
+      )
+    ),
+    body = AnyContentAsEmpty
+  )
+
+  val fakeRequestWithCorrelationId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
+    method = "GET",
+    uri = "/",
+    headers = FakeHeaders(
+      Seq(
+        PlayHeaderNames.HOST  -> "localhost",
+        config.xCorrelationId -> "a correlation id"
+      )
+    ),
+    body = AnyContentAsEmpty
+  )
+
+  val fakeRequestWithReqAndCorrelationId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
+    method = "GET",
+    uri = "/",
+    headers = FakeHeaders(
+      Seq(
+        PlayHeaderNames.HOST       -> "localhost",
+        config.xCorrelationId      -> "a correlation id",
+        HmrcHeaderNames.xRequestId -> "a request id"
+      )
+    ),
+    body = AnyContentAsEmpty
+  )
+
   val controller: APIController = new APIController(
     config,
     cc,
     fakeAuthorisedAction,
     mockSubscriptionConnector
   )
-
-  val badVpdId: String            = "bad-invalid-vpdid"
+  val badVpdId: String          = "bad-invalid-vpdid"
 
   def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
       |{
@@ -86,35 +122,56 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
       |}
       |""".stripMargin)
 
-  /** This helper method will assert that the `xRequestId` header is present on received responses in accordance with the API specification.
+  /** This helper method will assert that the specified header is present on received responses
     */
-  private def assertResponseHeadersArePresent(response: Future[Result]) = {
-    assert(headers(response).get(HeaderNames.xRequestId).get.isInstanceOf[String])
+  private def assertHeaderIsPresentOn(response: Future[Result], header: String) = {
+    assert(headers(response).get(header).get.isInstanceOf[String])
   }
 
   "SummaryAPI must " - {
-    "return data in expected shape when calling the API (PaperlessPreference is true)" in {
+    "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequest)
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesEmailSelected)
-      assertResponseHeadersArePresent(result)
+      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
+    }
+
+    "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id were received" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithCorrelationId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesEmailSelected)
+      assertHeaderIsPresentOn(result, config.xCorrelationId)
+    }
+
+    "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id & request id were received" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesEmailSelected)
+      assertHeaderIsPresentOn(result, config.xCorrelationId)
+      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is false)" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesPostNoEmail)))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequest)
-
-      println(headers(result).get(HeaderNames.xRequestId).get)
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesPostNoEmail)
-      assertResponseHeadersArePresent(result)
+      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
     }
 
     "return APIErrors.BadRequest when bad vpdId received" in {
