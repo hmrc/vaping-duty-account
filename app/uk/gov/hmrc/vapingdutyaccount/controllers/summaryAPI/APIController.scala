@@ -46,10 +46,12 @@ class APIController @Inject() (
 
   given OFormat[APIError] = APIErrorFormat
 
-  /** The VPD Summary API's GET endpoint
+  /** The VPD Summary API's `GET` endpoint
     *
     * @param vpdId
     *   the VpdId to use
+    * @note 
+    *   This serves the route: `/vpd/summary/:vpdId`
     */
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     if (!vpdId.matches(config.vpdIdPattern)) {
