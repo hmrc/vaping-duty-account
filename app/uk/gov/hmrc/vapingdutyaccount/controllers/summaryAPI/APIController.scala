@@ -50,7 +50,7 @@ class APIController @Inject() (
     *
     * @param vpdId
     *   the VpdId to use
-    * @note 
+    * @note
     *   This serves the route: `/vpd/summary/:vpdId`
     */
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
@@ -64,7 +64,7 @@ class APIController @Inject() (
       val extractedHeaders = extractHeaders(request)
 
       given HeaderCarrier(
-        requestId = extractedHeaders.get(HeaderNames.xRequestId).map(RequestId(_)),
+        requestId = extractedHeaders.get(HeaderNames.xRequestId).map(RequestId(_))
       )
 
       subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
