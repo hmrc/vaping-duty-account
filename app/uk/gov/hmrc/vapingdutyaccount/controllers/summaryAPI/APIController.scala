@@ -105,6 +105,7 @@ class APIController @Inject() (
             case BAD_REQUEST           => sendError(request, APIErrors.BadRequest)
             case NOT_FOUND             => sendError(request, APIErrors.VpdIdNotFound)
             case UNPROCESSABLE_ENTITY  => sendError(request, APIErrors.UnprocessableEntity)
+            case UNAUTHORIZED          => sendError(request, APIErrors.Unauthorised)
             case _: Int                => sendError(request, APIErrors.ServiceUnavailable)
           }
         }

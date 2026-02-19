@@ -225,6 +225,18 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
       contentAsJson(result) mustBe Json.toJson(APIErrors.UnprocessableEntity)
     }
 
+    "returns APIErrors.Unauthorised when appropirate status code is received from stub connector" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(
+          Future[Either[ErrorResponse, SubscriptionSummary]](Left(ErrorResponse(HttpStatus.UNAUTHORIZED, "no auth")))
+        )
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequest)
+
+      status(result)        mustBe HttpStatus.UNAUTHORIZED
+      contentAsJson(result) mustBe Json.toJson(APIErrors.Unauthorised)
+    }
+
     "return APIErrors.ServiceUnavailable when any other unknown statua code is received from stub connector" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(
