@@ -16,31 +16,32 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
-import play.api.libs.json.{JsString, Reads, JsSuccess, Writes}
+import play.api.libs.json.{JsString, JsSuccess, Reads, Writes}
 
-/**
- * An enum containing the type of contact method selected
- * 
- * @note it is important that the Reads for this enum are
- * kept up to date with this as they are hardcoded strings.
- */
+/** An enum containing the type of contact method selected
+  *
+  * @note
+  *   it is important that the Reads for this enum are kept up to date with this as they are hardcoded strings.
+  */
 enum ContactMethod {
-  /**
-   * PaperlessPreference.Digital, ContactMethod: True/1
-   */
+
+  /** PaperlessPreference.Digital, ContactMethod: True/1
+    */
   case Email
-  /**
-   * PaperlessPreference.Postal, ContactMethod: False/0
-   */
+
+  /** PaperlessPreference.Postal, ContactMethod: False/0
+    */
   case Post
 }
 
 object ContactMethod {
-  /**
-   * Resolves a boolean to a `ContactMethod` enum value.
-   * @param paperlessPreference The paperless preference
-   * @return `ContactMethod`
-   */
+
+  /** Resolves a boolean to a `ContactMethod` enum value.
+    * @param paperlessPreference
+    *   The paperless preference
+    * @return
+    *   `ContactMethod`
+    */
   def resolve(paperlessPreference: Boolean): ContactMethod = {
     if (paperlessPreference) ContactMethod.Email else ContactMethod.Post
   }

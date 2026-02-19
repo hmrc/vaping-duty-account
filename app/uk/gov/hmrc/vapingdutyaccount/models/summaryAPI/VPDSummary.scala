@@ -18,46 +18,52 @@ package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
 
 import play.api.libs.json.{JsObject, Json, OFormat}
 
-/**
- * Generates the API response
- *
- * @param config Used to populate the "service" field of the APIResponse (see example below)
- * @param code   Status code to be returned with the request
- * @param vpdId  VpdId that executed the request
- * @param contactMethod The contact method this VpdId uses
- * @param links The links that will be sent in the 'links' field of the API response
- * @param identifier the identifier for this request
- * @return `JsValue`
- * 
- * @example
- * {{{
- * {
- *   "service" : {
- *     "name" : "Vaping Products Duty",
- *     "id" : "VPD"
- *   },
- *   "identifiers" : {
- *     "vpdId" : "TEST"
- *   },
- *   "contactPreference" : "POST",
- *   "links" : {
- *     "self" : {
- *       "href" : "url",
- *       "method" : "GET"
- *     },
- *     "manage-contact-preference" : {
- *.      "href" : "url"
- *       "method" : "GET"
- *     }
- *   }
- * }
- * }}}
- */
+/** Generates the API response
+  *
+  * @param config
+  *   Used to populate the "service" field of the APIResponse (see example below)
+  * @param code
+  *   Status code to be returned with the request
+  * @param vpdId
+  *   VpdId that executed the request
+  * @param contactMethod
+  *   The contact method this VpdId uses
+  * @param links
+  *   The links that will be sent in the 'links' field of the API response
+  * @param identifier
+  *   the identifier for this request
+  * @return
+  *   `JsValue`
+  *
+  * @example
+  *   {{{
+  *  {
+  *    "service" : {
+  *      "name" : "Vaping Products Duty",
+  *      "id" : "VPD"
+  *    },
+  *    "identifiers" : {
+  *      "vpdId" : "TEST"
+  *    },
+  *    "contactPreference" : "POST",
+  *    "links" : {
+  *      "self" : {
+  *        "href" : "url",
+  *        "method" : "GET"
+  *      },
+  *      "manage-contact-preference" : {
+  * .      "href" : "url"
+  *        "method" : "GET"
+  *      }
+  *    }
+  *  }
+  *   }}}
+  */
 case class VPDSummary(
-  service: ServiceInfo,
-  identifiers: Identifier,
-  contactPreference: ContactMethod,
-  links: Links
+    service: ServiceInfo,
+    identifiers: Identifier,
+    contactPreference: ContactMethod,
+    links: Links
 )
 
 object VPDSummary {

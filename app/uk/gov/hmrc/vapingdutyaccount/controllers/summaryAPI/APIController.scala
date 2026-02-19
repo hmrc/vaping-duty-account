@@ -19,109 +19,111 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.summaryAPI
 import com.google.inject.Inject
 import play.api.Logging
 import play.api.http.ContentTypes
-import play.api.mvc.*
-import play.api.libs.json.*
 import play.api.http.Status.*
+import play.api.libs.json.*
+import play.api.mvc.*
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, RequestId, SessionId}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
-import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
+import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 
 class APIController @Inject() (
-                                config: AppConfig,
-                                cc: ControllerComponents,
-                                authorise: AuthorisedAction,
-                                subscriptionConnector: SubscriptionConnector
-                              )(implicit ec: ExecutionContext)
-                                extends BackendController(cc)
-                                  with Logging {
-  
-          given OFormat[APIError] = APIErrorFormat
+    config: AppConfig,
+    cc: ControllerComponents,
+    authorise: AuthorisedAction,
+    subscriptionConnector: SubscriptionConnector
+)(implicit ec: ExecutionContext)
+    extends BackendController(cc)
+    with Logging {
 
-          /**
-            * Sends an error to the requesting service.
-            *
-            * @param request The request that initiated this response
-            * @param error The APIError that should be applied
-            */
-          def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
-            logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
+  given OFormat[APIError] = APIErrorFormat
 
-            Future.successful(
-              new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
-            )
-          }
+  /** Sends an error to the requesting service.
+    *
+    * @param request
+    *   The request that initiated this response
+    * @param error
+    *   The APIError that should be applied
+    */
+  def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
+    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
-          /**
-            * The VPD Summary API's GET endpoint
-            *
-            * @param vpdId the VpdId to use
-            */
-          def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async {
-            implicit request =>
-              
-              // Validates that the trailing 10 characters of a given string are digits
-              if (!vpdId.matches(config.vpdIdPattern)) {
-                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
-                // Bad VpdId
-                sendError(request, APIErrors.BadRequest)
-              }
-              else {
-                logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
-                
-                given HeaderCarrier(
-                  // Todo: do we need to add additional headers here? SessionId is not defined.
-                  requestId = Option(RequestId(request.id.toString)),
+    Future.successful(
+      new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
+    )
+  }
+
+  /** The VPD Summary API's GET endpoint
+    *
+    * @param vpdId
+    *   the VpdId to use
+    */
+  def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
+    // Validates that the trailing 10 characters of a given string are digits
+    if (!vpdId.matches(config.vpdIdPattern)) {
+      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
+      // Bad VpdId
+      sendError(request, APIErrors.BadRequest)
+    } else {
+      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
+
+      given HeaderCarrier(
+        // Todo: do we need to add additional headers here? SessionId is not defined.
+        requestId = Option(RequestId(request.id.toString))
+      )
+
+      subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
+        case Right(response: SubscriptionContactPreferences) => {
+          logger.info(
+            s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
+          )
+
+          Future.successful(
+            Ok(
+              Json.toJson(
+                VPDSummary(
+                  service = ServiceInfo(config.serviceName, config.serviceId),
+                  identifiers = Identifier(vpdId),
+                  contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
+                  links = Links(
+                    Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
+                    ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref,
+                                            config.vpdSummaryRESTAPIGetContactPreferencesMethod
+                                           )
+                  )
                 )
-                
-                subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
-                  case Right(response: SubscriptionContactPreferences) => {
-                    logger.info(
-                      s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
-                    )
+              )
+            ).withHeaders(
+              HeaderNames.xRequestId -> request.id.toString,
+              // todo: cannot find where to get correlationId from!
+              config.xCorrelationId  -> "<todo>"
+            ).as(ContentTypes.JSON)
+          )
+        }
+        case Left(error: ErrorResponse)                      => { // Unable to retrieve data
+          logger.info(
+            s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
+          )
 
-                    Future.successful(
-                      Ok(
-                        Json.toJson(
-                          VPDSummary(
-                            service = ServiceInfo(config.serviceName, config.serviceId),
-                            identifiers = Identifier(vpdId),
-                            contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
-                            links = Links(
-                              Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIGetMethod),
-                              ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, config.vpdSummaryRESTAPIGetContactPreferencesMethod)
-                            )
-                          )
-                        )
-                      ).withHeaders(
-                        HeaderNames.xRequestId -> request.id.toString,
-                        // todo: cannot find where to get correlationId from!
-                        config.xCorrelationId -> "<todo>"
-                      ).as(ContentTypes.JSON)
-                    )
-                  }
-                  case Left(error: ErrorResponse)                 => { // Unable to retrieve data
-                    logger.info(
-                      s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
-                    )
-
-                    error.statusCode match {
-                      case INTERNAL_SERVER_ERROR  => sendError(request, APIErrors.InternalServerError)
-                      case BAD_REQUEST            => sendError(request, APIErrors.BadRequest)
-                      case NOT_FOUND              => sendError(request, APIErrors.VpdIdNotFound)
-                      case UNPROCESSABLE_ENTITY   => sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
-                      case _: Int                 => sendError(request, APIErrors.ServiceUnavailable)
-                    }
-                  }
-                }
-              }
+          error.statusCode match {
+            case INTERNAL_SERVER_ERROR => sendError(request, APIErrors.InternalServerError)
+            case BAD_REQUEST           => sendError(request, APIErrors.BadRequest)
+            case NOT_FOUND             => sendError(request, APIErrors.VpdIdNotFound)
+            case UNPROCESSABLE_ENTITY  => sendError(request, APIErrors.UnprocessableEntity)
+            // todo: investigate in which cases to send the below error.
+            // case UNPROCESSABLE_ENTITY   => sendError(request, APIErrors.ValidTokenNotAllowedForRequestedVpdId)
+            case _: Int                => sendError(request, APIErrors.ServiceUnavailable)
           }
+        }
+      }
+    }
+  }
 }
