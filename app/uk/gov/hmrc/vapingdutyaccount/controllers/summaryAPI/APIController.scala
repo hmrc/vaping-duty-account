@@ -61,8 +61,10 @@ class APIController @Inject() (
     } else {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
 
+      val extractedHeaders = extractHeaders(request)
+
       given HeaderCarrier(
-        requestId = Option(RequestId(request.id.toString))
+        requestId = extractedHeaders.get(HeaderNames.xRequestId).map(RequestId(_)),
       )
 
       subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
@@ -87,7 +89,7 @@ class APIController @Inject() (
                     )
                   )
                 )
-              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+              ).withHeaders(extractedHeaders.toSeq: _*).as(ContentTypes.JSON)
             )
           } catch {
             case _ => sendError(request, APIErrors.InternalServerError)
