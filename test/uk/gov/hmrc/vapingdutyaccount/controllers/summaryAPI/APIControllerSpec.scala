@@ -63,8 +63,6 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
 
   val badVpdId: String            = "bad-invalid-vpdid"
 
-  val emailContactPreference: String = "EMAIL"
-
   def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
       |{
       |  "service" : {
