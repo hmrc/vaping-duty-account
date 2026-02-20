@@ -49,10 +49,8 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
   when(config.xCorrelationId).thenReturn("X-Correlation-Id")
 
   when(config.vpdSummaryRESTAPIGetHref(vpdId)).thenReturn(s"/get/vpdId/${vpdId}")
-  when(config.vpdSummaryRESTAPIMethod).thenReturn("GET")
 
   when(config.vpdSummaryRESTAPIGetContactPreferencesHref).thenReturn("getContactPrefs.url")
-  when(config.vpdSummaryRESTAPIMethod).thenReturn("GET")
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
@@ -112,11 +110,11 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
       |  "links" : {
       |    "self" : {
       |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
-      |      "method" : "${config.vpdSummaryRESTAPIMethod}"
+      |      "method" : "GET"
       |    },
       |    "manage-contact-preference" : {
       |      "href" : "${config.vpdSummaryRESTAPIGetContactPreferencesHref}",
-      |      "method" : "${config.vpdSummaryRESTAPIMethod}"
+      |      "method" : "GET"
       |    }
       |  }
       |}

@@ -102,8 +102,5 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   def vpdSummaryRESTAPIGetHref(vpdId: String): String = s"/vpd/summary/${vpdId}"
   lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
 
-  // This is a value returned by the API. Extracted from the API specification
-  lazy val vpdSummaryRESTAPIMethod: String = "GET"
-
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

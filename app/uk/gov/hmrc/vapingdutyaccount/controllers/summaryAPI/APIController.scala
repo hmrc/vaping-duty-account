@@ -82,8 +82,8 @@ class APIController @Inject() (
                     identifiers = Identifier(vpdId),
                     contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
                     links = Links(
-                      Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIMethod),
-                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, config.vpdSummaryRESTAPIMethod)
+                      Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
+                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
                     )
                   )
                 )
