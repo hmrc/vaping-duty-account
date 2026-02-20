@@ -19,20 +19,6 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 import play.api.http.Status.*
 import play.api.libs.json.{Json, OFormat}
 
-/** An API Error
-  *
-  * @param message
-  *   the message that will be returned in the json body
-  * @param code
-  *   the status that should be sent with this `APIError`
-  * @example
-  *   {{{
-  * {
-  *   "message" : "Bad request (invalid headers or malformed request)",
-  *   "code" : 400
-  * }
-  *   }}}
-  */
 final case class APIError(message: String, code: Int)
 
 /** Types extracted from OpenAPI specification

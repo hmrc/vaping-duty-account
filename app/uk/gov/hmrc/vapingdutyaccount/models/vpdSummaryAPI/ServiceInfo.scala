@@ -18,13 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
 import play.api.libs.json.*
 
-/** The configuration parameters
-  *
-  * @param serviceName
-  *   The name of this service (should be taken from AppConfig)
-  * @param serviceId
-  *   The id of this service (should be taken from AppConfig)
-  */
 case class ServiceInfo(
     name: String,
     id: String

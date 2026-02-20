@@ -36,12 +36,6 @@ enum ContactMethod {
 
 object ContactMethod {
 
-  /** Resolves a boolean to a `ContactMethod` enum value.
-    * @param paperlessPreference
-    *   The paperless preference
-    * @return
-    *   `ContactMethod`
-    */
   def resolve(paperlessPreference: Boolean): ContactMethod = {
     if (paperlessPreference) ContactMethod.Email else ContactMethod.Post
   }

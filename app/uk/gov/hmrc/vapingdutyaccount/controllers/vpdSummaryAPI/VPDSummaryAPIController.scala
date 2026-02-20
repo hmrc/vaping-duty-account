@@ -47,13 +47,6 @@ class VPDSummaryAPIController @Inject() (
 
   given OFormat[APIError] = APIErrorFormat
 
-  /** The VPD Summary API's `GET` endpoint
-    *
-    * @param vpdId
-    *   the VpdId to use
-    * @note
-    *   This serves the route: `/vpd/summary/:vpdId`
-    */
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     if (!vpdId.matches(config.vpdIdPattern)) {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
@@ -97,15 +90,6 @@ class VPDSummaryAPIController @Inject() (
     }
   }
 
-  /** Generates a VPDSummary API response in accordance with the API specification and sends it to the reqeusting service in Json.
-    *
-    * @param vpdId
-    *   the vpdId for which to craete the API Response
-    * @param request
-    *   the request that initiated the action
-    * @param response
-    *   the [[uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionSummary]] data that was fetched from ETMP.
-    */
   private def sendVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], response: SubscriptionContactPreferences) = {
     Future.successful(
       Ok(
@@ -124,14 +108,6 @@ class VPDSummaryAPIController @Inject() (
     )
   }
 
-  /** This method will extract the headers assocaited with this request specifically, `X-Reqeust-Id` and `X-Correlation-Id` and only return
-    * with the response headers when present.
-    *
-    * @see
-    *   [[HeaderNames.xRequestId]]
-    * @see
-    *   [[config.xCorrelationId]]
-    */
   private def extractHeaders(request: IdentifierRequest[_]) = {
     val xRequestId     = request.headers.get(HeaderNames.xRequestId)
     val xCorrelationId = request.headers.get(config.xCorrelationId)
@@ -141,13 +117,6 @@ class VPDSummaryAPIController @Inject() (
       xCorrelationId.map(config.xCorrelationId -> _)
   }
 
-  /** Sends an error to the requesting service.
-    *
-    * @param request
-    *   The request that initiated this response
-    * @param error
-    *   The APIError that should be applied
-    */
   private def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
     logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
