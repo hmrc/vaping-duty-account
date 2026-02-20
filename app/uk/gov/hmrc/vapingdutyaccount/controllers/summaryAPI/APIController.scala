@@ -34,6 +34,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class APIController @Inject() (
     config: AppConfig,
@@ -63,8 +64,9 @@ class APIController @Inject() (
 
       val extractedHeaders = extractHeaders(request)
 
-      given HeaderCarrier(
-        requestId = extractedHeaders.get(HeaderNames.xRequestId).map(RequestId(_))
+      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+        session = request.session,
+        request = request.request,
       )
 
       subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
