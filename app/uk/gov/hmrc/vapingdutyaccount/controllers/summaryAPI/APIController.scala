@@ -26,6 +26,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, RequestId, SessionId}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
@@ -34,7 +35,6 @@ import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class APIController @Inject() (
     config: AppConfig,
@@ -66,7 +66,7 @@ class APIController @Inject() (
 
       given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
         session = request.session,
-        request = request.request,
+        request = request.request
       )
 
       subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
@@ -85,9 +85,7 @@ class APIController @Inject() (
                     contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
                     links = Links(
                       Self(config.vpdSummaryRESTAPIGetHref(vpdId), config.vpdSummaryRESTAPIMethod),
-                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref,
-                                              config.vpdSummaryRESTAPIMethod
-                                             )
+                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, config.vpdSummaryRESTAPIMethod)
                     )
                   )
                 )
