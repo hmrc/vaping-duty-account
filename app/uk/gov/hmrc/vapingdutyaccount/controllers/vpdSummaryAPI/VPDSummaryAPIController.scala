@@ -90,14 +90,14 @@ class VPDSummaryAPIController @Inject() (
     }
   }
 
-  private def sendVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], response: SubscriptionContactPreferences) = {
+  private def sendVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], etmpData: SubscriptionContactPreferences) = {
     Future.successful(
       Ok(
         Json.toJson(
           VPDSummary(
             service = ServiceInfo(config.serviceName, config.serviceId),
             identifiers = Identifier(vpdId),
-            contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
+            contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
             links = Links(
               Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
               ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
