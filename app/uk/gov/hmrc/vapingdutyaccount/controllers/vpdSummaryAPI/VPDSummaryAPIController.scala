@@ -68,27 +68,13 @@ class VPDSummaryAPIController @Inject() (
       )
 
       subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
-        case Right(response: SubscriptionContactPreferences) => {
+        case Right(etmpData: SubscriptionContactPreferences) => {
           logger.info(
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
           )
 
           try {
-            Future.successful(
-              Ok(
-                Json.toJson(
-                  VPDSummary(
-                    service = ServiceInfo(config.serviceName, config.serviceId),
-                    identifiers = Identifier(vpdId),
-                    contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
-                    links = Links(
-                      Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
-                      ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
-                    )
-                  )
-                )
-              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-            )
+            sendVPDSummary(vpdId, request, etmpData)
           } catch {
             case _ => sendError(request, APIErrors.InternalServerError)
           }
@@ -109,6 +95,33 @@ class VPDSummaryAPIController @Inject() (
         }
       }
     }
+  }
+
+  /** Generates a VPDSummary API response in accordance with the API specification and sends it to the reqeusting service in Json.
+    *
+    * @param vpdId
+    *   the vpdId for which to craete the API Response
+    * @param request
+    *   the request that initiated the action
+    * @param response
+    *   the [[uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionSummary]] data that was fetched from ETMP.
+    */
+  private def sendVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], response: SubscriptionContactPreferences) = {
+    Future.successful(
+      Ok(
+        Json.toJson(
+          VPDSummary(
+            service = ServiceInfo(config.serviceName, config.serviceId),
+            identifiers = Identifier(vpdId),
+            contactPreference = ContactMethod.resolve(paperlessPreference = response.paperlessPreference),
+            links = Links(
+              Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
+              ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
+            )
+          )
+        )
+      ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+    )
   }
 
   /** This method will extract the headers assocaited with this request specifically, `X-Reqeust-Id` and `X-Correlation-Id` and only return
@@ -135,7 +148,7 @@ class VPDSummaryAPIController @Inject() (
     * @param error
     *   The APIError that should be applied
     */
-  def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
+  private def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
     logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
     Future.successful(
