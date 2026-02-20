@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.summaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
 import play.api.libs.json.{Json, OFormat}
 

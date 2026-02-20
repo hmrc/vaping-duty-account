@@ -33,7 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 trait AuthorisedAction
     extends ActionBuilder[IdentifierRequest, AnyContent]

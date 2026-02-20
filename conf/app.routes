@@ -11,4 +11,4 @@ GET          /get-email-verification/:credId     uk.gov.hmrc.vapingdutyaccount.c
 PUT          /submit-preferences/:vpdId          uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController.submitContactPreferences(vpdId: String)
 
 # BTA API
-GET          /vpd/summary/:vpdId                 uk.gov.hmrc.vapingdutyaccount.controllers.summaryAPI.APIController.getVpdSummary(vpdId: String)
+GET          /vpd/summary/:vpdId                 uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI.VPDSummaryAPIController.getVpdSummary(vpdId: String)

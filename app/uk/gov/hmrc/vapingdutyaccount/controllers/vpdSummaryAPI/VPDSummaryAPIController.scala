@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.summaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
 
 import com.google.inject.Inject
 import play.api.Logging
@@ -22,7 +22,7 @@ import play.api.http.ContentTypes
 import play.api.http.Status.*
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames, RequestId, SessionId}
+import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
@@ -32,11 +32,11 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
-import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class APIController @Inject() (
+class VPDSummaryAPIController @Inject() (
     config: AppConfig,
     cc: ControllerComponents,
     authorise: AuthorisedAction,

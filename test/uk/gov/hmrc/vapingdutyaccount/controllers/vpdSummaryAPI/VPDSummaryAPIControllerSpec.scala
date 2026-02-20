@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.summaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
@@ -33,11 +33,11 @@ import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionSummary}
-import uk.gov.hmrc.vapingdutyaccount.models.summaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import scala.concurrent.Future
 
-class APIControllerSpec extends SpecBase with MockitoSugar {
+class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val config: AppConfig                                = mock[AppConfig]
@@ -89,7 +89,7 @@ class APIControllerSpec extends SpecBase with MockitoSugar {
     body = AnyContentAsEmpty
   )
 
-  val controller: APIController = new APIController(
+  val controller: VPDSummaryAPIController = new VPDSummaryAPIController(
     config,
     cc,
     fakeAuthorisedAction,
