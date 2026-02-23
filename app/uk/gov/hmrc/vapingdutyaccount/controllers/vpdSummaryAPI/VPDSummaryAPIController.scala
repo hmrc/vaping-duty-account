@@ -67,7 +67,13 @@ class VPDSummaryAPIController @Inject() (
           )
 
           try {
-            sendVPDSummary(vpdId, request, etmpData)
+            Future.successful(
+              Ok(
+                Json.toJson(
+                  createVPDSummary(vpdId, request, etmpData)
+                )
+              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+            )
           } catch {
             case _ => sendError(request, APIErrors.InternalServerError)
           }
@@ -90,21 +96,15 @@ class VPDSummaryAPIController @Inject() (
     }
   }
 
-  private def sendVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], etmpData: SubscriptionContactPreferences) = {
-    Future.successful(
-      Ok(
-        Json.toJson(
-          VPDSummary(
-            service = ServiceInfo(config.serviceName, config.serviceId),
-            identifiers = Identifier(vpdId),
-            contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
-            links = Links(
-              Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
-              ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
-            )
-          )
-        )
-      ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+  private def createVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], etmpData: SubscriptionContactPreferences) = {
+    VPDSummary(
+      service = ServiceInfo(config.serviceName, config.serviceId),
+      identifiers = Identifier(vpdId),
+      contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
+      links = Links(
+        Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
+        ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
+      )
     )
   }
 
