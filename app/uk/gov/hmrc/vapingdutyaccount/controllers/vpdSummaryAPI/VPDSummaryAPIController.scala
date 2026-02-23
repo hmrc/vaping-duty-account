@@ -51,7 +51,7 @@ class VPDSummaryAPIController @Inject() (
     if (!vpdId.matches(config.vpdIdPattern)) {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
       // Bad VpdId
-      sendError(request, APIErrors.BadRequest)
+      buildErrorResponse(request, APIErrors.BadRequest)
     } else {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
 
@@ -75,7 +75,7 @@ class VPDSummaryAPIController @Inject() (
               ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
             )
           } catch {
-            case _ => sendError(request, APIErrors.InternalServerError)
+            case _ => buildErrorResponse(request, APIErrors.InternalServerError)
           }
         }
         case Left(error: ErrorResponse)                      => { // Unable to retrieve data
@@ -84,12 +84,12 @@ class VPDSummaryAPIController @Inject() (
           )
 
           error.statusCode match {
-            case INTERNAL_SERVER_ERROR => sendError(request, APIErrors.InternalServerError)
-            case BAD_REQUEST           => sendError(request, APIErrors.BadRequest)
-            case NOT_FOUND             => sendError(request, APIErrors.VpdIdNotFound)
-            case UNPROCESSABLE_ENTITY  => sendError(request, APIErrors.UnprocessableEntity)
-            case UNAUTHORIZED          => sendError(request, APIErrors.Unauthorised)
-            case _: Int                => sendError(request, APIErrors.ServiceUnavailable)
+            case INTERNAL_SERVER_ERROR => buildErrorResponse(request, APIErrors.InternalServerError)
+            case BAD_REQUEST           => buildErrorResponse(request, APIErrors.BadRequest)
+            case NOT_FOUND             => buildErrorResponse(request, APIErrors.VpdIdNotFound)
+            case UNPROCESSABLE_ENTITY  => buildErrorResponse(request, APIErrors.UnprocessableEntity)
+            case UNAUTHORIZED          => buildErrorResponse(request, APIErrors.Unauthorised)
+            case _: Int                => buildErrorResponse(request, APIErrors.ServiceUnavailable)
           }
         }
       }
@@ -117,8 +117,8 @@ class VPDSummaryAPIController @Inject() (
       xCorrelationId.map(config.xCorrelationId -> _)
   }
 
-  private def sendError(request: IdentifierRequest[AnyContent], error: APIError) = {
-    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: sendError]: Sending error for Request ${request.id} with message \"${error.message}\"")
+  private def buildErrorResponse(request: IdentifierRequest[AnyContent], error: APIError) = {
+    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: buildErrorResponse]: Sending error for Request ${request.id} with message \"${error.message}\"")
 
     Future.successful(
       new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
