@@ -34,6 +34,7 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionSummary}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
 
 import scala.concurrent.Future
 import scala.compiletime.ops.boolean
@@ -42,6 +43,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val config: AppConfig                                = mock[AppConfig]
+  val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
   when(config.vpdIdPattern).thenReturn("(?:GB|XI)WK[0-9]{7}WK")
 
@@ -94,7 +96,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     config,
     cc,
     fakeAuthorisedAction,
-    mockSubscriptionConnector
+    mockVPDSummaryAPIService
   )
   val badVpdId: String          = "bad-invalid-vpdid"
 

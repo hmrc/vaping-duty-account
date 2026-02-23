@@ -30,9 +30,9 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,7 +40,7 @@ class VPDSummaryAPIController @Inject() (
     config: AppConfig,
     cc: ControllerComponents,
     authorise: AuthorisedAction,
-    subscriptionConnector: SubscriptionConnector
+    vpdSummaryAPIService: VPDSummaryAPIService
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -60,7 +60,7 @@ class VPDSummaryAPIController @Inject() (
         request = request.request
       )
 
-      getVPDSummary(vpdId)
+      vpdSummaryAPIService.getVPDSummary(vpdId)
         .flatMap((transformedApiResponse: Either[ErrorResponse, VPDSummary]) => 
           transformedApiResponse
           .match {
@@ -91,24 +91,6 @@ class VPDSummaryAPIController @Inject() (
           }
         )
     }
-  }
-
-  private def getVPDSummary(vpdId: String)(implicit hc: HeaderCarrier) = {
-    subscriptionConnector
-      .getSubscriptionContactPreferences(vpdId)
-      .map(apiResponse => apiResponse.map(createVPDSummary(vpdId, _)))
-  }
-
-  private def createVPDSummary(vpdId: String, etmpData: SubscriptionContactPreferences) = {
-    VPDSummary(
-      service = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers = Identifier(vpdId),
-      contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
-      links = Links(
-        Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
-        ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
-      )
-    )
   }
 
   private def extractHeaders(request: IdentifierRequest[_]) = {
