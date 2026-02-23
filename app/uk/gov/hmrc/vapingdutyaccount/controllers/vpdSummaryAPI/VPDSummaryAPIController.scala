@@ -62,8 +62,9 @@ class VPDSummaryAPIController @Inject() (
 
       subscriptionConnector
         .getSubscriptionContactPreferences(vpdId)
-        .flatMap(apiResponse => 
-          apiResponse.map(createVPDSummary(vpdId, _))
+        .map(apiResponse => apiResponse.map(createVPDSummary(vpdId, _)))
+        .flatMap((transformedApiResponse: Either[ErrorResponse, VPDSummary]) => 
+          transformedApiResponse
           .match {
             case Right(vpdSummary: VPDSummary) => {
                 logger.info(
