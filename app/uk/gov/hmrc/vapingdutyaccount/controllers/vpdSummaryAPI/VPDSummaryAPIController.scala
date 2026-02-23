@@ -70,7 +70,7 @@ class VPDSummaryAPIController @Inject() (
             Future.successful(
               Ok(
                 Json.toJson(
-                  createVPDSummary(vpdId, request, etmpData)
+                  createVPDSummary(vpdId, etmpData)
                 )
               ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
             )
@@ -96,7 +96,7 @@ class VPDSummaryAPIController @Inject() (
     }
   }
 
-  private def createVPDSummary(vpdId: String, request: IdentifierRequest[AnyContent], etmpData: SubscriptionContactPreferences) = {
+  private def createVPDSummary(vpdId: String, etmpData: SubscriptionContactPreferences) = {
     VPDSummary(
       service = ServiceInfo(config.serviceName, config.serviceId),
       identifiers = Identifier(vpdId),
