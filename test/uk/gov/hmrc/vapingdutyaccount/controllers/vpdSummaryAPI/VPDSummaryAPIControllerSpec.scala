@@ -36,6 +36,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionConta
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import scala.concurrent.Future
+import scala.compiletime.ops.boolean
 
 class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
@@ -97,6 +98,10 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   )
   val badVpdId: String          = "bad-invalid-vpdid"
 
+  private def getContactMethod(preference: Boolean): String = {
+    if (preference == true) "EMAIL" else "POST"
+  }
+
   def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
       |{
       |  "service" : {
@@ -106,7 +111,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
       |  "identifiers" : {
       |    "vpdId" : "$vpdId"
       |  },
-      |  "contactPreference" : "${ContactMethod.resolve(subscription.paperlessPreference).toString.toUpperCase}",
+      |  "contactPreference" : "${getContactMethod(subscription.paperlessPreference)}",
       |  "links" : {
       |    "self" : {
       |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
