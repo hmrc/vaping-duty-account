@@ -60,9 +60,7 @@ class VPDSummaryAPIController @Inject() (
         request = request.request
       )
 
-      subscriptionConnector
-        .getSubscriptionContactPreferences(vpdId)
-        .map(apiResponse => apiResponse.map(createVPDSummary(vpdId, _)))
+      getVPDSummary(vpdId)
         .flatMap((transformedApiResponse: Either[ErrorResponse, VPDSummary]) => 
           transformedApiResponse
           .match {
@@ -93,6 +91,12 @@ class VPDSummaryAPIController @Inject() (
           }
         )
     }
+  }
+
+  private def getVPDSummary(vpdId: String)(implicit hc: HeaderCarrier) = {
+    subscriptionConnector
+      .getSubscriptionContactPreferences(vpdId)
+      .map(apiResponse => apiResponse.map(createVPDSummary(vpdId, _)))
   }
 
   private def createVPDSummary(vpdId: String, etmpData: SubscriptionContactPreferences) = {
