@@ -65,32 +65,32 @@ class VPDSummaryAPIController @Inject() (
         .flatMap(apiResponse => 
           apiResponse.map(createVPDSummary(vpdId, _))
           .match {
-          case Right(vpdSummary: VPDSummary) => {
-            logger.info(
-              s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
-            )
-  
-            Future.successful(
-              Ok(Json.toJson(vpdSummary)).
-                withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-            )
-        }
-          case Left(error: ErrorResponse)                      => { // Unable to retrieve data
-            logger.info(
-              s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
-            )
-  
-            error.statusCode match {
-              case INTERNAL_SERVER_ERROR => buildErrorResponse(request, APIErrors.InternalServerError)
-              case BAD_REQUEST           => buildErrorResponse(request, APIErrors.BadRequest)
-              case NOT_FOUND             => buildErrorResponse(request, APIErrors.VpdIdNotFound)
-              case UNPROCESSABLE_ENTITY  => buildErrorResponse(request, APIErrors.UnprocessableEntity)
-              case UNAUTHORIZED          => buildErrorResponse(request, APIErrors.Unauthorised)
-              case _: Int                => buildErrorResponse(request, APIErrors.ServiceUnavailable)
+            case Right(vpdSummary: VPDSummary) => {
+                logger.info(
+                  s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
+                )
+      
+                Future.successful(
+                  Ok(Json.toJson(vpdSummary)).
+                    withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+                )
+            }
+            case Left(error: ErrorResponse)                      => { // Unable to retrieve data
+              logger.info(
+                s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
+              )
+    
+              error.statusCode match {
+                case INTERNAL_SERVER_ERROR => buildErrorResponse(request, APIErrors.InternalServerError)
+                case BAD_REQUEST           => buildErrorResponse(request, APIErrors.BadRequest)
+                case NOT_FOUND             => buildErrorResponse(request, APIErrors.VpdIdNotFound)
+                case UNPROCESSABLE_ENTITY  => buildErrorResponse(request, APIErrors.UnprocessableEntity)
+                case UNAUTHORIZED          => buildErrorResponse(request, APIErrors.Unauthorised)
+                case _: Int                => buildErrorResponse(request, APIErrors.ServiceUnavailable)
+              }
             }
           }
-        }
-      )
+        )
     }
   }
 
