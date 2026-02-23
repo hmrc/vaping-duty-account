@@ -66,18 +66,14 @@ class VPDSummaryAPIController @Inject() (
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
           )
 
-          try {
-            Future.successful(
-              Ok(
-                Json.toJson(
-                  createVPDSummary(vpdId, etmpData)
-                )
-              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-            )
-          } catch {
-            case _ => buildErrorResponse(request, APIErrors.InternalServerError)
-          }
-        }
+          Future.successful(
+            Ok(
+              Json.toJson(
+                createVPDSummary(vpdId, etmpData)
+              )
+            ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+          )
+      }
         case Left(error: ErrorResponse)                      => { // Unable to retrieve data
           logger.info(
             s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
