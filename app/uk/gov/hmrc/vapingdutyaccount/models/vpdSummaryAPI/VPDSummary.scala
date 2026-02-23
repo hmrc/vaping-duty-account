@@ -18,14 +18,18 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
 import play.api.libs.json.{JsObject, Json, OFormat}
 
-/** The VPD Summary API's successful response object.
-  * This is serialised to Json automatically by its accompanying implicit formats.
-  * 
-  * @param service  An instance of the service info case class
-  * @param identifiers  An instance of an identifier case class
-  * @param contactPreference  An instance of the desired ContactMethod (ContactMethod.resolve should be used to resolve the boolean received from Etmp to its enum value)
-  * @param links  An instance of this response's links case class
-  * 
+/** The VPD Summary API's successful response object. This is serialised to Json automatically by its accompanying implicit formats.
+  *
+  * @param service
+  *   An instance of the service info case class
+  * @param identifiers
+  *   An instance of an identifier case class
+  * @param contactPreference
+  *   An instance of the desired ContactMethod (ContactMethod.resolve should be used to resolve the boolean received from Etmp to its enum
+  *   value)
+  * @param links
+  *   An instance of this response's links case class
+  *
   * @return
   *   `JsValue`
   *
