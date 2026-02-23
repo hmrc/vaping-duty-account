@@ -60,7 +60,7 @@ class VPDSummaryAPIController @Inject() (
         request = request.request
       )
 
-      subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap {
+      subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap (apiResponse => apiResponse match {
         case Right(etmpData: SubscriptionContactPreferences) => {
           logger.info(
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
@@ -89,6 +89,7 @@ class VPDSummaryAPIController @Inject() (
           }
         }
       }
+      )
     }
   }
 
