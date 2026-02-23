@@ -18,20 +18,14 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
 import play.api.libs.json.{JsObject, Json, OFormat}
 
-/** Generates the API response
-  *
-  * @param config
-  *   Used to populate the "service" field of the APIResponse (see example below)
-  * @param code
-  *   Status code to be returned with the request
-  * @param vpdId
-  *   VpdId that executed the request
-  * @param contactMethod
-  *   The contact method this VpdId uses
-  * @param links
-  *   The links that will be sent in the 'links' field of the API response
-  * @param identifier
-  *   the identifier for this request
+/** The VPD Summary API's successful response object.
+  * This is serialised to Json automatically by its accompanying implicit formats.
+  * 
+  * @param service  An instance of the service info case class
+  * @param identifiers  An instance of an identifier case class
+  * @param contactPreference  An instance of the desired ContactMethod (ContactMethod.resolve should be used to resolve the boolean received from Etmp to its enum value)
+  * @param links  An instance of this response's links case class
+  * 
   * @return
   *   `JsValue`
   *
