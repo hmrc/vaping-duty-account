@@ -60,7 +60,10 @@ class VPDSummaryAPIController @Inject() (
         request = request.request
       )
 
-      subscriptionConnector.getSubscriptionContactPreferences(vpdId) flatMap (apiResponse => apiResponse.map(createVPDSummary(vpdId, _)) match {
+      subscriptionConnector
+        .getSubscriptionContactPreferences(vpdId)
+        .flatMap(apiResponse => apiResponse.map(createVPDSummary(vpdId, _))
+        .match {
         case Right(vpdSummary: VPDSummary) => {
           logger.info(
             s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
@@ -106,7 +109,7 @@ class VPDSummaryAPIController @Inject() (
   }
 
   private def extractHeaders(request: IdentifierRequest[_]) = {
-    val xRequestId     = request.headers.get(HeaderNames.xRequestId)
+    val xRequestId = request.headers.get(HeaderNames.xRequestId)
     val xCorrelationId = request.headers.get(config.xCorrelationId)
 
     Map[String, String]() ++
