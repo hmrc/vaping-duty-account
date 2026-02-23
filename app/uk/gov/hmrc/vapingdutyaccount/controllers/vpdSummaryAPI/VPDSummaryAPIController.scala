@@ -71,11 +71,8 @@ class VPDSummaryAPIController @Inject() (
             )
   
             Future.successful(
-              Ok(
-                Json.toJson(
-                  vpdSummary
-                )
-              ).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+              Ok(Json.toJson(vpdSummary)).
+                withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
             )
         }
           case Left(error: ErrorResponse)                      => { // Unable to retrieve data
