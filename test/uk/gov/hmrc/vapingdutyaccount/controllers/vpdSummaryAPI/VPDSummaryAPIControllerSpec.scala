@@ -28,16 +28,14 @@ import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.HeaderNames as HmrcHeaderNames
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionSummary}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
 
 import scala.concurrent.Future
-import scala.compiletime.ops.boolean
 
 class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
@@ -98,34 +96,34 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     fakeAuthorisedAction,
     mockVPDSummaryAPIService
   )
-  val badVpdId: String          = "bad-invalid-vpdid"
+  val badVpdId: String                    = "bad-invalid-vpdid"
 
   private def getContactMethod(preference: Boolean): String = {
     if (preference == true) "EMAIL" else "POST"
   }
 
   def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
-      |{
-      |  "service" : {
-      |    "name" : "${config.serviceName}",
-      |    "id" : "${config.serviceId}"
-      |  },
-      |  "identifiers" : {
-      |    "vpdId" : "$vpdId"
-      |  },
-      |  "contactPreference" : "${getContactMethod(subscription.paperlessPreference)}",
-      |  "links" : {
-      |    "self" : {
-      |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
-      |      "method" : "GET"
-      |    },
-      |    "manage-contact-preference" : {
-      |      "href" : "${config.vpdSummaryRESTAPIGetContactPreferencesHref}",
-      |      "method" : "GET"
-      |    }
-      |  }
-      |}
-      |""".stripMargin)
+       |{
+       |  "service" : {
+       |    "name" : "${config.serviceName}",
+       |    "id" : "${config.serviceId}"
+       |  },
+       |  "identifiers" : {
+       |    "vpdId" : "$vpdId"
+       |  },
+       |  "contactPreference" : "${getContactMethod(subscription.paperlessPreference)}",
+       |  "links" : {
+       |    "self" : {
+       |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
+       |      "method" : "GET"
+       |    },
+       |    "manage-contact-preference" : {
+       |      "href" : "${config.vpdSummaryRESTAPIGetContactPreferencesHref}",
+       |      "method" : "GET"
+       |    }
+       |  }
+       |}
+       |""".stripMargin)
 
   /** This helper method will assert that the specified header is present on received responses
     */
