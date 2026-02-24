@@ -36,8 +36,6 @@ final case class APIError(message: String, code: Int)
 object APIErrors {
   val BadRequest = APIError("Bad request (invalid headers or malformed request)", BAD_REQUEST)
 
-  val VpdIdNotFound = APIError("VPD ID not found", NOT_FOUND)
-
   val Unauthorised = APIError("Unauthorised (missing or invalid bearer token)", UNAUTHORIZED)
 
   val ValidTokenNotAllowedForRequestedVpdId = APIError("Forbidden (token valid but not authorised for this VPD ID)", FORBIDDEN)
@@ -45,8 +43,6 @@ object APIErrors {
   val InternalServerError = APIError("Internal server error", INTERNAL_SERVER_ERROR)
 
   val ServiceUnavailable = APIError("Service unavailable", SERVICE_UNAVAILABLE)
-
-  val UnprocessableEntity = APIError("Unprocessable entity", UNPROCESSABLE_ENTITY)
 }
 
 implicit val APIErrorFormat: OFormat[APIError] = Json.format[APIError]

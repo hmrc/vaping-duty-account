@@ -82,8 +82,6 @@ class VPDSummaryAPIController @Inject() (
               error.statusCode match {
                 case INTERNAL_SERVER_ERROR => buildErrorResponse(request, APIErrors.InternalServerError)
                 case BAD_REQUEST           => buildErrorResponse(request, APIErrors.BadRequest)
-                case NOT_FOUND             => buildErrorResponse(request, APIErrors.VpdIdNotFound)
-                case UNPROCESSABLE_ENTITY  => buildErrorResponse(request, APIErrors.UnprocessableEntity)
                 case UNAUTHORIZED          => buildErrorResponse(request, APIErrors.Unauthorised)
                 case _: Int                => buildErrorResponse(request, APIErrors.ServiceUnavailable)
               }
