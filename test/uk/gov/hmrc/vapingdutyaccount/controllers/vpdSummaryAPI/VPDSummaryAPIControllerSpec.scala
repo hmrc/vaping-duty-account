@@ -135,8 +135,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
 
   "SummaryAPI must " - {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
@@ -146,8 +146,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithCorrelationId)
 
@@ -157,8 +157,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id & request id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesEmailSelected)))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
@@ -169,8 +169,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is false)" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, SubscriptionContactPreferences]](Right(contactPreferencesPostNoEmail)))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesPostNoEmail))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
