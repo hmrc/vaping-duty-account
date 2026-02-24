@@ -32,10 +32,10 @@ class VPDSummaryAPIService @Inject()(
 )(implicit ec: ExecutionContext) {
 
 
-  def getVPDSummary(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, VPDSummary]] = {
+  def getVPDSummary(vpdId: String)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     subscriptionConnector
-      .getSubscriptionContactPreferences(vpdId)
-      .map(apiResponse => apiResponse.map(createVPDSummary(vpdId, _)))
+      .getSubscriptionContactPreferencesLight(vpdId)
+      .map(createVPDSummary(vpdId, _))
   }
 
   private def createVPDSummary(vpdId: String, etmpData: SubscriptionContactPreferences) = {
