@@ -51,7 +51,9 @@ class VPDSummaryAPIController @Inject() (
     if (!vpdId.matches(config.vpdIdPattern)) {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
       // Bad VpdId
-      buildErrorResponse(request, APIErrors.BadRequest)
+      Future.successful(
+        buildErrorResponse(request, APIErrors.BadRequest)
+      )
     } else {
       logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
 
@@ -60,34 +62,15 @@ class VPDSummaryAPIController @Inject() (
         request = request.request
       )
 
-      vpdSummaryAPIService.getVPDSummary(vpdId)
-        .flatMap((transformedApiResponse: Either[ErrorResponse, VPDSummary]) => 
-          transformedApiResponse
-          .match {
-            case Right(vpdSummary: VPDSummary) => {
-                logger.info(
-                  s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
-                )
-      
-                Future.successful(
-                  Ok(Json.toJson(vpdSummary)).
-                    withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-                )
-            }
-            case Left(error: ErrorResponse)                      => { // Unable to retrieve data
-              logger.info(
-                s"[SummaryAPI] [ƒ: getVpdSummary] Unable to retrieve SubscriptionSummary data for VpdId=[$vpdId]. Received statusCode=[${error.statusCode}]"
-              )
-    
-              error.statusCode match {
-                case INTERNAL_SERVER_ERROR => buildErrorResponse(request, APIErrors.InternalServerError)
-                case BAD_REQUEST           => buildErrorResponse(request, APIErrors.BadRequest)
-                case UNAUTHORIZED          => buildErrorResponse(request, APIErrors.Unauthorised)
-                case _: Int                => buildErrorResponse(request, APIErrors.ServiceUnavailable)
-              }
-            }
-          }
+      vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
+        logger.info(
+          s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
         )
+
+        Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+      } recover { case _ =>
+        buildErrorResponse(request, APIErrors.InternalServerError)
+      }
     }
   }
 
@@ -101,10 +84,10 @@ class VPDSummaryAPIController @Inject() (
   }
 
   private def buildErrorResponse(request: IdentifierRequest[AnyContent], error: APIError) = {
-    logger.info(s"[SummaryAPI] [getVpdSummary] [ƒ: buildErrorResponse]: Sending error for Request ${request.id} with message \"${error.message}\"")
-
-    Future.successful(
-      new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
+    logger.info(
+      s"[SummaryAPI] [getVpdSummary] [ƒ: buildErrorResponse]: Sending error for Request ${request.id} with message \"${error.message}\""
     )
+
+    new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
   }
 }
