@@ -84,6 +84,8 @@ class VPDSummaryAPIController @Inject() (
       s"[SummaryAPI] [getVpdSummary] [ƒ: buildErrorResponse]: Sending error for Request ${request.id} with message \"${error.message}\""
     )
 
-    new Status(error.code)(Json.toJson(error)).as(ContentTypes.JSON)
+    new Status(error.code)(Json.toJson(error))
+      .withHeaders(extractHeaders(request).toSeq: _*)
+      .as(ContentTypes.JSON)
   }
 }
