@@ -34,6 +34,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
+import uk.gov.hmrc.http.InternalServerException
 
 import scala.concurrent.Future
 
@@ -127,8 +128,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
 
   /** This helper method will assert that the specified header is present on received responses
     */
-  private def assertHeaderIsPresentOn(response: Future[Result], header: String) = {
-    assert(headers(response).get(header).get.isInstanceOf[String])
+  private def assertHeaderIsPresentOn(result: Future[Result], header: String) = {
+    assert(headers(result).get(header).get.isInstanceOf[String])
   }
 
   "SummaryAPI must " - {
@@ -182,6 +183,18 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
 
       status(result)        mustBe HttpStatus.BAD_REQUEST
       contentAsJson(result) mustBe Json.toJson(APIErrors.BadRequest)
+    }
+
+    "must return APIErrors.InteralServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.failed(new InternalServerException("")))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
+
+      status(result)        mustBe HttpStatus.INTERNAL_SERVER_ERROR
+      contentAsJson(result) mustBe Json.toJson(APIErrors.InternalServerError)
+      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
+      assertHeaderIsPresentOn(result, config.xCorrelationId)
     }
   }
 }
