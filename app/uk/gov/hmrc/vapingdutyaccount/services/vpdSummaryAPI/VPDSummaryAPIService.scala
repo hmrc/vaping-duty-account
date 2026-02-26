@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI
 
 import com.google.inject.Inject
+import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
@@ -43,8 +44,8 @@ class VPDSummaryAPIService @Inject()(
       identifiers = Identifier(vpdId),
       contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
       links = Links(
-        Self(config.vpdSummaryRESTAPIGetHref(vpdId), "GET"),
-        ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, "GET")
+        Self(config.vpdSummaryRESTAPIGetHref(vpdId), HttpVerbs.GET),
+        ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, HttpVerbs.GET)
       )
     )
   }

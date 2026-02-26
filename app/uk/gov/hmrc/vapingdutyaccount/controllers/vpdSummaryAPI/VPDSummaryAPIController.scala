@@ -45,7 +45,7 @@ class VPDSummaryAPIController @Inject() (
 
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     if (!vpdId.matches(config.vpdIdPattern)) {
-      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[${vpdId}]")
+      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[$vpdId]")
       // Bad VpdId
       Future.successful(
         buildErrorResponse(request, APIErrors.BadRequest)
