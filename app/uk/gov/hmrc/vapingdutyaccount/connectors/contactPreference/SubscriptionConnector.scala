@@ -32,20 +32,43 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class SubscriptionConnector @Inject()(
-  config: AppConfig,
-  headers: HIPHeaders,
-  circuitBreakerProvider: CircuitBreakerProvider,
-  implicit val system: ActorSystem,
-  implicit val httpClient: HttpClientV2
+class SubscriptionConnector @Inject() (
+    config: AppConfig,
+    headers: HIPHeaders,
+    circuitBreakerProvider: CircuitBreakerProvider,
+    implicit val system: ActorSystem,
+    implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances
     with Logging {
 
   implicit val scheduler: Scheduler = system.scheduler
 
+  /** This method serves as a light wrapper around the below caller to ETMP. This was done to hide the errors that are encountered from us
+    * while interacting with ETMP. This thin wrapper will only return a Future.failed and allow mapping this to an internal server
+    * exception.
+    */
+  def getSubscriptionContactPreferencesLight(vpdId: String)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] = {
+    getSubscriptionContactPreferences(vpdId) flatMap {
+      case Right(etmpData: SubscriptionContactPreferences) =>
+        logger.info(
+          s"[SubscriptionConnector] [ƒ: getSubscriptionContactPreferencesLight]: Successfully retrieved SubscriptionContactPreferences from ETMP for vpdId=[$vpdId]"
+        )
+
+        Future.successful(etmpData)
+      case Left(err: ErrorResponse)                        =>
+        logger.info(
+          s"[SubscriptionConnector] [ƒ: getSubscriptionContactPreferencesLight]: Unable to retrieve SubscriptionContactPreferences for vpdId=[$vpdId]; received" +
+            s"error response from ETMP: err.statusCode=[${err.statusCode}] & err.message=[${err.message}]"
+        )
+
+        Future.failed(new InternalServerException(""))
+    }
+
+  }
+
   def getSubscriptionContactPreferences(
-    vpdId: String
+      vpdId: String
   )(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
       retry(
         () => call(vpdId),
@@ -70,7 +93,7 @@ class SubscriptionConnector @Inject()(
               Try {
                 response.json.as[SubscriptionContactPreferences]
               } match {
-                case Success(doc) =>
+                case Success(doc)     =>
                   logger.info(
                     s"[SubscriptionConnector] [getSubscriptionContactPreferences] Retrieved subscription summary success for vpdId $vpdId"
                   )

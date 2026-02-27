@@ -17,8 +17,10 @@
 package uk.gov.hmrc.vapingdutyaccount.base
 
 import org.scalatest.Suite
-import play.api.http.Status.OK
+import play.api.http.Status.*
+import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.utils.helpers.WireMockHelper
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.{APIErrors, APIErrorFormat}
 
 trait AuthStubs extends WireMockHelper {
   this: Suite =>
@@ -65,8 +67,14 @@ trait AuthStubs extends WireMockHelper {
         |  }
          """.stripMargin
 
+  val authNotOKResponse = Json.stringify(Json.toJson(APIErrors.Unauthorised))
+
   def stubAuthorised(vpdId: String): Unit =
     stubPost(authUrl, OK, authRequest, authOKResponse(vpdId))
+
+  def stubNotAuthorised(vpdId: String): Unit = {
+    stubPost(authUrl, UNAUTHORIZED, authRequest, authNotOKResponse)
+  }
 
   def verifyAuthorised(): Unit =
     verifyPost(authUrl)

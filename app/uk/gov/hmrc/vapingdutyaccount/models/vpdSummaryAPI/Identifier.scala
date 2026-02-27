@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.utils.generators
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import org.scalacheck.Gen
+import play.api.libs.json.*
 
-trait ModelGenerators {
+final case class Identifier(vpdId: String)
 
-  def vpdIdGen: Gen[String] = Gen.listOfN(7, Gen.numChar).map(id => s"GBWK${id.mkString}WK")
+object Identifier {
+  given OFormat[Identifier] = Json.format[Identifier]
 }
