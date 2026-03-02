@@ -49,5 +49,5 @@ class CheckVpdIdActionImpl private[actions](vpdId: String)(implicit val executio
 
 class CheckVpdIdAction @Inject()(implicit val executionContext: ExecutionContext) {
   def apply(vpdId: String): ActionRefiner[IdentifierRequest, IdentifierRequest] =
-    new CheckVpdIdActionImpl(vpdId)(executionContext)
+    new CheckVpdIdActionImpl(vpdId)
 }
