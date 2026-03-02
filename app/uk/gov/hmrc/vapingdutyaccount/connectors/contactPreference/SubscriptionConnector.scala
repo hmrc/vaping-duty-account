@@ -51,25 +51,15 @@ class SubscriptionConnector @Inject() (
   def getSubscriptionContactPreferencesLight(vpdId: String)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] = {
     getSubscriptionContactPreferences(vpdId) flatMap {
       case Right(etmpData: SubscriptionContactPreferences) =>
-        logger.info(
-          s"[SubscriptionConnector] [ƒ: getSubscriptionContactPreferencesLight]: Successfully retrieved SubscriptionContactPreferences from ETMP for vpdId=[$vpdId]"
-        )
-
         Future.successful(etmpData)
       case Left(err: ErrorResponse)                        =>
-        logger.info(
-          s"[SubscriptionConnector] [ƒ: getSubscriptionContactPreferencesLight]: Unable to retrieve SubscriptionContactPreferences for vpdId=[$vpdId]; received" +
-            s"error response from ETMP: err.statusCode=[${err.statusCode}] & err.message=[${err.message}]"
-        )
-
         Future.failed(new InternalServerException(""))
     }
 
   }
 
-  def getSubscriptionContactPreferences(
-      vpdId: String
-  )(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
+  def getSubscriptionContactPreferences(vpdId: String)
+                                       (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
       retry(
         () => call(vpdId),
         attempts = config.retryAttempts,
@@ -80,9 +70,6 @@ class SubscriptionConnector @Inject() (
 
   private def call(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
     circuitBreakerProvider.get().withCircuitBreaker {
-      logger.info(
-        s"[SubscriptionConnector] [getSubscriptionContactPreferences] Fetching subscription summary for vpdId $vpdId"
-      )
       httpClient
         .get(url"${config.getSubscriptionUrl(vpdId)}")
         .setHeader(headers.subscriptionHeaders(): _*)
@@ -94,9 +81,6 @@ class SubscriptionConnector @Inject() (
                 response.json.as[SubscriptionContactPreferences]
               } match {
                 case Success(doc)     =>
-                  logger.info(
-                    s"[SubscriptionConnector] [getSubscriptionContactPreferences] Retrieved subscription summary success for vpdId $vpdId"
-                  )
                   Future.successful(Right(doc))
                 case Failure(error)   =>
                   logger.warn(
