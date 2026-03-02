@@ -62,7 +62,6 @@ class SubmitPreferencesConnector @Inject() (
   Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] = {
 
     circuitBreakerProvider.get().withCircuitBreaker {
-      logger.info(s"Submitting contact preferences for vpdId $vpdId")
       httpClient
         .put(url"${config.submitPreferencesUrl(vpdId)}")
         .setHeader(headers.submissionHeaders(): _*)
@@ -96,7 +95,6 @@ class SubmitPreferencesConnector @Inject() (
   private def tryParse(vpdId: String, response: HttpResponse) = {
     Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
       case Success(submissionResponse) =>
-        logger.info(s"Contact preferences submitted successfully for vpdId $vpdId")
         Future.successful(Right(submissionResponse.success))
       case Failure(_) =>
         logger.warn(s"Parsing failed for submission response for vpdId $vpdId")

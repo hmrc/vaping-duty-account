@@ -38,7 +38,6 @@ class EmailVerificationConnector @Inject()(
   def getEmailVerification(credId: String)
                           (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, GetVerificationStatusResponse]] =
     
-      logger.info(s"Fetching email verification list for credId $credId")
       httpClient
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
         .execute[Either[UpstreamErrorResponse, HttpResponse]]
@@ -49,7 +48,6 @@ class EmailVerificationConnector @Inject()(
                 .as[GetVerificationStatusResponse]
             } match {
               case Success(response) =>
-                logger.info(s"Retrieved email records successfully for credId $credId")
                 Right(response)
               case Failure(_)        =>
                 logger.warn(s"Unable to parse email records successful response for credId $credId")
@@ -58,7 +56,6 @@ class EmailVerificationConnector @Inject()(
           case Left(error)     =>
             error.statusCode match {
               case NOT_FOUND   =>
-                logger.info(s"There were no email address records for credId $credId. status: ${error.statusCode}")
                 Right(GetVerificationStatusResponse(emails = List.empty))
               case BAD_REQUEST =>
                 logger.warn(

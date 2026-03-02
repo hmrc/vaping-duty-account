@@ -45,24 +45,17 @@ class VPDSummaryAPIController @Inject() (
 
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     if (!vpdId.matches(config.vpdIdPattern)) {
-      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary] Bad VpdId received; did not satisfy regex validation. VpdId=[$vpdId]")
       // Bad VpdId
       Future.successful(
         buildErrorResponse(request, APIErrors.BadRequest)
       )
     } else {
-      logger.info(s"[SummaryAPI] [ƒ: getVpdSummary]: VpdId validated; initiating request to API#5786 for SubscriptionSummary data...")
-
       given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
         session = request.session,
         request = request.request
       )
 
       vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
-        logger.info(
-          s"[SummaryAPI] [ƒ: getVpdSummary] Successfully retrieved SubscriptionSummary data from API#5786 for VpdId=[$vpdId]"
-        )
-
         Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
       } recover { case _ =>
         buildErrorResponse(request, APIErrors.InternalServerError)
@@ -80,9 +73,6 @@ class VPDSummaryAPIController @Inject() (
   }
 
   private def buildErrorResponse(request: IdentifierRequest[AnyContent], error: APIError) = {
-    logger.info(
-      s"[SummaryAPI] [getVpdSummary] [ƒ: buildErrorResponse]: Sending error for Request ${request.id} with message \"${error.message}\""
-    )
 
     new Status(error.code)(Json.toJson(error))
       .withHeaders(extractHeaders(request).toSeq: _*)
