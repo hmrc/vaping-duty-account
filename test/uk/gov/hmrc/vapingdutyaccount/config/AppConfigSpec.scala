@@ -41,7 +41,7 @@ class SpecBaseWithConfigOverrides extends SpecBase {
     "downstream-apis.regime"                                         -> "AD",
     "crypto.key"                                                     -> "cryptokey",
     "crypto.isEnabled"                                               -> true,
-    "enrolment.serviceName"                                          -> "HMRC-AD-ORG",
+    "enrolment.serviceName"                                          -> "HMRC-VPD-ORG",
     "features.email-verification-stub"                               -> false
   )
 }
@@ -123,7 +123,7 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
     }
 
     "must return the enrolment service name" in {
-      appConfig.enrolmentServiceName mustBe "HMRC-AD-ORG"
+      appConfig.enrolmentServiceName mustBe "HMRC-VPD-ORG"
     }
 
     "getConfStringAndThrowIfNotFound must" - {
