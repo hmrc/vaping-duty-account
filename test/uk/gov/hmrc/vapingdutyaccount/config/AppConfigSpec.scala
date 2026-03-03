@@ -37,8 +37,8 @@ class SpecBaseWithConfigOverrides extends SpecBase {
     "microservice.services.submit-preferences.clientId"              -> "submission clientId",
     "microservice.services.submit-preferences.secret"                -> "submission secret",
     "microservice.services.submit-preferences.url.submitPreferences" -> "/etmp/RESTAdapter/email-contact-preference",
-    "downstream-apis.idType"                                         -> "ZAD",
-    "downstream-apis.regime"                                         -> "AD",
+    "downstream-apis.idType"                                         -> "ZVPD",
+    "downstream-apis.regime"                                         -> "VPD",
     "crypto.key"                                                     -> "cryptokey",
     "crypto.isEnabled"                                               -> true,
     "enrolment.serviceName"                                          -> "HMRC-VPD-ORG",
@@ -48,9 +48,9 @@ class SpecBaseWithConfigOverrides extends SpecBase {
 
 class SpecBaseWithEmailVerificationStubs extends SpecBase {
   override def configOverrides: Map[String, Any] = Map(
-    "microservice.services.alcohol-duty-stubs.protocol"              -> "http",
-    "microservice.services.alcohol-duty-stubs.host"                  -> "stubshost",
-    "microservice.services.alcohol-duty-stubs.port"                  -> 54321,
+    "microservice.services.vaping-duty-stubs.protocol"               -> "http",
+    "microservice.services.vaping-duty-stubs.host"                   -> "stubshost",
+    "microservice.services.vaping-duty-stubs.port"                   -> 54321,
     "microservice.services.email-verification.url.getVerifiedEmails" -> "/email-verification/verification-status",
     "features.email-verification-stub"                               -> true
   )
@@ -90,7 +90,7 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
       "must return the submitContactPreferences url" in {
         appConfig.submitPreferencesUrl(
           vpdId
-        ) mustBe s"http://submissionhost:12345/etmp/RESTAdapter/email-contact-preference/AD/ZAD/$vpdId"
+        ) mustBe s"http://submissionhost:12345/etmp/RESTAdapter/email-contact-preference/VPD/ZVPD/$vpdId"
       }
 
       "must return the client id" in {
@@ -104,11 +104,11 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
 
     "must return the config relating to downstream APIs" - {
       "for idType" in {
-        appConfig.idType mustBe "ZAD"
+        appConfig.idType mustBe "ZVPD"
       }
 
       "for regime" in {
-        appConfig.regime mustBe "AD"
+        appConfig.regime mustBe "VPD"
       }
     }
 
@@ -143,7 +143,7 @@ class AppConfigWithEmailVerificationStubsSpec extends SpecBaseWithEmailVerificat
     "must return the getVerifiedEmailsUrl when email verification stubs is toggled on" in {
       appConfig.getVerifiedEmailsUrl(
         credId
-      ) mustBe s"http://localhost:8142/email-verification/verification-status/$credId"
+      ) mustBe s"http://stubshost:54321/email-verification/verification-status/$credId"
     }
   }
 }
