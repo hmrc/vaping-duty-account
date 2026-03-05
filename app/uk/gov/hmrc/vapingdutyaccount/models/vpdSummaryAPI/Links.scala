@@ -29,8 +29,8 @@ implicit val manageContactPreferenceFormats: OFormat[ManageContactPreference] = 
   * @param self
   *   The link that will be sent along under the "self" field.
   * @param manageContactPreferences
-  *   The link that will be sent along under the "manage-contact-preference" field.
+  *   The link that will be sent along under the "manageContactPreference" field.
   */
-case class Links(self: Self, `manage-contact-preference`: ManageContactPreference)
+case class Links(self: Self, manageContactPreference: ManageContactPreference)
 
 implicit val linksFormats: OFormat[Links] = Json.format[Links]

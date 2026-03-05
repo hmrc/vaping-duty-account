@@ -118,7 +118,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
        |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
        |      "method" : "GET"
        |    },
-       |    "manage-contact-preference" : {
+       |    "manageContactPreference" : {
        |      "href" : "${config.vpdSummaryRESTAPIGetContactPreferencesHref}",
        |      "method" : "GET"
        |    }

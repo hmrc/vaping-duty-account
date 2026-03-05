@@ -49,7 +49,7 @@ import play.api.libs.json.{JsObject, Json, OFormat}
   *        "href" : "url",
   *        "method" : "GET"
   *      },
-  *      "manage-contact-preference" : {
+  *      "manageContactPreference" : {
   * .      "href" : "url"
   *        "method" : "GET"
   *      }
