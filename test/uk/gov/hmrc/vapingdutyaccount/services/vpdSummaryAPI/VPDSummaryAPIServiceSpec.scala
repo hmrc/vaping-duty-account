@@ -41,8 +41,10 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val config: AppConfig                                = mock[AppConfig]
 
-  val vpdSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
+  when(config.frontend).thenReturn("urls.vaping-duty-frontend")
+  when(config.self).thenReturn("urls.self")
 
+  val vpdSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
   "SummaryAPIService must " - {
     "return data in expected shape when calling the API (PaperlessPreference is true)" in {

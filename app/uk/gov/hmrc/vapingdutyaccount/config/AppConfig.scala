@@ -99,8 +99,5 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val serviceName: String = config.get[String]("service.name")
   lazy val serviceId: String   = config.get[String]("service.id")
 
-  def vpdSummaryRESTAPIGetHref(vpdId: String): String = s"/vpd/summary/${vpdId}"
-  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
-
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }
