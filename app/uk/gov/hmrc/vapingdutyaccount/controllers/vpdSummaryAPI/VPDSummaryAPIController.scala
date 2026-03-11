@@ -44,22 +44,29 @@ class VPDSummaryAPIController @Inject() (
   given OFormat[APIError] = APIErrorFormat
 
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
-    if (!vpdId.matches(config.vpdIdPattern)) {
-      // Bad VpdId
-      Future.successful(
-        buildErrorResponse(request, APIErrors.BadRequest)
-      )
-    } else {
-      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-        session = request.session,
-        request = request.request
+    if (config.vpdSummaryRESTAPIEnabled) {
+      if (!vpdId.matches(config.vpdIdPattern)) { // Invalid VpdId
+        Future.successful(
+          buildErrorResponse(request, APIErrors.BadRequest)
+        )
+      } else {
+        given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+          session = request.session,
+          request = request.request
+        )
+
+        vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
+          Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+        } recover { case _ =>
+          buildErrorResponse(request, APIErrors.InternalServerError)
+        }
+      }
+    } else { // feature switch set to false
+      logger.warn(
+        s"[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)"
       )
 
-      vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
-        Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-      } recover { case _ =>
-        buildErrorResponse(request, APIErrors.InternalServerError)
-      }
+      Future.successful(buildErrorResponse(request, APIErrors.InternalServerError))
     }
   }
 
