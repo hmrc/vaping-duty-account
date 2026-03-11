@@ -27,14 +27,13 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.*
 import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.http.HeaderNames as HmrcHeaderNames
+import uk.gov.hmrc.http.{InternalServerException, HeaderNames as HmrcHeaderNames}
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
-import uk.gov.hmrc.http.InternalServerException
 
 import scala.concurrent.Future
 
