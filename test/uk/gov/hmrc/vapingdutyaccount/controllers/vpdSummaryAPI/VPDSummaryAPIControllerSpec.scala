@@ -44,6 +44,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val config: AppConfig                                = mock[AppConfig]
   val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
+  when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
   when(config.vpdIdPattern).thenReturn("(?:GB|XI)WK[0-9]{7}WK")
 
   when(config.serviceName).thenReturn("Vaping Products Duty")
@@ -181,9 +182,20 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
       contentAsJson(result) mustBe Json.toJson(APIErrors.BadRequest)
     }
 
-    "must return APIErrors.InteralServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
+    "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
+
+      status(result)        mustBe HttpStatus.INTERNAL_SERVER_ERROR
+      contentAsJson(result) mustBe Json.toJson(APIErrors.InternalServerError)
+      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
+      assertHeaderIsPresentOn(result, config.xCorrelationId)
+    }
+
+    "must return APIErrors.InternalServerError when feature switch is disabled" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(false)
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
