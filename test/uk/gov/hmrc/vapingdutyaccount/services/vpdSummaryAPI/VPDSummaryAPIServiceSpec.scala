@@ -44,6 +44,16 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
   val vpdSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
   "SummaryAPIService must " - {
+    "must return correct URLs as part of VPDSummary" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+
+      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+      result.links.manageContactPreference.href mustEqual "/vaping-duty/contact-preferences/how-should-we-contact-you"
+      result.links.self.href                    mustEqual s"/vaping-duty-account/vpd/summary/$vpdId"
+    }
+
     "must return ContactMethod.Email when PaperlessPreference is true" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
@@ -57,9 +67,9 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
       when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-      await(result).contactPreference mustBe ContactMethod.Post
+      result.contactPreference mustBe ContactMethod.Post
     }
 
     "return APIErrors.InternalServerError when appropriate status code received from stub connector" in {
