@@ -44,8 +44,8 @@ class VPDSummaryAPIService @Inject()(
       identifiers = Identifier(vpdId),
       contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
       links = Links(
-        Self(config.vpdSummaryRESTAPIGetHref(vpdId), HttpVerbs.GET),
-        ManageContactPreference(config.vpdSummaryRESTAPIGetContactPreferencesHref, HttpVerbs.GET)
+        Self(s"/vaping-duty-account/vpd/summary/${vpdId}", HttpVerbs.GET),
+        ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", HttpVerbs.GET)
       )
     )
   }

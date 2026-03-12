@@ -43,24 +43,33 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
   val vpdSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
-
   "SummaryAPIService must " - {
-    "return data in expected shape when calling the API (PaperlessPreference is true)" in {
+    "must return correct URLs as part of VPDSummary" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-      await(result).contactPreference mustBe ContactMethod.Email
+      result.links.manageContactPreference.href mustEqual "/vaping-duty/contact-preferences/how-should-we-contact-you"
+      result.links.self.href                    mustEqual s"/vaping-duty-account/vpd/summary/$vpdId"
     }
 
-    "return data in expected shape when calling the API (PaperlessPreference is false)" in {
+    "must return ContactMethod.Email when PaperlessPreference is true" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+
+      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+      result.contactPreference mustBe ContactMethod.Email
+    }
+
+    "must return ContactMethod.Post when PaperlessPreference is false" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-      await(result).contactPreference mustBe ContactMethod.Post
+      result.contactPreference mustBe ContactMethod.Post
     }
 
     "return APIErrors.InternalServerError when appropriate status code received from stub connector" in {

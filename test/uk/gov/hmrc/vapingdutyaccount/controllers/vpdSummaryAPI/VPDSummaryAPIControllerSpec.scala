@@ -50,10 +50,6 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   when(config.serviceId).thenReturn("VPD")
   when(config.xCorrelationId).thenReturn("X-Correlation-Id")
 
-  when(config.vpdSummaryRESTAPIGetHref(vpdId)).thenReturn(s"/get/vpdId/${vpdId}")
-
-  when(config.vpdSummaryRESTAPIGetContactPreferencesHref).thenReturn("getContactPrefs.url")
-
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
     uri = "/",
@@ -115,11 +111,11 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
        |  "contactPreference" : "${getContactMethod(subscription.paperlessPreference)}",
        |  "links" : {
        |    "self" : {
-       |      "href" : "${config.vpdSummaryRESTAPIGetHref(vpdId)}",
+       |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
        |      "method" : "GET"
        |    },
        |    "manageContactPreference" : {
-       |      "href" : "${config.vpdSummaryRESTAPIGetContactPreferencesHref}",
+       |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
        |      "method" : "GET"
        |    }
        |  }
