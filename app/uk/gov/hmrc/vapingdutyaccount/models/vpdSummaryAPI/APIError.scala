@@ -42,7 +42,7 @@ object APIErrors {
 
   val InternalServerError = APIError("Internal server error", INTERNAL_SERVER_ERROR)
 
-  val ServiceUnavailable = APIError("Service unavailable", SERVICE_UNAVAILABLE)
+  val ServiceUnavailable = APIError("Service unavailable (feature is switched OFF)", SERVICE_UNAVAILABLE)
 }
 
 implicit val APIErrorFormat: OFormat[APIError] = Json.format[APIError]
