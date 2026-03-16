@@ -66,7 +66,7 @@ class VPDSummaryAPIController @Inject() (
         s"[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)"
       )
 
-      Future.successful(buildErrorResponse(request, APIErrors.InternalServerError))
+      Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
     }
   }
 
