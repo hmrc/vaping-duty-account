@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.vapingdutyaccount.repositories
 
-import org.mongodb.scala.model._
+import org.mongodb.scala.model.*
 import play.api.libs.json.Format
+import uk.gov.hmrc.mdc.Mdc
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.mongo.MongoComponent
@@ -75,10 +76,24 @@ class UserAnswersRepository @Inject() (
   private def byVpdId(vpdId: String) = Filters.equal("vpdId", vpdId)
   private def byInternalId(internalId: String) = Filters.equal("userId", internalId)
 
-  def get(vpdId: String): Future[Option[UserAnswers]] =
+  private def keepAlive(vpdId: String): Future[Boolean] =
     collection
-      .find(byVpdId(vpdId))
-      .headOption()
+      .updateOne(
+        filter = byVpdId(vpdId),
+        update = Updates.set("lastUpdated", Instant.now(clock))
+      )
+      .toFuture()
+      .map(_ => true)
+
+  def get(vpdId: String): Future[Option[UserAnswers]] = {
+    keepAlive(vpdId).flatMap { _ =>
+      Mdc.preservingMdc {
+        collection
+          .find(byVpdId(vpdId))
+          .headOption()
+      }
+    }
+  }
 
   def set(answers: UserAnswers): Future[UpdateResult] = {
 
