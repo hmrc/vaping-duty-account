@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import play.api.libs.json.{JsObject, Json, OFormat}
+import play.api.libs.json.{JsObject, Json, OFormat, Writes}
 
 /** The VPD Summary API's successful response object. This is serialised to Json automatically by its accompanying implicit formats.
   *
@@ -65,5 +65,5 @@ case class VPDSummary(
 )
 
 object VPDSummary {
-  given OFormat[VPDSummary] = Json.format[VPDSummary]
+  given Writes[VPDSummary] = Json.writes[VPDSummary]
 }

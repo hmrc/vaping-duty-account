@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Json, OFormat, Writes}
 
 case class Self(href: String, method: String)
 case class ManageContactPreference(href: String, method: String)
 
-implicit val selfFormats: OFormat[Self]                                       = Json.format[Self]
-implicit val manageContactPreferenceFormats: OFormat[ManageContactPreference] = Json.format[ManageContactPreference]
+implicit val selfFormats: Writes[Self]                                       = Json.writes[Self]
+implicit val manageContactPreferenceFormats: Writes[ManageContactPreference] = Json.writes[ManageContactPreference]
 
 /** The links that will be appended to the VPDSummary.
   *
@@ -33,4 +33,4 @@ implicit val manageContactPreferenceFormats: OFormat[ManageContactPreference] = 
   */
 case class Links(self: Self, manageContactPreference: ManageContactPreference)
 
-implicit val linksFormats: OFormat[Links] = Json.format[Links]
+implicit val linksFormats: Writes[Links] = Json.writes[Links]

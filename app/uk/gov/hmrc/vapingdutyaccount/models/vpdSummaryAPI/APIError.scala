@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
+import org.apache.pekko.io.Tcp.Write
 import play.api.http.Status.*
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Json, OFormat, Writes}
 
 final case class APIError(message: String, code: Int)
 
@@ -45,4 +46,4 @@ object APIErrors {
   val ServiceUnavailable = APIError("Service unavailable (feature is switched OFF)", SERVICE_UNAVAILABLE)
 }
 
-implicit val APIErrorFormat: OFormat[APIError] = Json.format[APIError]
+implicit val APIErrorFormat: Writes[APIError] = Json.writes[APIError]
