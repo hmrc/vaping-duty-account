@@ -21,9 +21,8 @@ import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.{SubmitPreferencesConnector, SubscriptionConnector}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
 
 import scala.concurrent.Future
 
@@ -38,7 +37,7 @@ class GetPreferencesControllerSpec extends SpecBase {
   )
 
   "getContactPreferences must" - {
-    "return 200 OK and the submission response when successful" in {
+    "return 200 OK and the response when successful" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
@@ -50,7 +49,7 @@ class GetPreferencesControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(contactPreferencesEmailSelected)
     }
 
-    "return 422 UNPROCESSABLE_ENTITY when the submission response could not be parsed" in {
+    "return 422 UNPROCESSABLE_ENTITY when the response could not be parsed" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())

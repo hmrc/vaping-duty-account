@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import org.apache.pekko.io.Tcp.Write
 import play.api.http.Status.*
-import play.api.libs.json.{Json, OFormat, Writes}
+import play.api.libs.json.{Json, Writes}
 
 final case class APIError(message: String, code: Int)
 

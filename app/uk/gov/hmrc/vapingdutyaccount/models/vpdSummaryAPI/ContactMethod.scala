@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import play.api.libs.json.{JsString, JsSuccess, Reads, Writes}
+import play.api.libs.json.{JsString, Writes}
 
 /** An enum containing the type of contact method selected
   *

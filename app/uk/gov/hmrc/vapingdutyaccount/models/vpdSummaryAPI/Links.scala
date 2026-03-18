@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import play.api.libs.json.{Json, OFormat, Writes}
+import play.api.libs.json.{Json, Writes}
 
 case class Self(href: String, method: String)
 case class ManageContactPreference(href: String, method: String)

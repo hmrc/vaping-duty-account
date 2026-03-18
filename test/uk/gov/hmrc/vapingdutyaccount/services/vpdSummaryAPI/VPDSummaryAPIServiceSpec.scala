@@ -24,8 +24,6 @@ import org.scalactic.source.Position
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.test.*
-import play.api.test.Helpers.await
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
