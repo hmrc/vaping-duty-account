@@ -21,5 +21,5 @@ import play.api.libs.json.*
 final case class Identifier(vpdId: String)
 
 object Identifier {
-  given OFormat[Identifier] = Json.format[Identifier]
+  given Writes[Identifier] = Json.writes[Identifier]
 }

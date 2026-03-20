@@ -24,5 +24,5 @@ case class ServiceInfo(
 )
 
 object ServiceInfo {
-  given OFormat[ServiceInfo] = Json.format[ServiceInfo]
+  given Writes[ServiceInfo] = Json.writes[ServiceInfo]
 }

@@ -41,7 +41,7 @@ class VPDSummaryAPIController @Inject() (
     extends BackendController(cc)
     with Logging {
 
-  given OFormat[APIError] = APIErrorFormat
+  given Writes[APIError] = APIErrorFormat
 
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     if (config.vpdSummaryRESTAPIEnabled) {

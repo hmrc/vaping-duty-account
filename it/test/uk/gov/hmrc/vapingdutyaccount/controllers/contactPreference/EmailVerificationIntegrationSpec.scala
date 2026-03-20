@@ -19,7 +19,6 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
-import uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.routes
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 class EmailVerificationIntegrationSpec extends ISpecBase {

@@ -9,6 +9,7 @@ DELETE       /user-answers/clear/:internalId     uk.gov.hmrc.vapingdutyaccount.c
 GET          /get-email-verification/:credId     uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.EmailVerificationController.getEmailVerification(credId: String)
 
 PUT          /submit-preferences/:vpdId          uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController.submitContactPreferences(vpdId: String)
+GET          /get-preferences/:vpdId             uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.GetPreferencesController.getContactPreferences(vpdId: String)
 
 # BTA API
 GET          /vpd/summary/:vpdId                 uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI.VPDSummaryAPIController.getVpdSummary(vpdId: String)
