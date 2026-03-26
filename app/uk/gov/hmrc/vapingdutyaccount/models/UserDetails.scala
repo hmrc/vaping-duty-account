@@ -18,7 +18,11 @@ package uk.gov.hmrc.vapingdutyaccount.models
 
 import play.api.libs.json.{Json, OFormat}
 
-case class UserDetails(vpdId: VpdId, userId: InternalId)
+case class UserDetails(vpdId: String, userId: String) {
+
+  def getVpdId: VpdId = VpdId(vpdId)
+  def getInternalId: InternalId = InternalId(userId)
+}
 
 object UserDetails {
   given OFormat[UserDetails] = Json.format[UserDetails]
