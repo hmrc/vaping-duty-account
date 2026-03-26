@@ -24,7 +24,7 @@ import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.vapingdutyaccount.models.VpdId
+import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
 
 import java.time.{Clock, Instant}
@@ -77,17 +77,17 @@ class UserAnswersRepository @Inject() (
   private def byVpdId(vpdId: String) = Filters.equal("vpdId", vpdId)
   private def byInternalId(internalId: String) = Filters.equal("userId", internalId)
 
-  private def keepAlive(vpdId: String): Future[Boolean] =
+  private def keepAlive(vpdId: VpdId): Future[Boolean] =
     collection
       .updateOne(
-        filter = byVpdId(vpdId),
+        filter = byVpdId(vpdId.toString),
         update = Updates.set("lastUpdated", Instant.now(clock))
       )
       .toFuture()
       .map(_ => true)
 
   def get(vpdId: VpdId): Future[Option[UserAnswers]] = {
-    keepAlive(vpdId.toString).flatMap { _ =>
+    keepAlive(vpdId).flatMap { _ =>
       Mdc.preservingMdc {
         collection
           .find(byVpdId(vpdId.toString))
@@ -129,6 +129,6 @@ class UserAnswersRepository @Inject() (
       .map(_ => updatedAnswers)
   }
 
-  def clearUserAnswersById(internalId: String): Future[Unit] =
-    collection.deleteOne(filter = byInternalId(internalId)).toFuture().map(_ => ())
+  def clearUserAnswersById(internalId: InternalId): Future[Unit] =
+    collection.deleteOne(filter = byInternalId(internalId.toString)).toFuture().map(_ => ())
 }

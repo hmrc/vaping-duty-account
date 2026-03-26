@@ -35,7 +35,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     "subscription.url.subscriptionSummary"
   )
 
-  val emailVerificationStubsEnabled: Boolean = config.get[Boolean]("features.email-verification-stub")
+  private val emailVerificationStubsEnabled: Boolean = config.get[Boolean]("features.email-verification-stub")
 
   private val stubsHost: String                             = servicesConfig.baseUrl("vaping-duty-stubs")
   private val emailVerificationHost: String                 = servicesConfig.baseUrl("email-verification")

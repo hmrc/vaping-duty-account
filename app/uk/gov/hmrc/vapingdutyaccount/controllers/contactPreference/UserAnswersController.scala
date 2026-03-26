@@ -45,7 +45,7 @@ class UserAnswersController @Inject()(
 
   def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[UserDetails] { userDetails =>
-      val vpdId = userDetails.vpdId
+      val vpdId = userDetails.getVpdId
 
       checkVpdId(vpdId).invokeBlock[JsValue](
         request,
@@ -103,7 +103,6 @@ class UserAnswersController @Inject()(
   )
 
   def clear(internalId: InternalId): Action[AnyContent] = checkSignedInAction.async {
-    userAnswersRepository.clearUserAnswersById(internalId.toString).map(_ => Results.NoContent)
-    
+    userAnswersRepository.clearUserAnswersById(internalId).map(_ => Results.NoContent)
   }
 }

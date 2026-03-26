@@ -33,7 +33,7 @@ trait TestData extends ModelGenerators {
   val regime: String           = "ZVPD"
   val vpdId: VpdId             = VpdId(id = vpdIdGen.sample.get)
   val userId: InternalId       = InternalId(id = "userId")
-  val userDetails: UserDetails = UserDetails(vpdId, userId)
+  val userDetails: UserDetails = UserDetails(vpdId.toString, userId.toString)
   val credId: CredentialId     = CredentialId("TESTCREDID00000")
 
   val emailAddress          = "john.doe@example.com"
