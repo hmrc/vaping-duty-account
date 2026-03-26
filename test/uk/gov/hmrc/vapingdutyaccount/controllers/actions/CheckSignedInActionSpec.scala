@@ -26,6 +26,7 @@ import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.models.InternalId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.SignedInRequest
 
 import scala.concurrent.Future
@@ -45,7 +46,7 @@ class CheckSignedInActionSpec extends SpecBase with MockitoSugar {
       stubAuthResponse(Future.successful(Some("internalId123")))
 
       val result = checkSignedInAction.invokeBlock(
-        FakeRequest(), block = request => Future.successful(Results.Ok(request.internalId))
+        FakeRequest(), block = request => Future.successful(Results.Ok(request.internalId.toString))
       )
 
       status(result)          mustBe OK
@@ -62,11 +63,10 @@ class CheckSignedInActionSpec extends SpecBase with MockitoSugar {
         stubAuthResponse(Future.failed(exception))
 
         val result = checkSignedInAction.invokeBlock(
-          SignedInRequest(FakeRequest(), internalId = "id"), block = _ => Future.failed(SessionRecordNotFound())
+          SignedInRequest(FakeRequest(), internalId = InternalId("id")), block = _ => Future.failed(exception)
         )
 
-        status(result)                 mustBe UNAUTHORIZED
-        //redirectLocation(result).value mustEqual controllers.routes.UnauthorisedController.onPageLoad().url
+        status(result) mustBe UNAUTHORIZED
       }
     }
   }

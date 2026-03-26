@@ -24,6 +24,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.models.InternalId
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import scala.concurrent.Future

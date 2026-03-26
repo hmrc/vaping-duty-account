@@ -34,6 +34,8 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
+import uk.gov.hmrc.http.InternalServerException
+import uk.gov.hmrc.vapingdutyaccount.models.VpdId
 
 import scala.concurrent.Future
 
@@ -172,13 +174,6 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesPostNoEmail)
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
-    }
-
-    "return APIErrors.BadRequest when bad vpdId received" in {
-      val result: Future[Result] = controller.getVpdSummary(badVpdId)(fakeRequest)
-
-      status(result)        mustBe HttpStatus.BAD_REQUEST
-      contentAsJson(result) mustBe Json.toJson(APIErrors.BadRequest)
     }
 
     "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {

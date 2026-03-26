@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.vapingdutyaccount.models.{CredentialId, VpdId}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
@@ -59,17 +60,17 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val enrolmentServiceName: String   = config.get[String]("enrolment.serviceName")
   val enrolmentIdentifierKey: String = config.get[String]("enrolment.identifierKey")
 
-  def getSubscriptionUrl(vpdId: String): String =
+  def getSubscriptionUrl(vpdId: VpdId): String =
     s"$subscriptionHost$subscriptionGetSubscriptionUrlPrefix/$vpdId"
 
-  def getVerifiedEmailsUrl(credId: String): String =
+  def getVerifiedEmailsUrl(credId: CredentialId): String =
     if (emailVerificationStubsEnabled) {
       s"$stubsHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
     } else {
       s"$emailVerificationHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
     }
 
-  def submitPreferencesUrl(vpdId: String): String =
+  def submitPreferencesUrl(vpdId: VpdId): String =
     s"$submitPreferencesHost$submitPreferencesUrlPrefix/$regime/$idType/$vpdId"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
@@ -100,6 +101,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")
   lazy val serviceId: String   = config.get[String]("service.id")
+
+  def vpdSummaryRESTAPIGetHref(vpdId: VpdId): String = s"/vpd/summary/$vpdId"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

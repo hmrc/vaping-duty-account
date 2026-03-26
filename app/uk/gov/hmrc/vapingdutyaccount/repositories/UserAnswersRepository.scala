@@ -24,6 +24,7 @@ import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.vapingdutyaccount.models.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
 
 import java.time.{Clock, Instant}
@@ -85,11 +86,11 @@ class UserAnswersRepository @Inject() (
       .toFuture()
       .map(_ => true)
 
-  def get(vpdId: String): Future[Option[UserAnswers]] = {
-    keepAlive(vpdId).flatMap { _ =>
+  def get(vpdId: VpdId): Future[Option[UserAnswers]] = {
+    keepAlive(vpdId.toString).flatMap { _ =>
       Mdc.preservingMdc {
         collection
-          .find(byVpdId(vpdId))
+          .find(byVpdId(vpdId.toString))
           .headOption()
       }
     }

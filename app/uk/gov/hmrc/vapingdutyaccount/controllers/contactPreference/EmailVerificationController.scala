@@ -24,6 +24,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.vapingdutyaccount.models.CredentialId
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,7 +37,7 @@ class EmailVerificationController @Inject() (
     extends BackendController(cc)
     with Logging {
 
-  def getEmailVerification(credId: String): Action[AnyContent] = authorise.async { implicit request =>
+  def getEmailVerification(credId: CredentialId): Action[AnyContent] = authorise.async { implicit request =>
     emailVerificationConnector.getEmailVerification(credId).flatMap {
       case Left(errorResponse: ErrorResponse)                    => Future.successful(InternalServerError(s"Error: ${errorResponse.message}"))
       case Right(successResponse: GetVerificationStatusResponse) => Future.successful(Ok(Json.toJson(successResponse)))

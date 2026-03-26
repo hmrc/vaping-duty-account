@@ -44,7 +44,7 @@ class VPDSummaryAPIIntegrationSpec extends ISpecBase {
 
   "the VPD Summary API must " - {
     "return 401 when incoming requests are not appropriately authorised" in new SetUp {
-      stubNotAuthorised(vpdId)
+      stubNotAuthorised(vpdId.toString)
 
       val response: Future[Result] = callRoute(
         FakeRequest("GET", routes.VPDSummaryAPIController.getVpdSummary(vpdId).url)

@@ -26,8 +26,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckSignedInAction, CheckVpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
+import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, UserDetails, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import java.time.Clock
@@ -55,7 +55,7 @@ class UserAnswersController @Inject()(
             _.fold(
             err => {
               logger.warn(
-                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for $vpdId - status ${err.statusCode}"
+                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString} - status ${err.statusCode}"
               )
               Future.successful(error(err))
             },
@@ -74,7 +74,7 @@ class UserAnswersController @Inject()(
     }
   }
 
-  def getUserAnswers(vpdId: String): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async { _ =>
+  def getUserAnswers(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async { _ =>
     userAnswersRepository.get(vpdId).map {
       case Some(ua) => Ok(Json.toJson(DecryptedUA.fromUA(ua)))
       case None     => NotFound
@@ -84,7 +84,7 @@ class UserAnswersController @Inject()(
   def set(): Action[JsValue] =
     authorise(parse.json).async { implicit request =>
       withJsonBody[DecryptedUA] { decryptedUA =>
-        checkVpdId(decryptedUA.vpdId).invokeBlock[JsValue](
+        checkVpdId(VpdId(decryptedUA.vpdId)).invokeBlock[JsValue](
           request,
           { _ =>
             val userAnswers = UserAnswers.fromDecryptedUA(decryptedUA)
@@ -102,8 +102,8 @@ class UserAnswersController @Inject()(
     body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
   )
 
-  def clear(internalId: String): Action[AnyContent] = checkSignedInAction.async {
-    userAnswersRepository.clearUserAnswersById(internalId).map(_ => Results.NoContent)
+  def clear(internalId: InternalId): Action[AnyContent] = checkSignedInAction.async {
+    userAnswersRepository.clearUserAnswersById(internalId.toString).map(_ => Results.NoContent)
     
   }
 }

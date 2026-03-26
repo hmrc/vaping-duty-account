@@ -94,8 +94,8 @@ object UserAnswers {
     ).flatten.mkString("\n")
 
     UserAnswers(
-      vpdId = userDetails.vpdId,
-      userId = userDetails.userId,
+      vpdId = userDetails.vpdId.toString,
+      userId = userDetails.userId.toString,
       subscriptionSummary = SubscriptionSummaryBackend(
         contactPreferences.paperlessPreference,
         existingEmail,

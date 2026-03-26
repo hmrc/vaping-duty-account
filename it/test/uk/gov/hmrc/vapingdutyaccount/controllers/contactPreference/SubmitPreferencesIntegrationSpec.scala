@@ -26,7 +26,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
       val submitPreferencesUrl = config.submitPreferencesUrl(vpdId)
 
       "return 200 OK and the submission response when successful" in {
-        stubAuthorised(vpdId)
+        stubAuthorised(vpdId.toString)
 
         stubPut(
           submitPreferencesUrl,
@@ -48,7 +48,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
       }
 
       "return 500 INTERNAL_SERVER_ERROR if the response obtained cannot be parsed" in {
-        stubAuthorised(vpdId)
+        stubAuthorised(vpdId.toString)
 
         stubPut(
           submitPreferencesUrl,
@@ -69,7 +69,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
 
       Seq(BAD_REQUEST, NOT_FOUND, UNPROCESSABLE_ENTITY).foreach { statusCode =>
         s"return $statusCode if the API returns this error code" in {
-          stubAuthorised(vpdId)
+          stubAuthorised(vpdId.toString)
 
           stubPut(
             submitPreferencesUrl,
@@ -90,7 +90,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
       }
 
       "return 500 INTERNAL_SERVER_ERROR if the API returns another error" in {
-        stubAuthorised(vpdId)
+        stubAuthorised(vpdId.toString)
 
         stubPut(
           submitPreferencesUrl,

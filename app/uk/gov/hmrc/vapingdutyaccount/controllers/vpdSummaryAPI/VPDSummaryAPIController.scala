@@ -26,46 +26,38 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.vapingdutyaccount.models.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class VPDSummaryAPIController @Inject() (
-    config: AppConfig,
-    cc: ControllerComponents,
-    authorise: AuthorisedAction,
-    vpdSummaryAPIService: VPDSummaryAPIService
-)(implicit ec: ExecutionContext)
-    extends BackendController(cc)
+class VPDSummaryAPIController @Inject()(
+                                         config: AppConfig,
+                                         cc: ControllerComponents,
+                                         authorise: AuthorisedAction,
+                                         vpdSummaryAPIService: VPDSummaryAPIService
+                                       )(implicit ec: ExecutionContext)
+  extends BackendController(cc)
     with Logging {
 
   given Writes[APIError] = APIErrorFormat
 
-  def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
+  def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
     if (config.vpdSummaryRESTAPIEnabled) {
-      if (!vpdId.matches(config.vpdIdPattern)) { // Invalid VpdId
-        Future.successful(
-          buildErrorResponse(request, APIErrors.BadRequest)
-        )
-      } else {
-        given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-          session = request.session,
-          request = request.request
-        )
-
-        vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
-          Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-        } recover { case _ =>
-          buildErrorResponse(request, APIErrors.InternalServerError)
-        }
-      }
-    } else { // feature switch set to false
-      logger.warn(
-        "[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)"
+      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+        session = request.session,
+        request = request.request
       )
 
+      vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
+        Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
+      } recover { case _ =>
+        buildErrorResponse(request, APIErrors.InternalServerError)
+      }
+    } else { // feature switch set to false
+      logger.warn("[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)")
       Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
     }
   }
