@@ -141,13 +141,13 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
     "clear down existing user answers" in {
       insert(userAnswers).futureValue
       repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe false
-      repository.clearUserAnswersById(userAnswers.userId).futureValue mustBe ()
+      repository.clearUserAnswersById(userId).futureValue mustBe ()
       repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe true
     }
 
     "not fail if user answers doesn't exist" in {
       repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe true
-      repository.clearUserAnswersById(userAnswers.userId).futureValue mustBe ()
+      repository.clearUserAnswersById(userId).futureValue mustBe ()
     }
   }
 
