@@ -77,7 +77,7 @@ class SubscriptionConnector @Inject() (
         .flatMap { response =>
           response.status match {
             case OK                   =>
-              parseSuccessResponse(vpdId, response, logError)
+              parseSuccessResponse(vpdId, response)
             case BAD_REQUEST          =>
               logError(s"Bad request sent to get subscription for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(BAD_REQUEST, "Bad request")))
@@ -95,7 +95,7 @@ class SubscriptionConnector @Inject() (
     }
   }
 
-  private def parseSuccessResponse(vpdId: String, response: HttpResponse, logError: String => Unit) = {
+  private def parseSuccessResponse(vpdId: String, response: HttpResponse) = {
     Try {
       response.json.as[SubscriptionContactPreferences]
     } match {
