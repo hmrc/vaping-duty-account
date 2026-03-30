@@ -79,16 +79,16 @@ class SubscriptionConnector @Inject() (
             case OK                   =>
               parseSuccessResponse(vpdId, response)
             case BAD_REQUEST          =>
-              logError(s"Bad request sent to get subscription for vpdId $vpdId")
+              logWarning(s"Bad request sent to get subscription for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(BAD_REQUEST, "Bad request")))
             case NOT_FOUND            =>
-              logError(s"No subscription summary found for vpdId $vpdId")
+              logWarning(s"No subscription summary found for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(NOT_FOUND, "Subscription summary not found")))
             case UNPROCESSABLE_ENTITY =>
-              logError(s"Subscription summary request unprocessable for vpdId $vpdId")
+              logWarning(s"Subscription summary request unprocessable for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(UNPROCESSABLE_ENTITY, "Unprocessable entity")))
             case _                    =>
-              logError(s"An error was returned while trying to fetch subscription summary for vpdId $vpdId")
+              logWarning(s"An error was returned while trying to fetch subscription summary for vpdId $vpdId")
               Future.failed(new InternalServerException(response.body))
           }
         }
@@ -102,12 +102,12 @@ class SubscriptionConnector @Inject() (
       case Success(contactPreferenceResponse) =>
         Future.successful(Right(contactPreferenceResponse))
       case Failure(error) =>
-        logError(s"Unable to parse subscription summary success for vpdId $vpdId with $error")
+        logWarning(s"Unable to parse subscription summary success for vpdId $vpdId with $error")
         Future.successful(Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success")))
     }
   }
 
-  private def logError(logText: String): Unit =
+  private def logWarning(message: String): Unit =
     val prefix: String = "[SubscriptionConnector] [getSubscriptionContactPreferences] "
-    logger.warn(s"$prefix $logText")
+    logger.warn(s"$prefix $message")
 }
