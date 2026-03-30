@@ -68,7 +68,7 @@ class SubscriptionConnector @Inject() (
         Future.successful(Left(ErrorCodes.unexpectedResponse))
       }
 
-  private def call(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
+  private def call(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] = {
     circuitBreakerProvider.get().withCircuitBreaker {
       httpClient
         .get(url"${config.getSubscriptionUrl(vpdId)}")
@@ -77,40 +77,37 @@ class SubscriptionConnector @Inject() (
         .flatMap { response =>
           response.status match {
             case OK                   =>
-              Try {
-                response.json.as[SubscriptionContactPreferences]
-              } match {
-                case Success(doc)     =>
-                  Future.successful(Right(doc))
-                case Failure(error)   =>
-                  logger.warn(
-                    s"[SubscriptionConnector] [getSubscriptionContactPreferences] Unable to parse subscription summary success for vpdId $vpdId with $error"
-                  )
-                  Future.successful(
-                    Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success"))
-                  )
-              }
+              parseSuccessResponse(vpdId, response, logError)
             case BAD_REQUEST          =>
-              logger.warn(
-                s"[SubscriptionConnector] [getSubscriptionContactPreferences] Bad request sent to get subscription for vpdId $vpdId"
-              )
+              logError(s"Bad request sent to get subscription for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(BAD_REQUEST, "Bad request")))
             case NOT_FOUND            =>
-              logger.warn(
-                s"[SubscriptionConnector] [getSubscriptionContactPreferences] No subscription summary found for vpdId $vpdId"
-              )
+              logError(s"No subscription summary found for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(NOT_FOUND, "Subscription summary not found")))
             case UNPROCESSABLE_ENTITY =>
-              logger.warn(
-                s"[SubscriptionConnector] [getSubscriptionContactPreferences] Subscription summary request unprocessable for vpdId $vpdId"
-              )
+              logError(s"Subscription summary request unprocessable for vpdId $vpdId")
               Future.successful(Left(ErrorResponse(UNPROCESSABLE_ENTITY, "Unprocessable entity")))
             case _                    =>
-              logger.warn(
-                s"[SubscriptionConnector] [getSubscriptionContactPreferences] An error was returned while trying to fetch subscription summary for vpdId $vpdId"
-              )
+              logError(s"An error was returned while trying to fetch subscription summary for vpdId $vpdId")
               Future.failed(new InternalServerException(response.body))
           }
         }
     }
+  }
+
+  private def parseSuccessResponse(vpdId: String, response: HttpResponse, logError: String => Unit) = {
+    Try {
+      response.json.as[SubscriptionContactPreferences]
+    } match {
+      case Success(contactPreferenceResponse) =>
+        Future.successful(Right(contactPreferenceResponse))
+      case Failure(error) =>
+        logError(s"Unable to parse subscription summary success for vpdId $vpdId with $error")
+        Future.successful(Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success")))
+    }
+  }
+
+  private def logError(logText: String): Unit =
+    val prefix: String = "[SubscriptionConnector] [getSubscriptionContactPreferences] "
+    logger.warn(s"$prefix $logText")
 }
