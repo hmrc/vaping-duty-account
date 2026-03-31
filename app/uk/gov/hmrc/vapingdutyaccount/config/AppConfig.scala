@@ -95,8 +95,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     * Types extracted from OpenAPI specification
     */
   lazy val vpdSummaryRESTAPIEnabled: Boolean = config.get[Boolean]("features.bta.tile.api")
-  /** The pattern that is used to test for valid VpdIds */
-  lazy val vpdIdPattern: String = "(?:GB|XI)WK[0-9]{7}WK"
 
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")
