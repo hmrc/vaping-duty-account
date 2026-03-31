@@ -20,7 +20,8 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{ActionRefiner, Result}
-import uk.gov.hmrc.vapingdutyaccount.models.{ErrorCodes, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import javax.inject.Inject

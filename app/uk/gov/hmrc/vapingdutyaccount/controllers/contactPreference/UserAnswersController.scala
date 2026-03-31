@@ -27,7 +27,8 @@ import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckSignedInAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
-import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, UserDetails, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import java.time.Clock

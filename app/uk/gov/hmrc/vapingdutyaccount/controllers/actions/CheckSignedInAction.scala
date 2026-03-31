@@ -25,7 +25,7 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.internalId
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
-import uk.gov.hmrc.vapingdutyaccount.models.InternalId
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.SignedInRequest
 
 import scala.concurrent.{ExecutionContext, Future}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.requests
+package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId
+import models.identifiers.InternalId
+import play.api.libs.json.Json
 
-case class SignedInRequest[A](request: Request[A], internalId: InternalId) extends WrappedRequest[A](request)
+class InternalIdSpec extends SpecBase {
+
+  "InternalId" - {
+    val json = s""""${internalId.value}""""
+
+    "must serialise to json" in {
+      Json.toJson(internalId).toString mustBe json
+    }
+
+    "must deserialise from json" in {
+      Json.parse(json).as[InternalId] mustBe internalId
+    }
+  }
+}

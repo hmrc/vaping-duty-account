@@ -31,7 +31,7 @@ import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{authorisedEnrolments, inter
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
-import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*

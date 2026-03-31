@@ -24,7 +24,6 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.InternalId
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import scala.concurrent.Future
@@ -135,7 +134,7 @@ class UserAnswersControllerSpec extends SpecBase {
     "return 204 NO_CONTENT" in {
       when(mockUserAnswersRepository.clearUserAnswersById(any())).thenReturn(Future.successful(()))
 
-      val result: Future[Result] = controller.clear(userId)(FakeRequest())
+      val result: Future[Result] = controller.clear(internalId)(FakeRequest())
 
       status(result) mustBe NO_CONTENT
     }

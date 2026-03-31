@@ -34,8 +34,6 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
-import uk.gov.hmrc.http.InternalServerException
-import uk.gov.hmrc.vapingdutyaccount.models.VpdId
 
 import scala.concurrent.Future
 

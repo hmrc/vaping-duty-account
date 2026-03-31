@@ -24,8 +24,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.vapingdutyaccount.models.CredentialId
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 import scala.concurrent.{ExecutionContext, Future}
 

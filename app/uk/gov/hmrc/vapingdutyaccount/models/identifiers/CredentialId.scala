@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models
+package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.PathBindable
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 case class CredentialId(id: String) {
   override def toString: String = id

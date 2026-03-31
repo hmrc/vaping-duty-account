@@ -18,7 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.vapingdutyaccount.models.{CredentialId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, VpdId}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration

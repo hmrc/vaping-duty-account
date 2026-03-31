@@ -14,9 +14,9 @@ lazy val microservice = Project("vaping-duty-account", file("."))
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
-    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.VpdId",
-    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.InternalId",
-    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.CredentialId"
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId",
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId",
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId"
   )
   .settings(CodeCoverageSettings.settings *)
 

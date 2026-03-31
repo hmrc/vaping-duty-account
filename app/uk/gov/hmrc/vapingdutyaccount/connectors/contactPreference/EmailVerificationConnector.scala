@@ -22,8 +22,8 @@ import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.models.CredentialId
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}

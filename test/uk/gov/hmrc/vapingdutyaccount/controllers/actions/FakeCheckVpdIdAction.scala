@@ -17,7 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.mvc.*
-import uk.gov.hmrc.vapingdutyaccount.models.VpdId
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.{ExecutionContext, Future}
