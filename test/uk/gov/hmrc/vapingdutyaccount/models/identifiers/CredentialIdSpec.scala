@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
-import models.identifiers.CredentialId
 import play.api.libs.json.Json
+import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
 
-class CredentialIdSpec extends SpecBase {
+
+class CredentialIdSpec extends SpecBase with TestData {
 
   "CredentialId" - {
-    val json = s""""${credId.value}""""
+    val json = s"""{"id":"$credId"}"""
 
     "must serialise to json" in {
       Json.toJson(credId).toString mustBe json

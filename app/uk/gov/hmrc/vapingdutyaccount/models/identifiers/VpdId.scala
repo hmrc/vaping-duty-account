@@ -18,7 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{JsValue, Json, OFormat, Writes}
 import play.api.mvc.PathBindable
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import scala.util.matching.Regex
 

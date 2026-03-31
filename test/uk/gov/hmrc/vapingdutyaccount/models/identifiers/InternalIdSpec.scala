@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
-import models.identifiers.InternalId
 import play.api.libs.json.Json
+import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
 
-class InternalIdSpec extends SpecBase {
+
+class InternalIdSpec extends SpecBase with TestData {
 
   "InternalId" - {
-    val json = s""""${internalId.value}""""
+    val json = s"""{"id":"$internalId"}"""
 
     "must serialise to json" in {
       Json.toJson(internalId).toString mustBe json

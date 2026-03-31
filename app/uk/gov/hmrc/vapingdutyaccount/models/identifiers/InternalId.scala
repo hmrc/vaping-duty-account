@@ -18,7 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.PathBindable
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId
 
 case class InternalId(id: String) {
   override def toString: String = id

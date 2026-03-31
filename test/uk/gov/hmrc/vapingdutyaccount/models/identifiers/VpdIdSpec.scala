@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
-import models.identifiers.VpdId
 import play.api.libs.json.Json
+import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
+import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 
-class VpdIdSpec extends SpecBase {
+class VpdIdSpec extends SpecBase with TestData {
 
   "VpdId" - {
-    val json = s""""${vpdId.value}""""
+    val json = s"""{"id":"$vpdId"}"""
 
     "must serialise to json" in {
       Json.toJson(vpdId).toString mustBe json
