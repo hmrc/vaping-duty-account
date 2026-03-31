@@ -33,5 +33,11 @@ class InternalIdSpec extends SpecBase with TestData {
     "must deserialise from json" in {
       Json.parse(json).as[InternalId] mustBe internalId
     }
+
+    "fail to bind an invalid VPD ID" in {
+      val binder = InternalId.given_PathBindable_InternalId
+      val result = binder.bind("id", "tooShort")
+      result mustBe Left("Invalid InternalId") // Assumes your Left value
+    }
   }
 }

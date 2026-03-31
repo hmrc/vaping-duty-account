@@ -32,5 +32,11 @@ class VpdIdSpec extends SpecBase with TestData {
     "must deserialise from json" in {
       Json.parse(json).as[VpdId] mustBe vpdId
     }
+
+    "fail to bind an invalid VPD ID" in {
+      val binder = VpdId.given_PathBindable_VpdId
+      val result = binder.bind("id", "invalidVpdId")
+      result mustBe Left("Invalid VpdId") // Assumes your Left value
+    }
   }
 }
