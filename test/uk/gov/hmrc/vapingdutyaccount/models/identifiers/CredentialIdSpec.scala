@@ -33,5 +33,11 @@ class CredentialIdSpec extends SpecBase with TestData {
     "must deserialise from json" in {
       Json.parse(json).as[CredentialId] mustBe credId
     }
+
+    "fail to bind an invalid CredentialId" in {
+      val binder = CredentialId.given_PathBindable_CredentialId
+      val result = binder.bind("id", "tooShort")
+      result mustBe Left("Invalid CredentialId") // Assumes your Left value
+    }
   }
 }

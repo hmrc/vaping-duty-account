@@ -44,7 +44,6 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-  when(config.vpdIdPattern).thenReturn("(?:GB|XI)WK[0-9]{7}WK")
 
   when(config.serviceName).thenReturn("Vaping Products Duty")
   when(config.serviceId).thenReturn("VPD")

@@ -30,7 +30,7 @@ object CredentialId {
       value match {
         // Discuss with team the kind of validation used here
         case _: String if value.length > 10 => Right(CredentialId(value))
-        case _                              => Left("Invalid InternalId")
+        case _                              => Left("Invalid CredentialId")
       }
     }
 
