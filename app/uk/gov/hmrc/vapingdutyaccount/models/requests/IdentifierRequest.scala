@@ -17,6 +17,6 @@
 package uk.gov.hmrc.vapingdutyaccount.models.requests
 
 import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
-case class IdentifierRequest[A](request: Request[A], vpdId: VpdId, userId: InternalId) extends WrappedRequest[A](request)
+case class IdentifierRequest[A](request: Request[A], vpdId: VpdId, internalId: InternalId) extends WrappedRequest[A](request)

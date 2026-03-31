@@ -20,6 +20,7 @@ import play.api.libs.json.{JsObject, Json, OFormat}
 import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
@@ -32,8 +33,8 @@ trait TestData extends ModelGenerators {
 
   val regime: String           = "ZVPD"
   val vpdId: VpdId             = VpdId(id = vpdIdGen.sample.get)
-  val userId: InternalId       = InternalId(id = "userId")
-  val userDetails: UserDetails = UserDetails(vpdId.toString, userId.toString)
+  val internalId: InternalId   = InternalId(id = "internalId")
+  val userDetails: UserDetails = UserDetails(vpdId.toString, internalId.toString)
   val credId: CredentialId     = CredentialId("TESTCREDID00000")
 
   val emailAddress          = "john.doe@example.com"
@@ -64,7 +65,7 @@ trait TestData extends ModelGenerators {
 
   val userAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
-    userId = userId.toString,
+    internalId = internalId.toString,
     subscriptionSummary = SubscriptionSummaryBackend(
       paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
@@ -80,7 +81,7 @@ trait TestData extends ModelGenerators {
 
   val decryptedUA: DecryptedUA = DecryptedUA(
     vpdId = vpdId.toString,
-    userId = userId.toString,
+    internalId = internalId.toString,
     subscriptionSummary = SubscriptionSummary(
       paperlessPreference = true,
       emailAddress = Some(emailAddress),
@@ -96,7 +97,7 @@ trait TestData extends ModelGenerators {
 
   val emptyUserAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
-    userId = userId.toString,
+    internalId = internalId.toString,
     subscriptionSummary = SubscriptionSummaryBackend(
       paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
@@ -111,7 +112,7 @@ trait TestData extends ModelGenerators {
 
   val emptyUserAnswersNoEmail: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
-    userId = userId.toString,
+    internalId = internalId.toString,
     subscriptionSummary = SubscriptionSummaryBackend(
       paperlessPreference = false,
       emailAddress = None,
@@ -126,7 +127,7 @@ trait TestData extends ModelGenerators {
 
   val emptyUserAnswersBouncedEmail: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
-    userId = userId.toString,
+    internalId = internalId.toString,
     subscriptionSummary = SubscriptionSummaryBackend(
       paperlessPreference = false,
       emailAddress = Some(SensitiveString(emailAddress)),

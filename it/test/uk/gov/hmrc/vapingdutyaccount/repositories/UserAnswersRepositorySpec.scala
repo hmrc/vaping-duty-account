@@ -24,8 +24,8 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
-import uk.gov.hmrc.vapingdutyaccount.models.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -90,12 +90,12 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       )
 
       val updatedResult = userAnswers.copy(
-        userId = "new-user-id",
+        internalId = "new-user-id",
         validUntil = Some(instant.plusSeconds(DB_TTL_IN_SEC))
       )
 
       val expectedResult = expectedAddedUserAnswers.copy(
-        userId = "new-user-id"
+        internalId = "new-user-id"
       )
 
       val setResult     = repository.set(updatedResult).futureValue
@@ -140,20 +140,20 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
   "clearUserAnswersById must" - {
     "clear down existing user answers" in {
       insert(userAnswers).futureValue
-      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe false
-      repository.clearUserAnswersById(userId).futureValue mustBe ()
-      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe true
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe false
+      repository.clearUserAnswersById(InternalId(userAnswers.internalId)).futureValue   mustBe ()
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe true
     }
 
     "not fail if user answers doesn't exist" in {
-      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty          mustBe true
-      repository.clearUserAnswersById(userId).futureValue mustBe ()
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe true
+      repository.clearUserAnswersById(internalId).futureValue mustBe ()
     }
   }
 
   def verifyUserAnswerResult(actual: UserAnswers, expected: UserAnswers): Assertion = {
-    actual.vpdId                                        mustEqual expected.vpdId
-    actual.userId                                        mustEqual expected.userId
+    actual.vpdId                                         mustEqual expected.vpdId
+    actual.internalId                                    mustEqual expected.internalId
     actual.subscriptionSummary                           mustEqual expected.subscriptionSummary
     actual.emailAddress                                  mustEqual expected.emailAddress
     actual.data                                          mustEqual expected.data

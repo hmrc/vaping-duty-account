@@ -18,7 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.models.VpdId
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ import scala.concurrent.Future
 class CheckVpdIdActionSpec extends SpecBase {
   val wrongVpdId: String                                               = vpdId.id + "1"
   val fakeIdentifierRequest: IdentifierRequest[AnyContentAsEmpty.type] =
-    IdentifierRequest(fakeRequest, vpdId, userId)
+    IdentifierRequest(fakeRequest, vpdId, internalId)
   val testContent                                                      = "Test"
 
   val testAction: IdentifierRequest[_] => Future[Result] = { request =>

@@ -24,8 +24,8 @@ import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.vapingdutyaccount.models.{InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import java.time.{Clock, Instant}
 import java.util.concurrent.TimeUnit
@@ -60,9 +60,9 @@ class UserAnswersRepository @Inject() (
             .name("vpdId")
         ),
         IndexModel(
-          Indexes.ascending("userId"),
+          Indexes.ascending("internalId"),
           IndexOptions()
-            .name("userId")
+            .name("internalId")
         )
       ),
       extraCodecs = Seq.empty,
@@ -75,7 +75,7 @@ class UserAnswersRepository @Inject() (
   private val replaceUpsert     = ReplaceOptions().upsert(true)
 
   private def byVpdId(vpdId: String) = Filters.equal("vpdId", vpdId)
-  private def byInternalId(internalId: String) = Filters.equal("userId", internalId)
+  private def byInternalId(internalId: String) = Filters.equal("internalId", internalId)
 
   private def keepAlive(vpdId: VpdId): Future[Boolean] =
     collection
