@@ -112,6 +112,32 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
       }
     }
 
+    "must return the config relating BTA tile API" - {
+      "for BTA tile API feature switch" in {
+        appConfig.vpdSummaryRESTAPIEnabled mustBe true
+      }
+
+      "for serviceName" in {
+        appConfig.serviceName mustBe "Vaping Products Duty"
+      }
+
+      "for serviceId" in {
+        appConfig.serviceId mustBe "VPD"
+      }
+
+      "for vpdSummaryRESTAPIGetHref" in {
+        appConfig.vpdSummaryRESTAPIGetHref(vpdId) mustBe s"/vpd/summary/$vpdId"
+      }
+
+      "for vpdSummaryRESTAPIGetContactPreferencesHref" in {
+        appConfig.vpdSummaryRESTAPIGetContactPreferencesHref mustBe "/vpd/contact-preference"
+      }
+
+      "for xCorrelationId" in {
+        appConfig.xCorrelationId mustBe "X-Correlation-Id"
+      }
+    }
+
     "for encryption" - {
       "must return the encryption key" in {
         appConfig.cryptoKey mustBe "cryptokey"
