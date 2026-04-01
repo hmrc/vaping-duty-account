@@ -1,7 +1,7 @@
 .*
 
+!.scalafix.conf
 !.gitignore
-!.scalafmt.conf
 bin
 .bloop/
 .cache
