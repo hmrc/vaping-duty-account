@@ -22,6 +22,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
 
+@SuppressWarnings(Array("scalafix:DisableSyntax.throw"))
 @Singleton
 class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig) {
   val appName: String = config.get[String]("appName")

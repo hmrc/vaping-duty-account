@@ -63,7 +63,7 @@ class VPDSummaryAPIController @Inject() (
       }
     } else { // feature switch set to false
       logger.warn(
-        s"[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)"
+        "[getVpdSummary] Returning internal server error (feature switch is ** DISABLED **)"
       )
 
       Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
