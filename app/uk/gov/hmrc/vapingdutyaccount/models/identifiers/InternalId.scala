@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.PathBindable
+import uk.gov.hmrc.vapingdutyaccount.utils.Constants.internalIdPattern
 
 case class InternalId(id: String) {
   override def toString: String = id
@@ -27,14 +28,18 @@ object InternalId {
   given PathBindable[InternalId] = new PathBindable[InternalId] {
 
     override def bind(key: String, value: String): Either[String, InternalId] = {
-      value match {
-        // Discuss with team the kind of validation used here
-        case _: String if value.length > 10 => Right(InternalId(value))
-        case _                              => Left("Invalid InternalId")
-      }
+      validate(value)
     }
 
     override def unbind(key: String, value: InternalId): String = value.toString
   }
+
+  private def validate(value: String) =
+    if (internalIdPattern.matches(value)) {
+      Right(InternalId(value))
+    } else {
+      Left("Invalid InternalId")
+    }
+    
   given OFormat[InternalId] = Json.format[InternalId]
 }

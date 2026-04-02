@@ -41,7 +41,7 @@ class CredentialIdSpec extends SpecBase with TestData {
     "fail to bind an invalid CredentialId" in {
       val binder = CredentialId.given_PathBindable_CredentialId
       val result = binder.bind("id", Random.nextString(maxCredIdLength + 1))
-      result mustBe Left("Invalid CredentialId") // Assumes your Left value
+      result mustBe Left("Invalid CredentialId")
     }
   }
 }

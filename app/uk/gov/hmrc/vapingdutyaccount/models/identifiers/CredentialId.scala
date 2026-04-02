@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.PathBindable
+import uk.gov.hmrc.vapingdutyaccount.utils.Constants.credentialIdMaxLength
 
 case class CredentialId(id: String) {
   override def toString: String = id
@@ -27,13 +28,18 @@ object CredentialId {
   given PathBindable[CredentialId] = new PathBindable[CredentialId] {
 
     override def bind(key: String, value: String): Either[String, CredentialId] = {
-      value match {
-        case _: String if value.length < 17 => Right(CredentialId(value))
-        case _                              => Left("Invalid CredentialId")
-      }
+      validate(value)
     }
 
     override def unbind(key: String, value: CredentialId): String = value.toString
   }
+
+  private def validate(value: String) =
+    if (value.length > credentialIdMaxLength) {
+      Left("Invalid CredentialId")
+    } else {
+      Right(CredentialId(value))
+    }
+
   given OFormat[CredentialId] = Json.format[CredentialId]
 }

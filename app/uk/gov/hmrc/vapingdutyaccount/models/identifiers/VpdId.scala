@@ -18,8 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.models.identifiers
 
 import play.api.libs.json.{JsValue, Json, OFormat, Writes}
 import play.api.mvc.PathBindable
-
-import scala.util.matching.Regex
+import uk.gov.hmrc.vapingdutyaccount.utils.Constants.vpdIdPattern
 
 case class VpdId(id: String) {
   override def toString: String = id
@@ -29,15 +28,18 @@ object VpdId {
   given PathBindable[VpdId] = new PathBindable[VpdId] {
 
     override def bind(key: String, value: String): Either[String, VpdId] = {
-      lazy val vpdIdPattern: Regex = "(?:GB|XI)WK[0-9]{7}WK".r
-      value match {
-        case _: String if vpdIdPattern.matches(value) => Right(VpdId(value))
-        case _                                        => Left("Invalid VpdId")
-      }
+      validate(value)
     }
 
     override def unbind(key: String, value: VpdId): String = value.toString
   }
 
+  private def validate(value: String) =
+    if (vpdIdPattern.matches(value)) {
+      Right(VpdId(value))
+    } else {
+      Left("Invalid VpdId")
+    }
+    
   given OFormat[VpdId] = Json.format[VpdId]
 }
