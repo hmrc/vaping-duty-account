@@ -20,8 +20,12 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
 
+import scala.util.Random
+
 
 class CredentialIdSpec extends SpecBase with TestData {
+
+  val maxCredIdLength = 16
 
   "CredentialId" - {
     val json = s"""{"id":"$credId"}"""
@@ -36,7 +40,7 @@ class CredentialIdSpec extends SpecBase with TestData {
 
     "fail to bind an invalid CredentialId" in {
       val binder = CredentialId.given_PathBindable_CredentialId
-      val result = binder.bind("id", "tooShort")
+      val result = binder.bind("id", Random.nextString(maxCredIdLength + 1))
       result mustBe Left("Invalid CredentialId") // Assumes your Left value
     }
   }

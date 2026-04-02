@@ -28,8 +28,7 @@ object CredentialId {
 
     override def bind(key: String, value: String): Either[String, CredentialId] = {
       value match {
-        // Discuss with team the kind of validation used here
-        case _: String if value.length > 10 => Right(CredentialId(value))
+        case _: String if value.length < 17 => Right(CredentialId(value))
         case _                              => Left("Invalid CredentialId")
       }
     }
