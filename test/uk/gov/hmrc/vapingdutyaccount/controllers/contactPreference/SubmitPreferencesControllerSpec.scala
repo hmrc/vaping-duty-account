@@ -24,17 +24,20 @@ import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
+import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.Future
 
 class SubmitPreferencesControllerSpec extends SpecBase {
   val mockSubmitPreferencesConnector: SubmitPreferencesConnector = mock[SubmitPreferencesConnector]
+  val errorHandler: ErrorResponseHandler = ErrorResponseHandler()
 
   val controller = new SubmitPreferencesController(
     cc,
     mockSubmitPreferencesConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction
+    fakeCheckVpdIdAction,
+    errorHandler
   )
 
   "submitContactPreferences must" - {

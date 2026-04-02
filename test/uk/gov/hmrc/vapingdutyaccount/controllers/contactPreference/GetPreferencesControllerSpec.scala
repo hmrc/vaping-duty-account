@@ -23,17 +23,20 @@ import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.Future
 
 class GetPreferencesControllerSpec extends SpecBase {
   val mockSubmitPreferencesConnector: SubscriptionConnector = mock[SubscriptionConnector]
-
+  val errorHandler: ErrorResponseHandler = ErrorResponseHandler()
+  
   val controller = new GetPreferencesController(
     cc,
     mockSubmitPreferencesConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction
+    fakeCheckVpdIdAction,
+    errorHandler
   )
 
   "getContactPreferences must" - {

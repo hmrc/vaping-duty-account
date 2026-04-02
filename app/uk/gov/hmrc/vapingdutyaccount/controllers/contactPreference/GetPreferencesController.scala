@@ -17,15 +17,13 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import com.google.inject.Inject
-import org.apache.pekko.util.ByteString
 import play.api.Logging
-import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
@@ -33,22 +31,16 @@ class GetPreferencesController @Inject()(
                                           cc: ControllerComponents,
                                           connector: SubscriptionConnector,
                                           authorise: AuthorisedAction,
-                                          checkVpdId: CheckVpdIdAction
-                                        )(implicit ec: ExecutionContext)
-  extends BackendController(cc)
-    with Logging {
+                                          checkVpdId: CheckVpdIdAction,
+                                          errorHandler: ErrorResponseHandler
+                                        )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def getContactPreferences(vpdId: String): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
     implicit request =>
       connector.getSubscriptionContactPreferences(vpdId)
         .map(_.fold(
-          e => error(e),
+          e => errorHandler.toResult(e),
           response => Ok(Json.toJson(response))
         ))
   }
-
-  private def error(errorResponse: ErrorResponse): Result = Result(
-    header = ResponseHeader(errorResponse.statusCode),
-    body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
-  )
 }
