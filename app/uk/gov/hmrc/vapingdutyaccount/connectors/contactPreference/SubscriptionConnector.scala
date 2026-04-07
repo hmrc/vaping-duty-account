@@ -94,9 +94,8 @@ class SubscriptionConnector @Inject() (
           }
         }
     }
-  }
 
-  private def parseSuccessResponse(vpdId: String, response: HttpResponse) = {
+  private def parseSuccessResponse(vpdId: VpdId, response: HttpResponse) = {
     Try {
       response.json.as[SubscriptionContactPreferences]
     } match {
