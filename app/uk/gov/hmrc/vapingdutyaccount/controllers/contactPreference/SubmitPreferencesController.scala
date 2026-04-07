@@ -17,16 +17,14 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import com.google.inject.Inject
-import org.apache.pekko.util.ByteString
 import play.api.Logging
-import play.api.http.HttpEntity
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
+import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
@@ -34,7 +32,8 @@ class SubmitPreferencesController @Inject() (
   cc: ControllerComponents,
   submitPreferencesConnector: SubmitPreferencesConnector,
   authorise: AuthorisedAction,
-  checkVpdId: CheckVpdIdAction
+  checkVpdId: CheckVpdIdAction,
+  errorHandler: ErrorResponseHandler
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -46,14 +45,9 @@ class SubmitPreferencesController @Inject() (
         submitPreferencesConnector
           .submitContactPreferences(contactPreferenceSubmission, vpdId)
           .map(_.fold(
-            e => error(e),
+            e => errorHandler.toResult(e),
             submissionResponse => Ok(Json.toJson(submissionResponse))
           ))
       }
     }
-
-  def error(errorResponse: ErrorResponse): Result = Result(
-    header = ResponseHeader(errorResponse.statusCode),
-    body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
-  )
 }
