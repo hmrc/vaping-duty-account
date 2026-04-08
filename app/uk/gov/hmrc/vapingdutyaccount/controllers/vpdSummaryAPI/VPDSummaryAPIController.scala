@@ -44,7 +44,7 @@ class VPDSummaryAPIController @Inject()(
 
   given Writes[APIError] = APIErrorFormat
 
-  def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
+  def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
     config.vpdSummaryRESTAPIEnabled match {
       case false =>
         logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
@@ -56,11 +56,11 @@ class VPDSummaryAPIController @Inject()(
           request = request.request
         )
 
-        vpdSummaryAPIService.getVPDSummary(vpdId).map { vpdSummary =>
-          Ok(Json.toJson(vpdSummary)).withHeaders(extractHeaders(request).toSeq: _*).as(ContentTypes.JSON)
-        } recover { case _ =>
-          buildErrorResponse(request, APIErrors.InternalServerError)
-        }
+        vpdSummaryAPIService.getVPDSummary(vpdId)
+          .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
+          .recover { case _ =>
+            buildErrorResponse(request, APIErrors.InternalServerError)
+          }
     }
   }
 
@@ -79,4 +79,10 @@ class VPDSummaryAPIController @Inject()(
       .withHeaders(extractHeaders(request).toSeq: _*)
       .as(ContentTypes.JSON)
   }
+
+  private def buildSuccessResponse(vpdSummary: VPDSummary, request: IdentifierRequest[_]): Result =
+
+      Ok(Json.toJson(vpdSummary))
+        .withHeaders(extractHeaders(request).toSeq: _*)
+        .as(ContentTypes.JSON)
 }
