@@ -69,6 +69,7 @@ class BaseAuthorisedAction @Inject() (
 
       identifiers match {
         case Right((internal, approvalId)) => block(IdentifierRequest(request, approvalId, internal))
+        // scalafix:off DisableSyntax.throw
         case Left(error) => throw AuthorisationException.fromString(error)
       }
 
