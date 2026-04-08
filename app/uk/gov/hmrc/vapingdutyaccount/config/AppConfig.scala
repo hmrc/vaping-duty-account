@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, VpdId}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
@@ -34,7 +35,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     "subscription.url.subscriptionSummary"
   )
 
-  val emailVerificationStubsEnabled: Boolean = config.get[Boolean]("features.email-verification-stub")
+  private val emailVerificationStubsEnabled: Boolean = config.get[Boolean]("features.email-verification-stub")
 
   private val stubsHost: String                             = servicesConfig.baseUrl("vaping-duty-stubs")
   private val emailVerificationHost: String                 = servicesConfig.baseUrl("email-verification")
@@ -59,17 +60,17 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   val enrolmentServiceName: String   = config.get[String]("enrolment.serviceName")
   val enrolmentIdentifierKey: String = config.get[String]("enrolment.identifierKey")
 
-  def getSubscriptionUrl(vpdId: String): String =
+  def getSubscriptionUrl(vpdId: VpdId): String =
     s"$subscriptionHost$subscriptionGetSubscriptionUrlPrefix/$vpdId"
 
-  def getVerifiedEmailsUrl(credId: String): String =
+  def getVerifiedEmailsUrl(credId: CredentialId): String =
     if (emailVerificationStubsEnabled) {
       s"$stubsHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
     } else {
       s"$emailVerificationHost$emailVerificationGetVerifiedEmailsPrefix/$credId"
     }
 
-  def submitPreferencesUrl(vpdId: String): String =
+  def submitPreferencesUrl(vpdId: VpdId): String =
     s"$submitPreferencesHost$submitPreferencesUrlPrefix/$regime/$idType/$vpdId"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
@@ -94,12 +95,13 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     * Types extracted from OpenAPI specification
     */
   lazy val vpdSummaryRESTAPIEnabled: Boolean = config.get[Boolean]("features.bta.tile.api")
-  /** The pattern that is used to test for valid VpdIds */
-  lazy val vpdIdPattern: String = "(?:GB|XI)WK[0-9]{7}WK"
 
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")
   lazy val serviceId: String   = config.get[String]("service.id")
+
+  def vpdSummaryRESTAPIGetHref(vpdId: VpdId): String = s"/vpd/summary/$vpdId"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

@@ -23,6 +23,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
@@ -35,7 +36,7 @@ class GetPreferencesController @Inject()(
                                           errorHandler: ErrorResponseHandler
                                         )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
-  def getContactPreferences(vpdId: String): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
+  def getContactPreferences(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
     implicit request =>
       connector.getSubscriptionContactPreferences(vpdId)
         .map(_.fold(

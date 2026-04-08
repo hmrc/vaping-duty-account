@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.requests
+package uk.gov.hmrc.vapingdutyaccount.utils
 
-import play.api.mvc.{Request, WrappedRequest}
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId
+import scala.util.matching.Regex
 
-case class SignedInRequest[A](request: Request[A], internalId: InternalId) extends WrappedRequest[A](request)
+object Constants {
+  val internalIdPattern: Regex = "Int-.*".r
+  val vpdIdPattern: Regex = "(?:GB|XI)WK[0-9]{7}WK".r
+  val credentialIdMaxLength = 16
+}

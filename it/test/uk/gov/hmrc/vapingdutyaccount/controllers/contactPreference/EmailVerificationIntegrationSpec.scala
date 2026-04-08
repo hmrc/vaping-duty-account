@@ -25,7 +25,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
 
   "the get email verification endpoint must" - {
     "respond with OK if able to fetch a list of email verification statuses" in new SetUp {
-      stubAuthorised(vpdId)
+      stubAuthorised(vpdId.toString)
       stubGet(url, OK, Json.toJson(getVerificationStatusResponse).toString)
 
       val response = callRoute(
@@ -39,7 +39,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
     }
 
     "respond with OK if no email verification records are found" in new SetUp {
-      stubAuthorised(vpdId)
+      stubAuthorised(vpdId.toString)
       stubGet(url, NOT_FOUND, Json.toJson(GetVerificationStatusResponse(List.empty)).toString)
 
       val response = callRoute(
@@ -53,7 +53,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
     }
 
     "respond with INTERNAL_SERVER_ERROR if the data retrieved cannot be parsed" in new SetUp {
-      stubAuthorised(vpdId)
+      stubAuthorised(vpdId.toString)
       stubGet(url, OK, "blah")
 
       val response = callRoute(
@@ -67,7 +67,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
     }
 
     "respond with INTERNAL_SERVER_ERROR if a bad request is returned" in new SetUp {
-      stubAuthorised(vpdId)
+      stubAuthorised(vpdId.toString)
       stubGet(url, BAD_REQUEST, "")
 
       val response = callRoute(
@@ -81,7 +81,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
     }
 
     "respond with INTERNAL_SERVER_ERROR if another error is returned from the get email verification api call" in new SetUp {
-      stubAuthorised(vpdId)
+      stubAuthorised(vpdId.toString)
       stubGet(url, INTERNAL_SERVER_ERROR, "")
 
       val response = callRoute(

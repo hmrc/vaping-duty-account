@@ -19,9 +19,10 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
-class EmailVerificationConnectorSpec extends SpecBase with ConnectorTestHelpers {
+class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "email-verification"
 
   "EmailVerificationConnector must" - {
@@ -79,7 +80,7 @@ class EmailVerificationConnectorSpec extends SpecBase with ConnectorTestHelpers 
   }
 
   class SetUp extends ConnectorFixture {
-    val connector = new EmailVerificationConnector(config = config, httpClient = httpClientV2)
-    lazy val url  = appConfig.getVerifiedEmailsUrl(credId)
+    val connector        = new EmailVerificationConnector(config = config, httpClient = httpClientV2)
+    lazy val url: String = appConfig.getVerifiedEmailsUrl(credId)
   }
 }

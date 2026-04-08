@@ -20,17 +20,18 @@ import com.google.inject.Inject
 import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.Results.Unauthorized
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
 import uk.gov.hmrc.auth.core.AuthProvider.GovernmentGateway
 import uk.gov.hmrc.auth.core.CredentialStrength.strong
-import uk.gov.hmrc.auth.core._
+import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.v2.Retrievals.{authorisedEnrolments, internalId}
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
@@ -68,7 +69,7 @@ class BaseAuthorisedAction @Inject() (
       }
 
       identifiers match {
-        case Right((internal, approvalId)) => block(IdentifierRequest(request, approvalId, internal))
+        case Right((internal, approvalId)) => block(IdentifierRequest(request, VpdId(approvalId), InternalId(internal)))
         // scalafix:off DisableSyntax.throw
         case Left(error) => throw AuthorisationException.fromString(error)
       }

@@ -78,7 +78,7 @@ trait SpecBase
 
   def fakeRequestWithJsonBody(json: JsValue): FakeRequest[JsValue] = FakeRequest("", "/", FakeHeaders(), json)
 
-  val fakeUUIDGenerator = new RandomUUIDGenerator {
+  val fakeUUIDGenerator: RandomUUIDGenerator = new RandomUUIDGenerator {
     override def uuid: String = dummyUUID
   }
 

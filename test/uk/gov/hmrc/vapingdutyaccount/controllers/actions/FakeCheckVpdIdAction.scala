@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.mvc.*
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,6 +30,6 @@ class FakeCheckVpdIdActionImpl private[actions] extends ActionRefiner[Identifier
 }
 
 class FakeCheckVpdIdAction extends CheckVpdIdAction()(scala.concurrent.ExecutionContext.Implicits.global) {
-  override def apply(vpdId: String): ActionRefiner[IdentifierRequest, IdentifierRequest] =
+  override def apply(vpdId: VpdId): ActionRefiner[IdentifierRequest, IdentifierRequest] =
     new FakeCheckVpdIdActionImpl()
 }

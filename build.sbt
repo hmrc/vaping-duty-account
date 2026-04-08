@@ -1,3 +1,4 @@
+import play.sbt.routes.RoutesKeys
 import uk.gov.hmrc.DefaultBuildSettings
 
 ThisBuild / majorVersion := 0
@@ -13,8 +14,11 @@ lazy val microservice = Project("vaping-duty-account", file("."))
     // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
     // suppress warnings in generated routes files
     scalacOptions += "-Wconf:src=routes/.*:s",
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId",
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.InternalId",
+    RoutesKeys.routesImport += "uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId"
   )
-  .settings(CodeCoverageSettings.settings: _*)
+  .settings(CodeCoverageSettings.settings *)
 
 commands ++= Seq(
   Command.command("runAllChecks") { state => "clean" :: "compile" :: "scalafixAll --check" :: "coverage" :: "test" :: "it/test" :: "coverageReport" :: state },

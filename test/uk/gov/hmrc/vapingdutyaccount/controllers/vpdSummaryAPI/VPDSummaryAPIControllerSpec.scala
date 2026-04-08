@@ -44,7 +44,6 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-  when(config.vpdIdPattern).thenReturn("(?:GB|XI)WK[0-9]{7}WK")
 
   when(config.serviceName).thenReturn("Vaping Products Duty")
   when(config.serviceId).thenReturn("VPD")
@@ -172,13 +171,6 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesPostNoEmail)
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
-    }
-
-    "return APIErrors.BadRequest when bad vpdId received" in {
-      val result: Future[Result] = controller.getVpdSummary(badVpdId)(fakeRequest)
-
-      status(result)        mustBe HttpStatus.BAD_REQUEST
-      contentAsJson(result) mustBe Json.toJson(APIErrors.BadRequest)
     }
 
     "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {

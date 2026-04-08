@@ -26,22 +26,20 @@ import uk.gov.hmrc.vapingdutyaccount.models.*
 
 import java.time.{Clock, Instant}
 
-case class DecryptedUA(
-                        vpdId: String,
-                        userId: String,
-                        subscriptionSummary: SubscriptionSummary,
-                        emailAddress: Option[String],
-                        data: JsObject = Json.obj(),
-                        startedTime: Instant,
-                        lastUpdated: Instant,
-                        validUntil: Option[Instant] = None
-)
+case class DecryptedUA(vpdId: String,
+                       internalId: String,
+                       subscriptionSummary: SubscriptionSummary,
+                       emailAddress: Option[String],
+                       data: JsObject = Json.obj(),
+                       startedTime: Instant,
+                       lastUpdated: Instant,
+                       validUntil: Option[Instant] = None)
 
 object DecryptedUA {
   def fromUA(userAnswers: UserAnswers): DecryptedUA =
     DecryptedUA(
       vpdId = userAnswers.vpdId,
-      userId = userAnswers.userId,
+      internalId = userAnswers.internalId,
       subscriptionSummary = SubscriptionSummary(
         userAnswers.subscriptionSummary.paperlessPreference,
         userAnswers.subscriptionSummary.emailAddress.map(_.decryptedValue),
@@ -56,9 +54,9 @@ object DecryptedUA {
       validUntil = userAnswers.validUntil
     )
 
-  implicit val format: OFormat[DecryptedUA] = (
+  given OFormat[DecryptedUA] = (
     (__ \ "vpdId").format[String] and
-      (__ \ "userId").format[String] and
+      (__ \ "internalId").format[String] and
       (__ \ "subscriptionSummary").format[SubscriptionSummary] and
       (__ \ "emailAddress").formatNullable[String] and
       (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
@@ -70,13 +68,13 @@ object DecryptedUA {
 }
 
 case class UserAnswers(vpdId: String,
-                        userId: String,
-                        subscriptionSummary: SubscriptionSummaryBackend,
-                        emailAddress: Option[SensitiveString],
-                        data: JsObject = Json.obj(),
-                        startedTime: Instant,
-                        lastUpdated: Instant,
-                        validUntil: Option[Instant] = None)
+                       internalId: String,
+                       subscriptionSummary: SubscriptionSummaryBackend,
+                       emailAddress: Option[SensitiveString],
+                       data: JsObject = Json.obj(),
+                       startedTime: Instant,
+                       lastUpdated: Instant,
+                       validUntil: Option[Instant] = None)
 
 object UserAnswers {
   def createUserAnswers(
@@ -95,7 +93,7 @@ object UserAnswers {
 
     UserAnswers(
       vpdId = userDetails.vpdId,
-      userId = userDetails.userId,
+      internalId = userDetails.internalId,
       subscriptionSummary = SubscriptionSummaryBackend(
         contactPreferences.paperlessPreference,
         existingEmail,
@@ -112,7 +110,7 @@ object UserAnswers {
   def fromDecryptedUA(decryptedUA: DecryptedUA): UserAnswers =
     UserAnswers(
       vpdId = decryptedUA.vpdId,
-      userId = decryptedUA.userId,
+      internalId = decryptedUA.internalId,
       subscriptionSummary = SubscriptionSummaryBackend(
         decryptedUA.subscriptionSummary.paperlessPreference,
         decryptedUA.subscriptionSummary.emailAddress.map(SensitiveString.apply),
@@ -130,7 +128,7 @@ object UserAnswers {
   implicit def format(implicit crypto: Encrypter with Decrypter): OFormat[UserAnswers] =
     (
       (__ \ "vpdId").format[String] and
-        (__ \ "userId").format[String] and
+        (__ \ "internalId").format[String] and
         (__ \ "subscriptionSummary").format[SubscriptionSummaryBackend] and
         (__ \ "emailAddress").formatNullable[SensitiveString] and
         (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
@@ -152,7 +150,7 @@ case class SubscriptionSummary(
 )
 
 object SubscriptionSummary {
-  implicit val subscriptionSummaryFormat: OFormat[SubscriptionSummary] = Json.format[SubscriptionSummary]
+  given OFormat[SubscriptionSummary] = Json.format[SubscriptionSummary]
 }
 
 case class SubscriptionSummaryBackend(
@@ -176,5 +174,4 @@ object SubscriptionSummaryBackend {
 
   implicit def sensitiveStringFormat(implicit crypto: Encrypter with Decrypter): Format[SensitiveString] =
     JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)
-
 }

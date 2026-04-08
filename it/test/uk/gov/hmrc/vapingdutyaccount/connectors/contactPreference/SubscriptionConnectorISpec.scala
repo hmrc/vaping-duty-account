@@ -19,10 +19,11 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 
-class SubscriptionConnectorSpec extends SpecBase with ConnectorTestHelpers {
+class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
 
   "SubscriptionConnector must" - {

@@ -29,6 +29,7 @@ import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
 import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,7 +47,7 @@ class SubmitPreferencesConnector @Inject() (
 
   implicit val scheduler: Scheduler = system.scheduler
 
-  def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: String)
+  def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
                               (implicit hc: HeaderCarrier):
   Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] =
       retry(
@@ -57,7 +58,7 @@ class SubmitPreferencesConnector @Inject() (
         Future.successful(Left(ErrorCodes.unexpectedResponse))
       }
 
-  private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: String)
+  private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
                         (implicit hc: HeaderCarrier):
   Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] = {
 
@@ -71,7 +72,7 @@ class SubmitPreferencesConnector @Inject() (
     }
   }
 
-  private def parseResponse(response: HttpResponse, vpdId: String) = {
+  private def parseResponse(response: HttpResponse, vpdId: VpdId) = {
       response match {
         case response if response.status == OK                   =>
           tryParse(vpdId, response)
@@ -92,7 +93,7 @@ class SubmitPreferencesConnector @Inject() (
     }
   }
 
-  private def tryParse(vpdId: String, response: HttpResponse) = {
+  private def tryParse(vpdId: VpdId, response: HttpResponse) = {
     Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
       case Success(submissionResponse) =>
         Future.successful(Right(submissionResponse.success))

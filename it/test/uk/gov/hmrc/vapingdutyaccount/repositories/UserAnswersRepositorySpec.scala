@@ -25,6 +25,7 @@ import uk.gov.hmrc.vapingdutyaccount.crypto.CryptoProvider
 import uk.gov.hmrc.crypto.SymmetricCryptoFactory
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UserAnswers
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -58,7 +59,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       )
 
       val addedUserAnswers = repository.add(userAnswers).futureValue
-      val addedRecord      = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
+      val addedRecord      = find(Filters.equal("vpdId", vpdId.toString)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       verifyUserAnswerResult(addedRecord, expectedAddedUserAnswers)
@@ -72,7 +73,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
 
       repository.add(userAnswers).futureValue
       val addedUserAnswers = repository.add(userAnswers).futureValue
-      val addedRecord      = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
+      val addedRecord      = find(Filters.equal("vpdId", vpdId.toString)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       verifyUserAnswerResult(addedRecord, expectedAddedUserAnswers)
@@ -89,16 +90,16 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       )
 
       val updatedResult = userAnswers.copy(
-        userId = "new-user-id",
+        internalId = "new-user-id",
         validUntil = Some(instant.plusSeconds(DB_TTL_IN_SEC))
       )
 
       val expectedResult = expectedAddedUserAnswers.copy(
-        userId = "new-user-id"
+        internalId = "new-user-id"
       )
 
       val setResult     = repository.set(updatedResult).futureValue
-      val updatedRecord = find(Filters.equal("vpdId", vpdId)).futureValue.headOption.value
+      val updatedRecord = find(Filters.equal("vpdId", vpdId.toString)).futureValue.headOption.value
 
       addedUserAnswers mustEqual expectedAddedUserAnswers
       setResult        mustEqual UpdateSuccess
@@ -117,7 +118,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       "update the lastUpdated time and get the record" in {
         insert(userAnswers.copy(validUntil = Some(instant.plusSeconds(DB_TTL_IN_SEC)))).futureValue
 
-        val result         = repository.get(userAnswers.vpdId).futureValue
+        val result         = repository.get(VpdId(userAnswers.vpdId)).futureValue
         val expectedResult = userAnswers.copy(
           lastUpdated = instant,
           validUntil = Some(instant.plusSeconds(DB_TTL_IN_SEC))
@@ -130,7 +131,7 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
     "there is no record for this id must" - {
       "return None" in {
         repository
-          .get("VPD id that does not exist")
+          .get(VpdId("VPD id that does not exist"))
           .futureValue must not be defined
       }
     }
@@ -139,20 +140,20 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
   "clearUserAnswersById must" - {
     "clear down existing user answers" in {
       insert(userAnswers).futureValue
-      repository.get(userAnswers.vpdId).futureValue.isEmpty          mustBe false
-      repository.clearUserAnswersById(userAnswers.userId).futureValue mustBe ()
-      repository.get(userAnswers.vpdId).futureValue.isEmpty          mustBe true
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe false
+      repository.clearUserAnswersById(InternalId(userAnswers.internalId)).futureValue   mustBe ()
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe true
     }
 
     "not fail if user answers doesn't exist" in {
-      repository.get(userAnswers.vpdId).futureValue.isEmpty          mustBe true
-      repository.clearUserAnswersById(userAnswers.userId).futureValue mustBe ()
+      repository.get(VpdId(userAnswers.vpdId)).futureValue.isEmpty                      mustBe true
+      repository.clearUserAnswersById(internalId).futureValue mustBe ()
     }
   }
 
   def verifyUserAnswerResult(actual: UserAnswers, expected: UserAnswers): Assertion = {
-    actual.vpdId                                        mustEqual expected.vpdId
-    actual.userId                                        mustEqual expected.userId
+    actual.vpdId                                         mustEqual expected.vpdId
+    actual.internalId                                    mustEqual expected.internalId
     actual.subscriptionSummary                           mustEqual expected.subscriptionSummary
     actual.emailAddress                                  mustEqual expected.emailAddress
     actual.data                                          mustEqual expected.data

@@ -30,7 +30,7 @@ class UserAnswersSpec extends SpecBase {
   "UserAnswers must" - {
     "when encryption is enabled" - {
       val jsonWithEncrpytion =
-        s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"dL4kJMiwICXDMg/IDWlMa3j6Nk8pgVhr9lGOEKAG12RN9QGBPmM2JUGvQ1StAH//"},"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+        s"""{"vpdId":"$vpdId","internalId":"$internalId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"dL4kJMiwICXDMg/IDWlMa3j6Nk8pgVhr9lGOEKAG12RN9QGBPmM2JUGvQ1StAH//"},"emailAddress":"QuEpxLZgVPo2eQybYbl9Yxq+hGWotDBesA31u/dlBBU=","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
       implicit val crypto: Encrypter with Decrypter = SymmetricCryptoFactory.aesCrypto(appConfig.cryptoKey)
 
@@ -44,7 +44,7 @@ class UserAnswersSpec extends SpecBase {
 
     "when encryption is disabled" - {
       val jsonWithoutEncryption =
-        s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"\\"john.doe@example.com\\"","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"\\"Flat 123\\\\n1 Example Road\\\\nAB1 2CD\\""},"emailAddress":"\\"john.doe@example.com\\"","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+        s"""{"vpdId":"$vpdId","internalId":"$internalId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"\\"john.doe@example.com\\"","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"\\"Flat 123\\\\n1 Example Road\\\\nAB1 2CD\\""},"emailAddress":"\\"john.doe@example.com\\"","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
       implicit val crypto: Encrypter with Decrypter = NoCrypto
 
@@ -90,7 +90,7 @@ class UserAnswersSpec extends SpecBase {
 
   "DecryptedUA must" - {
     val json =
-      s"""{"vpdId":"$vpdId","userId":"$userId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"john.doe@example.com","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"Flat 123\\n1 Example Road\\nAB1 2CD"},"emailAddress":"john.doe@example.com","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
+      s"""{"vpdId":"$vpdId","internalId":"$internalId","subscriptionSummary":{"paperlessPreference":true,"emailAddress":"john.doe@example.com","emailVerification":true,"bouncedEmail":false,"correspondenceAddress":"Flat 123\\n1 Example Road\\nAB1 2CD"},"emailAddress":"john.doe@example.com","data":{"contactPreferenceEmail":true},"startedTime":{"$$date":{"$$numberLong":"1718118467838"}},"lastUpdated":{"$$date":{"$$numberLong":"1718118467838"}},"validUntil":{"$$date":{"$$numberLong":"1718118467839"}}}"""
 
     "serialise to json" in {
       Json.toJson(uaDecrypted).toString() mustBe json

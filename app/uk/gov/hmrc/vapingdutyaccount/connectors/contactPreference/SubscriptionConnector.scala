@@ -27,6 +27,7 @@ import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -48,7 +49,7 @@ class SubscriptionConnector @Inject() (
     * while interacting with ETMP. This thin wrapper will only return a Future.failed and allow mapping this to an internal server
     * exception.
     */
-  def getSubscriptionContactPreferencesLight(vpdId: String)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] = {
+  def getSubscriptionContactPreferencesLight(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] = {
     getSubscriptionContactPreferences(vpdId) flatMap {
       case Right(etmpData: SubscriptionContactPreferences) =>
         Future.successful(etmpData)
@@ -58,7 +59,7 @@ class SubscriptionConnector @Inject() (
 
   }
 
-  def getSubscriptionContactPreferences(vpdId: String)
+  def getSubscriptionContactPreferences(vpdId: VpdId)
                                        (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
       retry(
         () => call(vpdId),
@@ -68,7 +69,7 @@ class SubscriptionConnector @Inject() (
         Future.successful(Left(ErrorCodes.unexpectedResponse))
       }
 
-  private def call(vpdId: String)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] = {
+  private def call(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
     circuitBreakerProvider.get().withCircuitBreaker {
       httpClient
         .get(url"${config.getSubscriptionUrl(vpdId)}")
@@ -93,9 +94,8 @@ class SubscriptionConnector @Inject() (
           }
         }
     }
-  }
 
-  private def parseSuccessResponse(vpdId: String, response: HttpResponse) = {
+  private def parseSuccessResponse(vpdId: VpdId, response: HttpResponse) = {
     Try {
       response.json.as[SubscriptionContactPreferences]
     } match {

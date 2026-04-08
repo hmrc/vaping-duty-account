@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.{ContactMethod, Identifier, Links, ManageContactPreference, Self, ServiceInfo, VPDSummary}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,19 +33,19 @@ class VPDSummaryAPIService @Inject()(
 )(implicit ec: ExecutionContext) {
 
 
-  def getVPDSummary(vpdId: String)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
+  def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     subscriptionConnector
       .getSubscriptionContactPreferencesLight(vpdId)
       .map(createVPDSummary(vpdId, _))
   }
 
-  private def createVPDSummary(vpdId: String, etmpData: SubscriptionContactPreferences) = {
+  private def createVPDSummary(vpdId: VpdId, etmpData: SubscriptionContactPreferences) = {
     VPDSummary(
       service = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers = Identifier(vpdId),
+      identifiers = Identifier(vpdId.toString),
       contactPreference = ContactMethod.resolve(paperlessPreference = etmpData.paperlessPreference),
       links = Links(
-        Self(s"/vaping-duty-account/vpd/summary/${vpdId}", HttpVerbs.GET),
+        Self(s"/vaping-duty-account/vpd/summary/$vpdId", HttpVerbs.GET),
         ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", HttpVerbs.GET)
       )
     )

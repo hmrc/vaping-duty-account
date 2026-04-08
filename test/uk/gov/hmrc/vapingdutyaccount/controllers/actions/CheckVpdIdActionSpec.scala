@@ -18,14 +18,15 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import scala.concurrent.Future
 
 class CheckVpdIdActionSpec extends SpecBase {
-  val wrongVpdId: String                                               = vpdId + "1"
+  val wrongVpdId: String                                               = vpdId.id + "1"
   val fakeIdentifierRequest: IdentifierRequest[AnyContentAsEmpty.type] =
-    IdentifierRequest(fakeRequest, vpdId, userId)
+    IdentifierRequest(fakeRequest, vpdId, internalId)
   val testContent                                                      = "Test"
 
   val testAction: IdentifierRequest[_] => Future[Result] = { request =>
@@ -45,7 +46,7 @@ class CheckVpdIdActionSpec extends SpecBase {
 
     "fail if vpdId doesn't match that in the enrolment" in {
       val checkVpdIdAction  = new CheckVpdIdAction
-      val result            = checkVpdIdAction(wrongVpdId).invokeBlock(fakeIdentifierRequest, testAction)
+      val result            = checkVpdIdAction(VpdId(wrongVpdId)).invokeBlock(fakeIdentifierRequest, testAction)
 
       status(result) mustBe UNAUTHORIZED
     }

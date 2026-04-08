@@ -21,21 +21,22 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{ActionRefiner, Result}
 import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class CheckVpdIdActionImpl private[actions](vpdId: String)(implicit val executionContext: ExecutionContext)
+class CheckVpdIdActionImpl private[actions](vpdId: VpdId)(implicit val executionContext: ExecutionContext)
     extends ActionRefiner[IdentifierRequest, IdentifierRequest]
     with Logging {
   override protected def refine[A](request: IdentifierRequest[A]): Future[Either[Result, IdentifierRequest[A]]] =
     Future.successful(checkRequestedvpdId(request.vpdId, vpdId).map(_ => request))
 
-  private def checkRequestedvpdId(identifiedVpdId: String, vpdIdToCheck: String): Either[Result, Unit] =
-    if (vpdIdToCheck != identifiedVpdId) {
+  private def checkRequestedvpdId(identifiedVpdId: VpdId, vpdIdToCheck: VpdId): Either[Result, Unit] =
+    if (vpdIdToCheck.toString != identifiedVpdId.toString) {
       logger.error(
-        s"Manual call of endpoint or bug (using unauthorised vpdId): Endpoint vpdId requested $vpdIdToCheck, enrolment vpdId was $identifiedVpdId"
+        s"Manual call of endpoint or bug (using unauthorised vpdId): Endpoint vpdId requested ${vpdIdToCheck.toString}, enrolment vpdId was $identifiedVpdId"
       )
       Left(
         Unauthorized(
@@ -48,6 +49,6 @@ class CheckVpdIdActionImpl private[actions](vpdId: String)(implicit val executio
 }
 
 class CheckVpdIdAction @Inject()(implicit val executionContext: ExecutionContext) {
-  def apply(vpdId: String): ActionRefiner[IdentifierRequest, IdentifierRequest] =
+  def apply(vpdId: VpdId): ActionRefiner[IdentifierRequest, IdentifierRequest] =
     new CheckVpdIdActionImpl(vpdId)
 }

@@ -134,7 +134,7 @@ class UserAnswersControllerSpec extends SpecBase {
     "return 204 NO_CONTENT" in {
       when(mockUserAnswersRepository.clearUserAnswersById(any())).thenReturn(Future.successful(()))
 
-      val result: Future[Result] = controller.clear(userId)(FakeRequest())
+      val result: Future[Result] = controller.clear(internalId)(FakeRequest())
 
       status(result) mustBe NO_CONTENT
     }

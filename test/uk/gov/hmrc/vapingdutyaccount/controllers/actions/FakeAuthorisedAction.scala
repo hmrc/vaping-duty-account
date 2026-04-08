@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.mvc.*
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
 import javax.inject.Inject
@@ -28,7 +29,7 @@ class FakeAuthorisedAction @Inject() (bodyParsers: PlayBodyParsers) extends Auth
 
   override def invokeBlock[A](request: Request[A], block: IdentifierRequest[A] => Future[Result]): Future[Result] =
     block(
-      IdentifierRequest(request, "vpdId", "userId")
+      IdentifierRequest(request, VpdId("vpdId"), InternalId("internalId"))
     )
 
   override protected def executionContext: ExecutionContext = scala.concurrent.ExecutionContext.Implicits.global
