@@ -50,7 +50,7 @@ class VPDSummaryAPIController @Inject()(
         logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
         Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
 
-      case _: Boolean => 
+      case _     => 
         given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
           session = request.session,
           request = request.request
