@@ -185,7 +185,7 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
       assertHeaderIsPresentOn(result, config.xCorrelationId)
     }
 
-    "must return APIErrors.ServiceUnavailable when feature switch is disabled" in {
+    "must return APIErrors.ServiceUnavailable when feature switch is set to false" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(false)
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
