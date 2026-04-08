@@ -46,8 +46,8 @@ class VPDSummaryAPIController @Inject()(
 
   def getVpdSummary(vpdId: String): Action[AnyContent] = authorise.async { implicit request =>
     config.vpdSummaryRESTAPIEnabled match {
-      case true =>
-        logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` != true")
+      case false =>
+        logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
         Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
 
       case _: Boolean => 
