@@ -16,61 +16,32 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.Logging
-import play.api.http.Status.*
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
-import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationParser.{EmailVerificationDetailsType, GetEmailVerificationHttpReads}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.EmailVerificationErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
+import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 class EmailVerificationConnector @Inject()(
   config: AppConfig,
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
-    extends HttpReadsInstances
-    with Logging {
+    extends DownstreamLogging {
 
   private val LOG_PREFIX = "[EmailVerificationConnector][getEmailVerification]"
 
   def getEmailVerification(credId: CredentialId)
-                          (implicit hc: HeaderCarrier): Future[GetVerificationStatusResponse] =
+                          (implicit hc: HeaderCarrier): Future[EmailVerificationDetailsType] =
       httpClient
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
-        .execute[Either[UpstreamErrorResponse, HttpResponse]]
-        .flatMap {
-          case Right(response) =>
-            Try(response.json.as[GetVerificationStatusResponse]) match {
-              case Success(response) =>
-                Future.successful(response)
-              case Failure(error) =>
-                logger.error(s"$LOG_PREFIX [BUG] Unable to parse email records for credId $credId - check our model", error)
-                Future.failed(ParseException(s"Parse failure for $credId", error))
-            }
-          case Left(error)     =>
-            error.statusCode match {
-              case NOT_FOUND   =>
-                logger.info(s"$LOG_PREFIX No verified emails found for credId $credId")
-                Future.successful(GetVerificationStatusResponse(emails = List.empty))
-              case BAD_REQUEST =>
-                logger.error(s"$LOG_PREFIX [BUG] Invalid request for email verification for credId $credId - check our request")
-                Future.failed(BadRequestException(s"Bad request for $credId"))
-              case statusCode  =>
-                logger.warn(s"$LOG_PREFIX Upstream error ($statusCode) for email verification credId $credId")
-                Future.failed(UpstreamServiceException(s"Upstream error for $credId", statusCode))
-            }
+        .execute[EmailVerificationDetailsType](GetEmailVerificationHttpReads, ec)
+        .recover { case ex: Exception =>
+          val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
+          Left(EmailVerificationErrorResponse(errMsg, None))
         }
-        .recoverWith {
-          case ex: ConnectorException =>
-            Future.failed(ex)
-          case ex =>
-            logger.error(s"$LOG_PREFIX Unexpected exception fetching email verification for credId $credId", ex)
-            Future.failed(UpstreamServiceException(s"Exception for $credId", 500, ex))
-        }
-
 }

@@ -25,10 +25,10 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import scala.concurrent.Future
@@ -44,7 +44,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
   "SummaryAPIService must " - {
     "must return correct URLs as part of VPDSummary" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        .thenReturn(Future.successful(Right(contactPreferencesEmailSelected)))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -54,7 +54,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
     "must return ContactMethod.Email when PaperlessPreference is true" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        .thenReturn(Future.successful(Right(contactPreferencesEmailSelected)))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -63,21 +63,21 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
     "must return ContactMethod.Post when PaperlessPreference is false" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        .thenReturn(Future.successful(Right(contactPreferencesPostNoEmail)))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
       result.contactPreference mustBe ContactMethod.Post
     }
 
-    "return APIErrors.InternalServerError when appropriate status code received from stub connector" in {
+    "return a failed Future with RuntimeException when the connector returns an error" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.failed(new InternalServerException("look I'm an internal server exception! fear me!")))
+        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("An error occurred", Some("500")))))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
 
       ScalaFutures.whenReady(result.failed) { e =>
-        e shouldBe a[InternalServerException]
+        e shouldBe a[RuntimeException]
       }
     }
   }

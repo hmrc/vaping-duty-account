@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI
 
 import com.google.inject.Inject
+import play.api.Logging
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -30,13 +31,19 @@ import scala.concurrent.{ExecutionContext, Future}
 class VPDSummaryAPIService @Inject()(
     config: AppConfig,
     subscriptionConnector: SubscriptionConnector
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext) extends Logging {
 
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     subscriptionConnector
       .getSubscriptionContactPreferences(vpdId)
-      .map(createVPDSummary(vpdId, _))
+      .flatMap {
+        case Right(etmpData) =>
+          Future.successful(createVPDSummary(vpdId, etmpData))
+        case Left(error) =>
+          logger.warn(s"[VPDSummaryAPIService][getVPDSummary] Failed to get subscription for vpdId $vpdId: $error")
+          Future.failed(new RuntimeException(s"Failed to get subscription for vpdId $vpdId: $error"))
+      }
   }
 
   private def createVPDSummary(vpdId: VpdId, etmpData: SubscriptionContactPreferences) = {

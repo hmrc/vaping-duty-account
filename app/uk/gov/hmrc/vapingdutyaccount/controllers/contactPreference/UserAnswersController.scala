@@ -27,7 +27,6 @@ import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckSignedInAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
-import uk.gov.hmrc.vapingdutyaccount.models.exceptions.ConnectorException
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
@@ -53,25 +52,19 @@ class UserAnswersController @Inject()(
         request,
         { implicit request =>
           subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-            .flatMap { contactPreferences =>
-              val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
-                userDetails = userDetails,
-                contactPreferences = contactPreferences,
-                clock = clock
-              )
-              userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
-            }
-            .recover {
-              case ex: ConnectorException =>
+            .flatMap {
+              case Right(contactPreferences) =>
+                val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
+                  userDetails = userDetails,
+                  contactPreferences = contactPreferences,
+                  clock = clock
+                )
+                userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
+              case Left(subscriptionError) =>
                 logger.warn(
-                  s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString}: ${ex.getMessage}"
+                  s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString}: ${subscriptionError}"
                 )
-                error(ErrorResponse(500, "Unable to get existing contact preferences"))
-              case ex =>
-                logger.error(
-                  s"[UserAnswersController] [createUserAnswers] Unexpected error getting contact preferences for ${vpdId.toString}", ex
-                )
-                error(ErrorResponse(500, "Internal server error"))
+                Future.successful(error(ErrorResponse(500, "Unable to get existing contact preferences")))
             }
         }
       )

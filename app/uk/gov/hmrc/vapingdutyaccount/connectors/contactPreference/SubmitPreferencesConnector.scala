@@ -18,21 +18,19 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.pattern.retry
-import play.api.Logging
-import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesParser.{SubmitPreferencesDetailsType, SubmitPreferencesHttpReads}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
-import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, SubmitPreferencesErrorResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
+import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
 
 class SubmitPreferencesConnector @Inject() (
                                              config: AppConfig,
@@ -41,64 +39,35 @@ class SubmitPreferencesConnector @Inject() (
                                              implicit val system: ActorSystem,
                                              implicit val httpClient: HttpClientV2
                                            )(implicit ec: ExecutionContext)
-  extends HttpReadsInstances
-    with Logging {
+  extends DownstreamLogging {
 
   implicit val scheduler: Scheduler = system.scheduler
 
   private val LOG_PREFIX = "[SubmitPreferencesConnector][submitContactPreferences]"
 
   def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                              (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] =
+                              (implicit hc: HeaderCarrier): Future[SubmitPreferencesDetailsType] =
       retry(
         () => submitCall(contactPreferenceSubmission, vpdId),
         attempts = config.retryAttemptsPost,
         delay = config.retryAttemptsDelay
-      ).recoverWith { case ex =>
+      ).recoverWith { case ex: Exception =>
         logger.error(s"$LOG_PREFIX All retry attempts failed for vpdId $vpdId", ex)
-        Future.failed(UpstreamServiceException(s"Failed to submit preferences for $vpdId after retries", 500, ex))
+        val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
+        Future.successful(Left(SubmitPreferencesErrorResponse(errMsg, None)))
       }
 
   private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                        (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] = {
-
+                        (implicit hc: HeaderCarrier): Future[SubmitPreferencesDetailsType] =
     circuitBreakerProvider.get().withCircuitBreaker {
       httpClient
         .put(url"${config.submitPreferencesUrl(vpdId)}")
         .setHeader(headers.submissionHeaders(): _*)
         .withBody(Json.toJson(contactPreferenceSubmission))
-        .execute[HttpResponse]
-        .flatMap { response =>
-          response.status match {
-            case OK =>
-              tryParse(vpdId, response)
-            case BAD_REQUEST =>
-              logger.error(s"$LOG_PREFIX [BUG] Bad request for contact preference submission vpdId $vpdId - check our request payload")
-              Future.failed(BadRequestException(s"Bad request for $vpdId"))
-            case NOT_FOUND =>
-              logger.error(s"$LOG_PREFIX [BUG?] Not found for contact preference submission vpdId $vpdId - check vpdId is valid")
-              Future.failed(EntityNotFoundException(s"Entity not found for $vpdId"))
-            case UNPROCESSABLE_ENTITY =>
-              logger.error(s"$LOG_PREFIX [BUG] Unprocessable entity for contact preference submission vpdId $vpdId - check our JSON structure")
-              Future.failed(UnprocessableEntityException(s"Unprocessable entity for $vpdId"))
-            case INTERNAL_SERVER_ERROR | BAD_GATEWAY | SERVICE_UNAVAILABLE =>
-              logger.warn(s"$LOG_PREFIX Upstream service error (${response.status}) for contact preference submission vpdId $vpdId")
-              Future.failed(UpstreamServiceException(s"Upstream error for $vpdId", response.status))
-            case statusCode =>
-              logger.warn(s"$LOG_PREFIX Unexpected status code ($statusCode) for contact preference submission vpdId $vpdId")
-              Future.failed(UpstreamServiceException(s"Unexpected response for $vpdId", statusCode))
-          }
+        .execute[SubmitPreferencesDetailsType](SubmitPreferencesHttpReads, ec)
+        .recover { case ex: Exception =>
+          val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
+          Left(SubmitPreferencesErrorResponse(errMsg, None))
         }
     }
-  }
-
-  private def tryParse(vpdId: VpdId, response: HttpResponse): Future[PaperlessPreferenceSubmittedResponse] = {
-    Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
-      case Success(submissionResponse) =>
-        Future.successful(submissionResponse.success)
-      case Failure(error) =>
-        logger.error(s"$LOG_PREFIX [BUG] Parse failure for submission response vpdId $vpdId - check our model", error)
-        Future.failed(ParseException(s"Parse failure for $vpdId", error))
-    }
-  }
 }

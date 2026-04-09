@@ -23,8 +23,6 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
-import uk.gov.hmrc.vapingdutyaccount.models.exceptions.ConnectorException
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 import scala.concurrent.ExecutionContext
@@ -39,13 +37,11 @@ class EmailVerificationController @Inject() (
 
   def getEmailVerification(credId: CredentialId): Action[AnyContent] = authorise.async { implicit request =>
     emailVerificationConnector.getEmailVerification(credId)
-      .map(response => Ok(Json.toJson(response)))
-      .recover {
-        case ex: ConnectorException =>
-          logger.warn(s"[getEmailVerification] Connector failure for credId $credId: ${ex.getMessage}")
-          InternalServerError("Internal server error")
-        case ex =>
-          logger.error(s"[getEmailVerification] Unexpected failure for credId $credId", ex)
+      .map {
+        case Right(response) =>
+          Ok(Json.toJson(response))
+        case Left(error) =>
+          logger.warn(s"[getEmailVerification] Connector failure for credId $credId: ${error}")
           InternalServerError("Internal server error")
       }
   }

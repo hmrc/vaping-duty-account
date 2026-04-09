@@ -22,8 +22,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
-import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmittedResponse, SubmitPreferencesErrorResponse}
 import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.Future
@@ -45,7 +44,7 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       when(
         mockSubmitPreferencesConnector
           .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(testSubmissionResponse))
+      ).thenReturn(Future.successful(Right(testSubmissionResponse)))
 
       val result: Future[Result] =
         controller.submitContactPreferences(vpdId)(
@@ -56,11 +55,11 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(testSubmissionResponse)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector throws UnprocessableEntityException" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubmitPreferencesErrorResponse for parse error" in {
       when(
         mockSubmitPreferencesConnector
           .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.failed(UnprocessableEntityException("Parse error")))
+      ).thenReturn(Future.successful(Left(SubmitPreferencesErrorResponse("Parse error", Some("422")))))
 
       val result: Future[Result] =
         controller.submitContactPreferences(vpdId)(
@@ -70,11 +69,11 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector throws BadRequestException" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubmitPreferencesErrorResponse for bad request" in {
       when(
         mockSubmitPreferencesConnector
           .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.failed(BadRequestException("Bad request")))
+      ).thenReturn(Future.successful(Left(SubmitPreferencesErrorResponse("Bad request", Some("400")))))
 
       val result: Future[Result] =
         controller.submitContactPreferences(vpdId)(
@@ -84,11 +83,11 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector throws EntityNotFoundException" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubmitPreferencesErrorResponse for not found" in {
       when(
         mockSubmitPreferencesConnector
           .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.failed(EntityNotFoundException("Not found")))
+      ).thenReturn(Future.successful(Left(SubmitPreferencesErrorResponse("Not found", Some("404")))))
 
       val result: Future[Result] =
         controller.submitContactPreferences(vpdId)(
@@ -98,11 +97,11 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector throws UpstreamServiceException" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubmitPreferencesErrorResponse for upstream error" in {
       when(
         mockSubmitPreferencesConnector
           .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.failed(UpstreamServiceException("Upstream error", 500)))
+      ).thenReturn(Future.successful(Left(SubmitPreferencesErrorResponse("Upstream error", Some("500")))))
 
       val result: Future[Result] =
         controller.submitContactPreferences(vpdId)(
