@@ -20,13 +20,12 @@ import org.apache.pekko.actor.{ActorSystem, Scheduler}
 import org.apache.pekko.pattern.retry
 import play.api.Logging
 import play.api.http.Status.*
-import uk.gov.hmrc.http.*
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import javax.inject.Inject
@@ -45,31 +44,19 @@ class SubscriptionConnector @Inject() (
 
   implicit val scheduler: Scheduler = system.scheduler
 
-  /** This method serves as a light wrapper around the below caller to ETMP. This was done to hide the errors that are encountered from us
-    * while interacting with ETMP. This thin wrapper will only return a Future.failed and allow mapping this to an internal server
-    * exception.
-    */
-  def getSubscriptionContactPreferencesLight(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] = {
-    getSubscriptionContactPreferences(vpdId) flatMap {
-      case Right(etmpData: SubscriptionContactPreferences) =>
-        Future.successful(etmpData)
-      case Left(err: ErrorResponse)                        =>
-        Future.failed(new InternalServerException(""))
+  private val LOG_PREFIX = "[SubscriptionConnector][getSubscriptionContactPreferences]"
+  
+  def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] =
+    retry(
+      () => call(vpdId),
+      attempts = config.retryAttempts,
+      delay = config.retryAttemptsDelay
+    ).recoverWith { case ex =>
+      logger.error(s"$LOG_PREFIX All retry attempts failed for vpdId $vpdId", ex)
+      Future.failed(UpstreamServiceException(s"Failed to get subscription for $vpdId after retries", 500, ex))
     }
 
-  }
-
-  def getSubscriptionContactPreferences(vpdId: VpdId)
-                                       (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
-      retry(
-        () => call(vpdId),
-        attempts = config.retryAttempts,
-        delay = config.retryAttemptsDelay
-      ).recoverWith { _ =>
-        Future.successful(Left(ErrorCodes.unexpectedResponse))
-      }
-
-  private def call(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[Either[ErrorResponse, SubscriptionContactPreferences]] =
+  private def call(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] =
     circuitBreakerProvider.get().withCircuitBreaker {
       httpClient
         .get(url"${config.getSubscriptionUrl(vpdId)}")
@@ -80,34 +67,33 @@ class SubscriptionConnector @Inject() (
             case OK                   =>
               parseSuccessResponse(vpdId, response)
             case BAD_REQUEST          =>
-              logWarning(s"Bad request sent to get subscription for vpdId $vpdId")
-              Future.successful(Left(ErrorResponse(BAD_REQUEST, "Bad request")))
+              logger.error(s"$LOG_PREFIX [BUG] Bad request sent to get subscription for vpdId $vpdId - check our request payload")
+              Future.failed(BadRequestException(s"Bad request for subscription $vpdId"))
             case NOT_FOUND            =>
-              logWarning(s"No subscription summary found for vpdId $vpdId")
-              Future.successful(Left(ErrorResponse(NOT_FOUND, "Subscription summary not found")))
+              logger.warn(s"$LOG_PREFIX No subscription summary found for vpdId $vpdId")
+              Future.failed(EntityNotFoundException(s"Subscription not found for $vpdId"))
             case UNPROCESSABLE_ENTITY =>
-              logWarning(s"Subscription summary request unprocessable for vpdId $vpdId")
-              Future.successful(Left(ErrorResponse(UNPROCESSABLE_ENTITY, "Unprocessable entity")))
-            case _                    =>
-              logWarning(s"An error was returned while trying to fetch subscription summary for vpdId $vpdId")
-              Future.failed(new InternalServerException(response.body))
+              logger.error(s"$LOG_PREFIX [BUG] Subscription summary request unprocessable for vpdId $vpdId - check our JSON structure")
+              Future.failed(UnprocessableEntityException(s"Unprocessable entity for $vpdId"))
+            case INTERNAL_SERVER_ERROR | BAD_GATEWAY | SERVICE_UNAVAILABLE =>
+              logger.warn(s"$LOG_PREFIX Upstream service error (${response.status}) while fetching subscription for vpdId $vpdId")
+              Future.failed(UpstreamServiceException(s"Upstream error for $vpdId", response.status))
+            case statusCode           =>
+              logger.warn(s"$LOG_PREFIX Unexpected status code ($statusCode) while fetching subscription for vpdId $vpdId")
+              Future.failed(UpstreamServiceException(s"Unexpected response for $vpdId", statusCode))
           }
         }
     }
 
-  private def parseSuccessResponse(vpdId: VpdId, response: HttpResponse) = {
+  private def parseSuccessResponse(vpdId: VpdId, response: HttpResponse): Future[SubscriptionContactPreferences] = {
     Try {
       response.json.as[SubscriptionContactPreferences]
     } match {
       case Success(contactPreferenceResponse) =>
-        Future.successful(Right(contactPreferenceResponse))
+        Future.successful(contactPreferenceResponse)
       case Failure(error) =>
-        logWarning(s"Unable to parse subscription summary success for vpdId $vpdId with $error")
-        Future.successful(Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success")))
+        logger.error(s"$LOG_PREFIX [BUG] Unable to parse subscription summary success response for vpdId $vpdId - check our model", error)
+        Future.failed(ParseException(s"Parse failure for $vpdId", error))
     }
   }
-
-  private def logWarning(message: String): Unit =
-    val prefix: String = "[SubscriptionConnector] [getSubscriptionContactPreferences] "
-    logger.warn(s"$prefix $message")
 }

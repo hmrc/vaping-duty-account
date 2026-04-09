@@ -21,9 +21,11 @@ import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.ConnectorException
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
@@ -45,10 +47,15 @@ class SubmitPreferencesController @Inject() (
 
         submitPreferencesConnector
           .submitContactPreferences(contactPreferenceSubmission, vpdId)
-          .map(_.fold(
-            e => errorHandler.toResult(e),
-            submissionResponse => Ok(Json.toJson(submissionResponse))
-          ))
+          .map(submissionResponse => Ok(Json.toJson(submissionResponse)))
+          .recover {
+            case ex: ConnectorException =>
+              logger.warn(s"[submitContactPreferences] Connector failure for vpdId $vpdId: ${ex.getMessage}")
+              errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+            case ex =>
+              logger.error(s"[submitContactPreferences] Unexpected failure for vpdId $vpdId", ex)
+              errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+          }
       }
     }
 }

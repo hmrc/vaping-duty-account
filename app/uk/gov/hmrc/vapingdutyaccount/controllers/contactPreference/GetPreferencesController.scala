@@ -21,8 +21,11 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.ConnectorException
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
@@ -39,9 +42,14 @@ class GetPreferencesController @Inject()(
   def getContactPreferences(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
     implicit request =>
       connector.getSubscriptionContactPreferences(vpdId)
-        .map(_.fold(
-          e => errorHandler.toResult(e),
-          response => Ok(Json.toJson(response))
-        ))
+        .map(response => Ok(Json.toJson(response)))
+        .recover {
+          case ex: ConnectorException =>
+            logger.warn(s"[getContactPreferences] Connector failure for vpdId $vpdId: ${ex.getMessage}")
+            errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+          case ex =>
+            logger.error(s"[getContactPreferences] Unexpected failure for vpdId $vpdId", ex)
+            errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+        }
   }
 }

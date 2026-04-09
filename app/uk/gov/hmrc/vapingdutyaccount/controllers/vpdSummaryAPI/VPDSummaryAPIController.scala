@@ -26,6 +26,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.ConnectorException
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
@@ -58,8 +59,13 @@ class VPDSummaryAPIController @Inject()(
 
         vpdSummaryAPIService.getVPDSummary(vpdId)
           .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
-          .recover { case _ =>
-            buildErrorResponse(request, APIErrors.InternalServerError)
+          .recover {
+            case ex: ConnectorException =>
+              logger.warn(s"[getVpdSummary] Connector failure for vpdId $vpdId: ${ex.getMessage}")
+              buildErrorResponse(request, APIErrors.InternalServerError)
+            case ex =>
+              logger.error(s"[getVpdSummary] Unexpected failure for vpdId $vpdId", ex)
+              buildErrorResponse(request, APIErrors.InternalServerError)
           }
     }
   }

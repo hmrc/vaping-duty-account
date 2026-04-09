@@ -20,10 +20,10 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
 
 import scala.concurrent.Future
 
@@ -39,7 +39,7 @@ class EmailVerificationControllerSpec extends SpecBase {
   "getEmailVerification must" - {
     "return 200 OK when GetVerificationStatusResponse is returned for the credId" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, GetVerificationStatusResponse]](Right(getVerificationStatusResponse)))
+        .thenReturn(Future.successful(getVerificationStatusResponse))
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
 
@@ -47,13 +47,9 @@ class EmailVerificationControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(getVerificationStatusResponse)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when an error is returned from the connector" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector throws an UpstreamServiceException" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
-        .thenReturn(
-          Future.successful(Left(
-            ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list")
-          ))
-        )
+        .thenReturn(Future.failed(UpstreamServiceException("Unexpected response for email verification list", 500)))
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
 

@@ -17,12 +17,12 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.Logging
-import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND}
-import uk.gov.hmrc.http.*
+import play.api.http.Status.*
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 import javax.inject.Inject
@@ -36,47 +36,41 @@ class EmailVerificationConnector @Inject()(
     extends HttpReadsInstances
     with Logging {
 
+  private val LOG_PREFIX = "[EmailVerificationConnector][getEmailVerification]"
+
   def getEmailVerification(credId: CredentialId)
-                          (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, GetVerificationStatusResponse]] =
-    
+                          (implicit hc: HeaderCarrier): Future[GetVerificationStatusResponse] =
       httpClient
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
         .execute[Either[UpstreamErrorResponse, HttpResponse]]
-        .map {
+        .flatMap {
           case Right(response) =>
-            Try {
-              response.json
-                .as[GetVerificationStatusResponse]
-            } match {
+            Try(response.json.as[GetVerificationStatusResponse]) match {
               case Success(response) =>
-                Right(response)
-              case Failure(_)        =>
-                logger.warn(s"Unable to parse email records successful response for credId $credId")
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse email records successful response"))
+                Future.successful(response)
+              case Failure(error) =>
+                logger.error(s"$LOG_PREFIX [BUG] Unable to parse email records for credId $credId - check our model", error)
+                Future.failed(ParseException(s"Parse failure for $credId", error))
             }
           case Left(error)     =>
             error.statusCode match {
               case NOT_FOUND   =>
-                Right(GetVerificationStatusResponse(emails = List.empty))
+                logger.info(s"$LOG_PREFIX No verified emails found for credId $credId")
+                Future.successful(GetVerificationStatusResponse(emails = List.empty))
               case BAD_REQUEST =>
-                logger.warn(
-                  s"Invalid request for email verification list for credId $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
-              case _           =>
-                logger.warn(
-                  s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list"))
+                logger.error(s"$LOG_PREFIX [BUG] Invalid request for email verification for credId $credId - check our request")
+                Future.failed(BadRequestException(s"Bad request for $credId"))
+              case statusCode  =>
+                logger.warn(s"$LOG_PREFIX Upstream error ($statusCode) for email verification credId $credId")
+                Future.failed(UpstreamServiceException(s"Upstream error for $credId", statusCode))
             }
         }
-        .recoverWith { case _: Exception =>
-          logger.warn(s"An exception was returned while trying to fetch the email verification list for credId $credId")
-          Future.successful(
-            Left(
-              ErrorResponse(INTERNAL_SERVER_ERROR, "Exception returned while trying to fetch email verification list")
-            )
-          )
+        .recoverWith {
+          case ex: ConnectorException =>
+            Future.failed(ex)
+          case ex =>
+            logger.error(s"$LOG_PREFIX Unexpected exception fetching email verification for credId $credId", ex)
+            Future.failed(UpstreamServiceException(s"Exception for $credId", 500, ex))
         }
 
 }

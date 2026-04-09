@@ -23,12 +23,11 @@ import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, InternalServerException, StringContextOps}
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, StringContextOps}
 import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import javax.inject.Inject
@@ -47,20 +46,21 @@ class SubmitPreferencesConnector @Inject() (
 
   implicit val scheduler: Scheduler = system.scheduler
 
+  private val LOG_PREFIX = "[SubmitPreferencesConnector][submitContactPreferences]"
+
   def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                              (implicit hc: HeaderCarrier):
-  Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] =
+                              (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] =
       retry(
         () => submitCall(contactPreferenceSubmission, vpdId),
         attempts = config.retryAttemptsPost,
         delay = config.retryAttemptsDelay
-      ).recoverWith { _ =>
-        Future.successful(Left(ErrorCodes.unexpectedResponse))
+      ).recoverWith { case ex =>
+        logger.error(s"$LOG_PREFIX All retry attempts failed for vpdId $vpdId", ex)
+        Future.failed(UpstreamServiceException(s"Failed to submit preferences for $vpdId after retries", 500, ex))
       }
 
   private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                        (implicit hc: HeaderCarrier):
-  Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] = {
+                        (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] = {
 
     circuitBreakerProvider.get().withCircuitBreaker {
       httpClient
@@ -68,38 +68,37 @@ class SubmitPreferencesConnector @Inject() (
         .setHeader(headers.submissionHeaders(): _*)
         .withBody(Json.toJson(contactPreferenceSubmission))
         .execute[HttpResponse]
-        .flatMap{ parseResponse(_, vpdId) }
+        .flatMap { response =>
+          response.status match {
+            case OK =>
+              tryParse(vpdId, response)
+            case BAD_REQUEST =>
+              logger.error(s"$LOG_PREFIX [BUG] Bad request for contact preference submission vpdId $vpdId - check our request payload")
+              Future.failed(BadRequestException(s"Bad request for $vpdId"))
+            case NOT_FOUND =>
+              logger.error(s"$LOG_PREFIX [BUG?] Not found for contact preference submission vpdId $vpdId - check vpdId is valid")
+              Future.failed(EntityNotFoundException(s"Entity not found for $vpdId"))
+            case UNPROCESSABLE_ENTITY =>
+              logger.error(s"$LOG_PREFIX [BUG] Unprocessable entity for contact preference submission vpdId $vpdId - check our JSON structure")
+              Future.failed(UnprocessableEntityException(s"Unprocessable entity for $vpdId"))
+            case INTERNAL_SERVER_ERROR | BAD_GATEWAY | SERVICE_UNAVAILABLE =>
+              logger.warn(s"$LOG_PREFIX Upstream service error (${response.status}) for contact preference submission vpdId $vpdId")
+              Future.failed(UpstreamServiceException(s"Upstream error for $vpdId", response.status))
+            case statusCode =>
+              logger.warn(s"$LOG_PREFIX Unexpected status code ($statusCode) for contact preference submission vpdId $vpdId")
+              Future.failed(UpstreamServiceException(s"Unexpected response for $vpdId", statusCode))
+          }
+        }
     }
   }
 
-  private def parseResponse(response: HttpResponse, vpdId: VpdId) = {
-      response match {
-        case response if response.status == OK                   =>
-          tryParse(vpdId, response)
-        case response if response.status == BAD_REQUEST          =>
-          logger.warn(s"Bad request returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.badRequest))
-        case response if response.status == NOT_FOUND            =>
-          logger.warn(s"Not found returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.entityNotFound))
-        case response if response.status == UNPROCESSABLE_ENTITY =>
-          logger.warn(s"Unprocessable entity returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.invalidJson))
-        case response =>
-          logger.warn(
-            s"Received unexpected response from contact preference submission API (vpdId $vpdId). Status: ${response.status}"
-          )
-          Future.failed(new InternalServerException(response.body))
-    }
-  }
-
-  private def tryParse(vpdId: VpdId, response: HttpResponse) = {
+  private def tryParse(vpdId: VpdId, response: HttpResponse): Future[PaperlessPreferenceSubmittedResponse] = {
     Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
       case Success(submissionResponse) =>
-        Future.successful(Right(submissionResponse.success))
-      case Failure(_) =>
-        logger.warn(s"Parsing failed for submission response for vpdId $vpdId")
-        Future.successful(Left(ErrorCodes.unexpectedResponse))
+        Future.successful(submissionResponse.success)
+      case Failure(error) =>
+        logger.error(s"$LOG_PREFIX [BUG] Parse failure for submission response vpdId $vpdId - check our model", error)
+        Future.failed(ParseException(s"Parse failure for $vpdId", error))
     }
   }
 }

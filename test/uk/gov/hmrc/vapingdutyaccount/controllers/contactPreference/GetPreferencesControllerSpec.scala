@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.exceptions.*
 import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.Future
@@ -44,7 +44,7 @@ class GetPreferencesControllerSpec extends SpecBase {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Right(contactPreferencesEmailSelected)))
+      ).thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result = controller.getContactPreferences(vpdId)(fakeRequest)
 
@@ -52,47 +52,47 @@ class GetPreferencesControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(contactPreferencesEmailSelected)
     }
 
-    "return 422 UNPROCESSABLE_ENTITY when the response could not be parsed" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector throws UnprocessableEntityException" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.invalidJson)))
+      ).thenReturn(Future.failed(UnprocessableEntityException("Parse error")))
 
       val result: Future[Result] =
         controller.getContactPreferences(vpdId)(fakeRequest)
 
-      status(result) mustBe UNPROCESSABLE_ENTITY
+      status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 400 BAD_REQUEST when there is a BAD_REQUEST" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector throws BadRequestException" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.badRequest)))
+      ).thenReturn(Future.failed(BadRequestException("Bad request")))
 
       val result: Future[Result] =
         controller.getContactPreferences(vpdId)(fakeRequest)
 
-      status(result) mustBe BAD_REQUEST
+      status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 404 NOT_FOUND when not found" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector throws EntityNotFoundException" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.entityNotFound)))
+      ).thenReturn(Future.failed(EntityNotFoundException("Not found")))
 
       val result: Future[Result] =
         controller.getContactPreferences(vpdId)(fakeRequest)
 
-      status(result) mustBe NOT_FOUND
+      status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when there is an unexpected response" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector throws UpstreamServiceException" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.unexpectedResponse)))
+      ).thenReturn(Future.failed(UpstreamServiceException("Upstream error", 500)))
 
       val result: Future[Result] =
         controller.getContactPreferences(vpdId)(fakeRequest)
