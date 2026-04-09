@@ -20,7 +20,11 @@ import play.api.libs.json.{Json, OFormat}
 
 sealed trait SubmitPreferencesError
 
-final case class SubmitPreferencesErrorResponse(error: String, details: Option[String]) extends SubmitPreferencesError
+final case class SubmitPreferencesErrorResponse(
+  error: String, 
+  details: Option[String],
+  statusCode: Option[Int] = None
+) extends SubmitPreferencesError
 
 object SubmitPreferencesErrorResponse {
   implicit val format: OFormat[SubmitPreferencesErrorResponse] = Json.format[SubmitPreferencesErrorResponse]

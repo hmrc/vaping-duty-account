@@ -68,7 +68,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
       }
 
       Seq(BAD_REQUEST, NOT_FOUND, UNPROCESSABLE_ENTITY).foreach { statusCode =>
-        s"return $statusCode if the API returns this error code" in {
+        s"return INTERNAL_SERVER_ERROR if the API returns $statusCode" in {
           stubAuthorised(vpdId.toString)
 
           stubPut(
@@ -84,7 +84,7 @@ class SubmitPreferencesIntegrationSpec extends ISpecBase {
               .withBody(Json.toJson(contactPreferenceSubmissionEmail))
           )
 
-          status(response) mustBe statusCode
+          status(response) mustBe INTERNAL_SERVER_ERROR
           verifyPut(submitPreferencesUrl)
         }
       }

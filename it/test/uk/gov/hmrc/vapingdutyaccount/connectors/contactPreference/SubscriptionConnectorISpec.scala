@@ -17,11 +17,10 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionErrorResponse, SubscriptionNotFound}
 
 class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
@@ -38,7 +37,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "return BAD_REQUEST if a bad request received with no retry" in new SetUp {
       stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
       whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(BAD_REQUEST, "Bad request"))
+        result mustBe Left(SubscriptionErrorResponse("Bad request", None, Some(400)))
         verifyGetWithoutRetry(url)
       }
     }
@@ -46,24 +45,26 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "return UNPROCESSABLE_ENTITY if a 422 is received with no retry" in new SetUp {
       stubGet(url, UNPROCESSABLE_ENTITY, Json.toJson(unprocessable).toString)
       whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(UNPROCESSABLE_ENTITY, "Unprocessable entity"))
+        result mustBe Left(SubscriptionErrorResponse("Unprocessable entity", None, Some(422)))
         verifyGetWithoutRetry(url)
       }
     }
 
     "return NOT_FOUND if subscription summary data cannot be found with no retry" in new SetUp {
-      stubGet(url, NOT_FOUND, "")
+      stubGet(url, NOT_FOUND, Json.obj("error" -> "Not found").toString)
       whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(NOT_FOUND, "Subscription summary not found"))
+        result mustBe Left(SubscriptionNotFound())
         verifyGetWithoutRetry(url)
       }
     }
 
     "return INTERNAL_SERVER_ERROR" - {
       "if the data retrieved cannot be parsed" in new SetUp {
-        stubGet(url, OK, "blah")
+        stubGet(url, OK, """{"wrongField": "value"}""")
         whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success"))
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[SubscriptionErrorResponse]
+          result.left.toOption.get.asInstanceOf[SubscriptionErrorResponse].error must include("Unable to parse JSON as SubscriptionContactPreferences")
           verifyGet(url)
         }
       }
@@ -71,7 +72,8 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       "if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned" in new SetUp {
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[SubscriptionErrorResponse]
           verifyGet(url)
         }
       }
@@ -79,7 +81,8 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       "if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned, the connector will invoke a retry" in new SetUp {
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[SubscriptionErrorResponse]
           verifyGetWithRetry(url)
         }
       }
@@ -87,7 +90,8 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       "if an exception is thrown when fetching subscription summary" in new SetUp {
         stubGetFault(url)
         whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[SubscriptionErrorResponse]
           verifyGet(url)
         }
       }

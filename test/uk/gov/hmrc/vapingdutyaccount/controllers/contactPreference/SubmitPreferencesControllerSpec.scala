@@ -35,8 +35,7 @@ class SubmitPreferencesControllerSpec extends SpecBase {
     cc,
     mockSubmitPreferencesConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction,
-    errorHandler
+    fakeCheckVpdIdAction
   )
 
   "submitContactPreferences must" - {

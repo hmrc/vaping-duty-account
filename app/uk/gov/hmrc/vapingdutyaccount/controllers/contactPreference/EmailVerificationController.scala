@@ -23,6 +23,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.EmailVerificationErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 
 import scala.concurrent.ExecutionContext
@@ -42,7 +43,9 @@ class EmailVerificationController @Inject() (
           Ok(Json.toJson(response))
         case Left(error) =>
           logger.warn(s"[getEmailVerification] Connector failure for credId $credId: ${error}")
-          InternalServerError("Internal server error")
+          error match {
+            case EmailVerificationErrorResponse(msg, _, _) => InternalServerError(msg)
+          }
       }
   }
 

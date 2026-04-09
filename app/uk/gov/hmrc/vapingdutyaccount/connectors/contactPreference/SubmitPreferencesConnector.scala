@@ -32,6 +32,8 @@ import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
+case class SubmitPreferencesServerErrorException(message: String) extends Exception(message)
+
 class SubmitPreferencesConnector @Inject() (
                                              config: AppConfig,
                                              headers: HIPHeaders,
@@ -54,7 +56,7 @@ class SubmitPreferencesConnector @Inject() (
       ).recoverWith { case ex: Exception =>
         logger.error(s"$LOG_PREFIX All retry attempts failed for vpdId $vpdId", ex)
         val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-        Future.successful(Left(SubmitPreferencesErrorResponse(errMsg, None)))
+        Future.successful(Left(SubmitPreferencesErrorResponse(errMsg, None, None)))
       }
 
   private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
@@ -65,9 +67,18 @@ class SubmitPreferencesConnector @Inject() (
         .setHeader(headers.submissionHeaders(): _*)
         .withBody(Json.toJson(contactPreferenceSubmission))
         .execute[SubmitPreferencesDetailsType](SubmitPreferencesHttpReads, ec)
-        .recover { case ex: Exception =>
+      .flatMap {
+        case Left(error:SubmitPreferencesErrorResponse) if error.statusCode.exists(_ >= 500) =>
+          Future.failed(SubmitPreferencesServerErrorException(s"Server error: ${error.error}"))
+        case other =>
+          Future.successful(other)
+      }
+      .recoverWith {
+        case ex: SubmitPreferencesServerErrorException =>
+          Future.failed(ex)
+        case ex: Exception =>
           val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-          Left(SubmitPreferencesErrorResponse(errMsg, None))
-        }
+          Future.successful(Left(SubmitPreferencesErrorResponse(errMsg, None, None)))
+      }
     }
 }

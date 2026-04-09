@@ -17,7 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.http.Status.*
-import play.api.libs.json.JsSuccess
+import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess, SubmitPreferencesError, SubmitPreferencesErrorResponse}
 import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
@@ -35,39 +35,40 @@ object SubmitPreferencesParser {
           response.json.validate[PaperlessPreferenceSubmittedSuccess] match {
             case JsSuccess(value, _) =>
               Right(value.success)
-            case error =>
-              val formatted = formatJsonErrors(error.asInstanceOf[play.api.libs.json.JsError].errors)
+            case JsError(errors) =>
+              val formatted = formatJsonErrors(errors)
               logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Unable to parse JSON as PaperlessPreferenceSubmittedSuccess: $formatted")
               Left(SubmitPreferencesErrorResponse("Unable to parse JSON as PaperlessPreferenceSubmittedSuccess", Some(formatted)))
           }
         case NOT_FOUND =>
-          logger.error(s"[SubmitPreferencesConnector][submitContactPreferences] Not found - check vpdId is valid")
-          Left(SubmitPreferencesErrorResponse("Entity not found", Some("404")))
+          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Not found - check vpdId is valid")
+          Left(SubmitPreferencesErrorResponse("Entity not found", None, Some(NOT_FOUND)))
         case BAD_REQUEST =>
-          logger.error(s"[SubmitPreferencesConnector][submitContactPreferences] Bad request sent - check our request payload")
+          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Bad request sent - check our request payload")
           response.json.validate[SubmitPreferencesErrorResponse] match {
             case JsSuccess(value, _) =>
-              Left(value)
-            case _ =>
-              Left(SubmitPreferencesErrorResponse("Bad request", Some("400")))
+              Left(value.copy(statusCode = Some(BAD_REQUEST)))
+            case JsError(_) =>
+              Left(SubmitPreferencesErrorResponse("Bad request", None, Some(BAD_REQUEST)))
           }
         case UNPROCESSABLE_ENTITY =>
-          logger.error(s"[SubmitPreferencesConnector][submitContactPreferences] Unprocessable entity - check our JSON structure")
+          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Unprocessable entity - check our JSON structure")
           response.json.validate[SubmitPreferencesErrorResponse] match {
             case JsSuccess(value, _) =>
-              Left(value)
-            case _ =>
-              Left(SubmitPreferencesErrorResponse("Unprocessable entity", Some("422")))
+              Left(value.copy(statusCode = Some(UNPROCESSABLE_ENTITY)))
+            case JsError(_) =>
+              Left(SubmitPreferencesErrorResponse("Unprocessable entity", None, Some(UNPROCESSABLE_ENTITY)))
           }
         case statusCode =>
           response.json.validate[SubmitPreferencesErrorResponse] match {
             case JsSuccess(value, _) =>
               logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Downstream error $statusCode: ${value.error}")
-              Left(value)
-            case _ =>
+              Left(value.copy(statusCode = Some(statusCode)))
+            case JsError(errors) =>
+              val formatted = formatJsonErrors(errors)
               val err = logBackendError("[SubmitPreferencesConnector][submitContactPreferences]", response)
-              logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Unable to parse Json as SubmitPreferencesErrorResponse")
-              Left(SubmitPreferencesErrorResponse(err.message, Some(err.body)))
+              logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Unable to parse Json as SubmitPreferencesErrorResponse: $formatted")
+              Left(SubmitPreferencesErrorResponse(err.message, Some(err.body), Some(statusCode)))
           }
       }
   }

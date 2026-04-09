@@ -20,7 +20,11 @@ import play.api.libs.json.{Json, OFormat}
 
 sealed trait EmailVerificationError
 
-final case class EmailVerificationErrorResponse(error: String, details: Option[String]) extends EmailVerificationError
+final case class EmailVerificationErrorResponse(
+  error: String, 
+  details: Option[String],
+  statusCode: Option[Int] = None
+) extends EmailVerificationError
 
 object EmailVerificationErrorResponse {
   implicit val format: OFormat[EmailVerificationErrorResponse] = Json.format[EmailVerificationErrorResponse]

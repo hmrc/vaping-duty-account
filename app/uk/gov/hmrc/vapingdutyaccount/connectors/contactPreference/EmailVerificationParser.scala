@@ -17,7 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.http.Status.*
-import play.api.libs.json.JsSuccess
+import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{EmailVerificationError, EmailVerificationErrorResponse, GetVerificationStatusResponse}
 import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
@@ -35,31 +35,32 @@ object EmailVerificationParser {
           response.json.validate[GetVerificationStatusResponse] match {
             case JsSuccess(value, _) =>
               Right(value)
-            case error =>
-              val formatted = formatJsonErrors(error.asInstanceOf[play.api.libs.json.JsError].errors)
+            case JsError(errors) =>
+              val formatted = formatJsonErrors(errors)
               logger.warn(s"[EmailVerificationConnector][getEmailVerification] Unable to parse JSON as GetVerificationStatusResponse: $formatted")
               Left(EmailVerificationErrorResponse("Unable to parse JSON as GetVerificationStatusResponse", Some(formatted)))
           }
         case NOT_FOUND =>
-          logger.info(s"[EmailVerificationConnector][getEmailVerification] No verified emails found")
+          logger.info("[EmailVerificationConnector][getEmailVerification] No verified emails found")
           Right(GetVerificationStatusResponse(emails = List.empty))
         case BAD_REQUEST =>
-          logger.error(s"[EmailVerificationConnector][getEmailVerification] Bad request sent - check our request")
+          logger.error("[EmailVerificationConnector][getEmailVerification] Bad request sent - check our request")
           response.json.validate[EmailVerificationErrorResponse] match {
             case JsSuccess(value, _) =>
-              Left(value)
-            case _ =>
-              Left(EmailVerificationErrorResponse("Bad request", Some("400")))
+              Left(value.copy(statusCode = Some(BAD_REQUEST)))
+            case JsError(_) =>
+              Left(EmailVerificationErrorResponse("Bad request", None, Some(BAD_REQUEST)))
           }
         case statusCode =>
           response.json.validate[EmailVerificationErrorResponse] match {
             case JsSuccess(value, _) =>
               logger.warn(s"[EmailVerificationConnector][getEmailVerification] Downstream error $statusCode: ${value.error}")
-              Left(value)
-            case _ =>
+              Left(value.copy(statusCode = Some(statusCode)))
+            case JsError(errors) =>
+              val formatted = formatJsonErrors(errors)
               val err = logBackendError("[EmailVerificationConnector][getEmailVerification]", response)
-              logger.warn(s"[EmailVerificationConnector][getEmailVerification] Unable to parse Json as EmailVerificationErrorResponse")
-              Left(EmailVerificationErrorResponse(err.message, Some(err.body)))
+              logger.warn(s"[EmailVerificationConnector][getEmailVerification] Unable to parse Json as EmailVerificationErrorResponse: $formatted")
+              Left(EmailVerificationErrorResponse(err.message, Some(err.body), Some(statusCode)))
           }
       }
   }

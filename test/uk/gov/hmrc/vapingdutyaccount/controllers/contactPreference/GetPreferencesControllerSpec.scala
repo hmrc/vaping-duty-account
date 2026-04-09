@@ -35,8 +35,7 @@ class GetPreferencesControllerSpec extends SpecBase {
     cc,
     mockSubmitPreferencesConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction,
-    errorHandler
+    fakeCheckVpdIdAction
   )
 
   "getContactPreferences must" - {
@@ -76,7 +75,7 @@ class GetPreferencesControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionNotFound" in {
+    "return 404 NOT_FOUND when the connector returns SubscriptionNotFound" in {
       when(
         mockSubmitPreferencesConnector
           .getSubscriptionContactPreferences(eqTo(vpdId))(any())
@@ -85,7 +84,7 @@ class GetPreferencesControllerSpec extends SpecBase {
       val result: Future[Result] =
         controller.getContactPreferences(vpdId)(fakeRequest)
 
-      status(result) mustBe INTERNAL_SERVER_ERROR
+      status(result) mustBe NOT_FOUND
     }
 
     "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionErrorResponse for upstream error" in {

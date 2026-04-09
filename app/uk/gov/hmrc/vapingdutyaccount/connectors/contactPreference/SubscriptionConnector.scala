@@ -30,6 +30,8 @@ import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
+case class SubscriptionServerErrorException(message: String) extends Exception(message)
+
 class SubscriptionConnector @Inject() (
     config: AppConfig,
     headers: HIPHeaders,
@@ -51,7 +53,7 @@ class SubscriptionConnector @Inject() (
     ).recoverWith { case ex: Exception =>
       logger.error(s"$LOG_PREFIX All retry attempts failed for vpdId $vpdId", ex)
       val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-      Future.successful(Left(SubscriptionErrorResponse(errMsg, None)))
+      Future.successful(Left(SubscriptionErrorResponse(errMsg, None, None)))
     }
 
   private def call(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionDetailsType] =
@@ -60,9 +62,18 @@ class SubscriptionConnector @Inject() (
         .get(url"${config.getSubscriptionUrl(vpdId)}")
         .setHeader(headers.subscriptionHeaders(): _*)
         .execute[SubscriptionDetailsType](GetSubscriptionHttpReads, ec)
-        .recover { case ex: Exception =>
+      .flatMap {
+        case Left(error: SubscriptionErrorResponse) if error.statusCode.exists(_ >= 500) =>
+          Future.failed(SubscriptionServerErrorException(s"Server error: ${error.error}"))
+        case other =>
+          Future.successful(other)
+      }
+      .recoverWith {
+        case ex: SubscriptionServerErrorException =>
+          Future.failed(ex)
+        case ex: Exception =>
           val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-          Left(SubscriptionErrorResponse(errMsg, None))
-        }
+          Future.successful(Left(SubscriptionErrorResponse(errMsg, None, None)))
+      }
     }
 }

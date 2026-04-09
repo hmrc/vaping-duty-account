@@ -19,7 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubmitPreferencesErrorResponse
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
@@ -40,9 +40,11 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
       }
 
       "return an UnexpectedResponse error if the call returns an invalid response json" in new SetUp {
-        stubPut(submitReturnUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), "invalid")
+        stubPut(submitReturnUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), """{"wrongField": "value"}""")
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[SubmitPreferencesErrorResponse]
+          result.left.toOption.get.asInstanceOf[SubmitPreferencesErrorResponse].error must include("Unable to parse JSON as PaperlessPreferenceSubmittedSuccess")
           verifyPut(submitReturnUrl)
         }
       }
@@ -56,7 +58,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         )
         whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
           result =>
-            result mustBe Left(ErrorCodes.badRequest)
+            result mustBe Left(SubmitPreferencesErrorResponse("Bad request", None, Some(400)))
             verifyPutWithoutRetry(submitReturnUrl)
         }
       }
@@ -65,7 +67,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubPut(submitReturnUrl, NOT_FOUND, Json.toJson(contactPreferenceSubmissionEmail).toString(), "")
         whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
           result =>
-            result mustBe Left(ErrorCodes.entityNotFound)
+            result mustBe Left(SubmitPreferencesErrorResponse("Entity not found", None, Some(404)))
             verifyPutWithoutRetry(submitReturnUrl)
         }
       }
@@ -79,7 +81,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         )
         whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
           result =>
-            result mustBe Left(ErrorCodes.invalidJson)
+            result mustBe Left(SubmitPreferencesErrorResponse("Unprocessable entity", None, Some(422)))
             verifyPutWithoutRetry(submitReturnUrl)
         }
       }
@@ -93,7 +95,8 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         )
         whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
           result =>
-            result mustBe Left(ErrorCodes.unexpectedResponse)
+            result.isLeft mustBe true
+            result.left.toOption.get mustBe a[SubmitPreferencesErrorResponse]
             verifyPutWithRetry(submitReturnUrl)
         }
       }

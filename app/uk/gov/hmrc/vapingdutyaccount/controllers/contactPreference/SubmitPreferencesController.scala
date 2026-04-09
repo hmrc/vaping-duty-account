@@ -21,12 +21,10 @@ import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, SubmitPreferencesErrorResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
@@ -34,8 +32,7 @@ class SubmitPreferencesController @Inject() (
   cc: ControllerComponents,
   submitPreferencesConnector: SubmitPreferencesConnector,
   authorise: AuthorisedAction,
-  checkVpdId: CheckVpdIdAction,
-  errorHandler: ErrorResponseHandler
+  checkVpdId: CheckVpdIdAction
 )(implicit ec: ExecutionContext)
     extends BackendController(cc)
     with Logging {
@@ -51,7 +48,9 @@ class SubmitPreferencesController @Inject() (
               Ok(Json.toJson(submissionResponse))
             case Left(error) =>
               logger.warn(s"[submitContactPreferences] Connector failure for vpdId $vpdId: ${error}")
-              errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+              error match {
+                case SubmitPreferencesErrorResponse(msg, _, _) => InternalServerError(msg)
+              }
           }
       }
     }

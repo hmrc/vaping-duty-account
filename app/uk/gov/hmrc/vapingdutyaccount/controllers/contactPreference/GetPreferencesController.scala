@@ -21,11 +21,10 @@ import play.api.Logging
 import play.api.libs.json.Json
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionErrorResponse, SubscriptionNotFound}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
@@ -33,8 +32,7 @@ class GetPreferencesController @Inject()(
                                           cc: ControllerComponents,
                                           connector: SubscriptionConnector,
                                           authorise: AuthorisedAction,
-                                          checkVpdId: CheckVpdIdAction,
-                                          errorHandler: ErrorResponseHandler
+                                          checkVpdId: CheckVpdIdAction
                                         )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def getContactPreferences(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
@@ -45,7 +43,12 @@ class GetPreferencesController @Inject()(
             Ok(Json.toJson(response))
           case Left(error) =>
             logger.warn(s"[getContactPreferences] Connector failure for vpdId $vpdId: ${error}")
-            errorHandler.toResult(ErrorResponse(500, "Internal server error"))
+            error match {
+              case SubscriptionNotFound() =>
+                NotFound("Subscription not found")
+              case SubscriptionErrorResponse(msg, _, _) =>
+                InternalServerError(msg)
+            }
         }
   }
 }

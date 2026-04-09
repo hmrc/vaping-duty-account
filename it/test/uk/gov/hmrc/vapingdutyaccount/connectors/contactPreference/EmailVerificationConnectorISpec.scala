@@ -17,10 +17,9 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{EmailVerificationErrorResponse, GetVerificationStatusResponse}
 
 class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "email-verification"
@@ -44,9 +43,11 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
 
     "return INTERNAL_SERVER_ERROR" - {
       "if the data retrieved cannot be parsed" in new SetUp {
-        stubGet(url, OK, "blah")
+        stubGet(url, OK, """{"wrongField": "value"}""")
         whenReady(connector.getEmailVerification(credId)) { result =>
-          result mustBe Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse email records successful response"))
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[EmailVerificationErrorResponse]
+          result.left.toOption.get.asInstanceOf[EmailVerificationErrorResponse].error must include("Unable to parse JSON as GetVerificationStatusResponse")
           verifyGet(url)
         }
       }
@@ -54,7 +55,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if BAD_REQUEST is returned" in new SetUp {
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
         whenReady(connector.getEmailVerification(credId)) { result =>
-          result mustBe Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
+          result mustBe Left(EmailVerificationErrorResponse("Bad request", None, Some(400)))
           verifyGet(url)
         }
       }
@@ -62,7 +63,8 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if an error other than BAD_REQUEST or NOT_FOUND is returned" in new SetUp {
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connector.getEmailVerification(credId)) { result =>
-          result mustBe Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list"))
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[EmailVerificationErrorResponse]
           verifyGet(url)
         }
       }
@@ -70,9 +72,8 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if an exception is thrown when fetching email verification statuses" in new SetUp {
         stubGetFault(url)
         whenReady(connector.getEmailVerification(credId)) { result =>
-          result mustBe Left(
-            ErrorResponse(INTERNAL_SERVER_ERROR, "Exception returned while trying to fetch email verification list")
-          )
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe a[EmailVerificationErrorResponse]
           verifyGet(url)
         }
       }

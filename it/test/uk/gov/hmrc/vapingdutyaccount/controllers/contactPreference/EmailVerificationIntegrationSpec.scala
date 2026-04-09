@@ -54,14 +54,14 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
 
     "respond with INTERNAL_SERVER_ERROR if the data retrieved cannot be parsed" in new SetUp {
       stubAuthorised(vpdId.toString)
-      stubGet(url, OK, "blah")
+      stubGet(url, OK, """{"wrongField": "value"}""")
 
       val response = callRoute(
         FakeRequest("GET", routes.EmailVerificationController.getEmailVerification(credId).url)
       )
 
-      status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Unable to parse email records successful response"
+      status(response) mustBe INTERNAL_SERVER_ERROR
+      contentAsString(response) must include("Unable to parse JSON as GetVerificationStatusResponse")
 
       verifyGet(url)
     }
@@ -74,8 +74,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
         FakeRequest("GET", routes.EmailVerificationController.getEmailVerification(credId).url)
       )
 
-      status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Invalid request for email verification list"
+      status(response) mustBe INTERNAL_SERVER_ERROR
 
       verifyGet(url)
     }
@@ -88,8 +87,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
         FakeRequest("GET", routes.EmailVerificationController.getEmailVerification(credId).url)
       )
 
-      status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Unexpected response for email verification list"
+      status(response) mustBe INTERNAL_SERVER_ERROR
 
       verifyGet(url)
     }

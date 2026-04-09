@@ -42,6 +42,6 @@ class EmailVerificationConnector @Inject()(
         .execute[EmailVerificationDetailsType](GetEmailVerificationHttpReads, ec)
         .recover { case ex: Exception =>
           val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-          Left(EmailVerificationErrorResponse(errMsg, None))
+          Left(EmailVerificationErrorResponse(errMsg, None, None))
         }
 }

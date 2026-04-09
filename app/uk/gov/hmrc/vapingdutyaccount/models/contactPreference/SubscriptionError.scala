@@ -20,7 +20,11 @@ import play.api.libs.json.{Json, OFormat}
 
 sealed trait SubscriptionError
 
-final case class SubscriptionErrorResponse(error: String, details: Option[String]) extends SubscriptionError
+final case class SubscriptionErrorResponse(
+  error: String, 
+  details: Option[String],
+  statusCode: Option[Int] = None
+) extends SubscriptionError
 
 final case class SubscriptionNotFound() extends SubscriptionError
 
