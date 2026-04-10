@@ -45,24 +45,21 @@ class VPDSummaryAPIController @Inject()(
   given Writes[APIError] = APIErrorFormat
 
   def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
-    config.vpdSummaryRESTAPIEnabled match {
-      case false =>
-        logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
-        Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
+    if (config.vpdSummaryRESTAPIEnabled) {
+      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+        session = request.session,
+        request = request.request
+      )
 
-      case _     => 
-        given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-          session = request.session,
-          request = request.request
-        )
-
-        vpdSummaryAPIService.getVPDSummary(vpdId)
-          .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
-          .recover {
-            case ex =>
-              logger.warn(s"[getVpdSummary] Service failure for vpdId $vpdId: ${ex.getMessage}")
-              buildErrorResponse(request, APIErrors.InternalServerError)
-          }
+      vpdSummaryAPIService.getVPDSummary(vpdId)
+        .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
+        .recover {
+          case exception =>
+            InternalServerError(exception.getMessage)
+        }
+    } else {
+      logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
+      Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
     }
   }
 

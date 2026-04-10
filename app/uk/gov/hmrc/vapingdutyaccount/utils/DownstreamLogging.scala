@@ -22,17 +22,23 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 trait DownstreamLogging extends Logging {
 
-  def logNonHttpError(prefix: String, hc: HeaderCarrier, ex: Exception): String = {
+  def logNonHttpError(prefix: String, hc: HeaderCarrier, ex: Throwable): String = {
     val errorMsg = s"$prefix Non-HTTP error: ${ex.getMessage}"
-    logger.error(errorMsg, ex)
+    logger.warn(errorMsg, ex)
     errorMsg
   }
 
   def logBackendError(prefix: String, response: HttpResponse): BackendError = {
     val message = s"$prefix Backend error - Status: ${response.status}"
     val body = response.body
-    logger.error(s"$message, Body: $body")
+    logger.warn(s"$message, Body: $body")
     BackendError(message, body)
+  }
+
+  def logJsonParseError(prefix: String, ex: Throwable): String = {
+    val message = s"$prefix Unable to parse JSON: ${ex.getMessage}"
+    logger.warn(message, ex)
+    message
   }
 
   def formatJsonErrors(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): String =

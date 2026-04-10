@@ -17,59 +17,38 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.http.Status.*
-import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess, SubmitPreferencesError, SubmitPreferencesErrorResponse}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionParser.GetSubscriptionHttpReads.logBackendError
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
 import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 
+import scala.util.{Failure, Success, Try}
+
 object SubmitPreferencesParser {
-  type SubmitPreferencesDetailsType = Either[SubmitPreferencesError, PaperlessPreferenceSubmittedResponse]
+  type SubmitPreferencesDetailsType = Either[Exception, PaperlessPreferenceSubmittedResponse]
 
   implicit object SubmitPreferencesHttpReads
       extends HttpReads[SubmitPreferencesDetailsType]
       with DownstreamLogging {
 
+    private val LOG_PREFIX = "[SubmitPreferencesConnector][submitContactPreferences]"
+
     override def read(method: String, url: String, response: HttpResponse): SubmitPreferencesDetailsType =
       response.status match {
         case OK =>
-          response.json.validate[PaperlessPreferenceSubmittedSuccess] match {
-            case JsSuccess(value, _) =>
-              Right(value.success)
-            case JsError(errors) =>
-              val formatted = formatJsonErrors(errors)
-              logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Unable to parse JSON as PaperlessPreferenceSubmittedSuccess: $formatted")
-              Left(SubmitPreferencesErrorResponse("Unable to parse JSON as PaperlessPreferenceSubmittedSuccess", Some(formatted)))
+          Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
+            case Success(value) => Right(value.success)
+            case Failure(ex) =>
+              val msg = logJsonParseError(LOG_PREFIX, ex)
+              Left(new Exception(msg))
           }
-        case NOT_FOUND =>
-          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Not found - check vpdId is valid")
-          Left(SubmitPreferencesErrorResponse("Entity not found", None, Some(NOT_FOUND)))
-        case BAD_REQUEST =>
-          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Bad request sent - check our request payload")
-          response.json.validate[SubmitPreferencesErrorResponse] match {
-            case JsSuccess(value, _) =>
-              Left(value.copy(statusCode = Some(BAD_REQUEST)))
-            case JsError(_) =>
-              Left(SubmitPreferencesErrorResponse("Bad request", None, Some(BAD_REQUEST)))
-          }
-        case UNPROCESSABLE_ENTITY =>
-          logger.error("[SubmitPreferencesConnector][submitContactPreferences] Unprocessable entity - check our JSON structure")
-          response.json.validate[SubmitPreferencesErrorResponse] match {
-            case JsSuccess(value, _) =>
-              Left(value.copy(statusCode = Some(UNPROCESSABLE_ENTITY)))
-            case JsError(_) =>
-              Left(SubmitPreferencesErrorResponse("Unprocessable entity", None, Some(UNPROCESSABLE_ENTITY)))
-          }
-        case statusCode =>
-          response.json.validate[SubmitPreferencesErrorResponse] match {
-            case JsSuccess(value, _) =>
-              logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Downstream error $statusCode: ${value.error}")
-              Left(value.copy(statusCode = Some(statusCode)))
-            case JsError(errors) =>
-              val formatted = formatJsonErrors(errors)
-              val err = logBackendError("[SubmitPreferencesConnector][submitContactPreferences]", response)
-              logger.warn(s"[SubmitPreferencesConnector][submitContactPreferences] Unable to parse Json as SubmitPreferencesErrorResponse: $formatted")
-              Left(SubmitPreferencesErrorResponse(err.message, Some(err.body), Some(statusCode)))
-          }
+        case NOT_FOUND | BAD_REQUEST | UNPROCESSABLE_ENTITY =>
+          val err = logBackendError(LOG_PREFIX, response)
+          Left(new Exception(s"4XX error occurred: ${err.body}"))
+        
+        case _ =>
+          val err = logBackendError(LOG_PREFIX, response)
+          Left(new Exception(s"Downstream error ${response.status}: ${err.message}"))
       }
   }
 }

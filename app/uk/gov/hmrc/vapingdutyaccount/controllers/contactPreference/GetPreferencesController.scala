@@ -23,7 +23,6 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionErrorResponse, SubscriptionNotFound}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import scala.concurrent.ExecutionContext
@@ -41,14 +40,8 @@ class GetPreferencesController @Inject()(
         .map {
           case Right(response) =>
             Ok(Json.toJson(response))
-          case Left(error) =>
-            logger.warn(s"[getContactPreferences] Connector failure for vpdId $vpdId: ${error}")
-            error match {
-              case SubscriptionNotFound() =>
-                NotFound("Subscription not found")
-              case SubscriptionErrorResponse(msg, _, _) =>
-                InternalServerError(msg)
-            }
+          case Left(exception) =>
+              InternalServerError(exception.getMessage)
         }
   }
 }

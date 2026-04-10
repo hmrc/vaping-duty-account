@@ -40,9 +40,8 @@ class VPDSummaryAPIService @Inject()(
       .flatMap {
         case Right(etmpData) =>
           Future.successful(createVPDSummary(vpdId, etmpData))
-        case Left(error) =>
-          logger.warn(s"[VPDSummaryAPIService][getVPDSummary] Failed to get subscription for vpdId $vpdId: $error")
-          Future.failed(new RuntimeException(s"Failed to get subscription for vpdId $vpdId: $error"))
+        case Left(exception) =>
+          Future.failed(exception)
       }
   }
 

@@ -17,10 +17,11 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.actions
 
 import play.api.Logging
+import play.api.http.Status.UNAUTHORIZED
 import play.api.libs.json.Json
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{ActionRefiner, Result}
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
+import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 
@@ -40,7 +41,7 @@ class CheckVpdIdActionImpl private[actions](vpdId: VpdId)(implicit val execution
       )
       Left(
         Unauthorized(
-          Json.toJson(ErrorCodes.unauthorisedRequest)
+          Json.toJson(ErrorResponse(UNAUTHORIZED, "Unauthorised request"))
         )
       )
     } else {

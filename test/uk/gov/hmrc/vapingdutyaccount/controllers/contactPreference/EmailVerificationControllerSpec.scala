@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import play.api.mvc.Result
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{EmailVerificationErrorResponse, GetVerificationStatusResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 
 import scala.concurrent.Future
 
@@ -46,9 +46,9 @@ class EmailVerificationControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(getVerificationStatusResponse)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns an EmailVerificationErrorResponse" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns an exception" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
-        .thenReturn(Future.successful(Left(EmailVerificationErrorResponse("Unexpected response for email verification list", Some("500")))))
+        .thenReturn(Future.successful(Left(new Exception("Unexpected response for email verification list"))))
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
 

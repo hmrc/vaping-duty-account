@@ -60,10 +60,7 @@ class UserAnswersController @Inject()(
                   clock = clock
                 )
                 userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
-              case Left(subscriptionError) =>
-                logger.warn(
-                  s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString}: ${subscriptionError}"
-                )
+              case Left(exception) =>
                 Future.successful(error(ErrorResponse(500, "Unable to get existing contact preferences")))
             }
         }

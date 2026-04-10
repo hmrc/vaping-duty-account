@@ -23,7 +23,6 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionErrorResponse, SubscriptionNotFound}
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import scala.concurrent.Future
@@ -105,10 +104,10 @@ class UserAnswersControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(decryptedUA)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionNotFound" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns an exception for subscription not found" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionNotFound())))
+        .thenReturn(Future.successful(Left(new Exception("Subscription not found"))))
 
       val result: Future[Result] =
         controller.createUserAnswers()(
@@ -118,10 +117,10 @@ class UserAnswersControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionErrorResponse for bad request" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns an exception for bad request" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("Bad request", Some("400")))))
+        .thenReturn(Future.successful(Left(new Exception("Bad request"))))
 
       val result: Future[Result] =
         controller.createUserAnswers()(
@@ -131,10 +130,10 @@ class UserAnswersControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionErrorResponse for parse error" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns an exception for parse error" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("Unable to parse subscription summary success", None))))
+        .thenReturn(Future.successful(Left(new Exception("Unable to parse subscription summary success"))))
 
       val result: Future[Result] =
         controller.createUserAnswers()(
@@ -144,10 +143,10 @@ class UserAnswersControllerSpec extends SpecBase {
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector returns SubscriptionErrorResponse for upstream error" in {
+    "return 500 INTERNAL_SERVER_ERROR when the connector returns an exception for upstream error" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("An error occurred", Some("500")))))
+        .thenReturn(Future.successful(Left(new Exception("An error occurred"))))
 
       val result: Future[Result] =
         controller.createUserAnswers()(

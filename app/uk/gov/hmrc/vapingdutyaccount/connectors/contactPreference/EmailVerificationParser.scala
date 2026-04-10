@@ -17,51 +17,42 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.http.Status.*
-import play.api.libs.json.{JsError, JsSuccess}
 import uk.gov.hmrc.http.{HttpReads, HttpResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{EmailVerificationError, EmailVerificationErrorResponse, GetVerificationStatusResponse}
+import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionParser.GetSubscriptionHttpReads.logBackendError
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 
+import scala.util.{Failure, Success, Try}
+
 object EmailVerificationParser {
-  type EmailVerificationDetailsType = Either[EmailVerificationError, GetVerificationStatusResponse]
+  type EmailVerificationDetailsType = Either[Exception, GetVerificationStatusResponse]
 
   implicit object GetEmailVerificationHttpReads
       extends HttpReads[EmailVerificationDetailsType]
       with DownstreamLogging {
 
+    private val LOG_PREFIX = "[EmailVerificationConnector][getEmailVerification]"
+
     override def read(method: String, url: String, response: HttpResponse): EmailVerificationDetailsType =
       response.status match {
         case OK =>
-          response.json.validate[GetVerificationStatusResponse] match {
-            case JsSuccess(value, _) =>
-              Right(value)
-            case JsError(errors) =>
-              val formatted = formatJsonErrors(errors)
-              logger.warn(s"[EmailVerificationConnector][getEmailVerification] Unable to parse JSON as GetVerificationStatusResponse: $formatted")
-              Left(EmailVerificationErrorResponse("Unable to parse JSON as GetVerificationStatusResponse", Some(formatted)))
+          Try(response.json.as[GetVerificationStatusResponse]) match {
+            case Success(value) => Right(value)
+            case Failure(ex) =>
+              val msg = logJsonParseError(LOG_PREFIX, ex)
+              Left(new Exception(msg))
           }
+
         case NOT_FOUND =>
-          logger.info("[EmailVerificationConnector][getEmailVerification] No verified emails found")
           Right(GetVerificationStatusResponse(emails = List.empty))
+
         case BAD_REQUEST =>
-          logger.error("[EmailVerificationConnector][getEmailVerification] Bad request sent - check our request")
-          response.json.validate[EmailVerificationErrorResponse] match {
-            case JsSuccess(value, _) =>
-              Left(value.copy(statusCode = Some(BAD_REQUEST)))
-            case JsError(_) =>
-              Left(EmailVerificationErrorResponse("Bad request", None, Some(BAD_REQUEST)))
-          }
-        case statusCode =>
-          response.json.validate[EmailVerificationErrorResponse] match {
-            case JsSuccess(value, _) =>
-              logger.warn(s"[EmailVerificationConnector][getEmailVerification] Downstream error $statusCode: ${value.error}")
-              Left(value.copy(statusCode = Some(statusCode)))
-            case JsError(errors) =>
-              val formatted = formatJsonErrors(errors)
-              val err = logBackendError("[EmailVerificationConnector][getEmailVerification]", response)
-              logger.warn(s"[EmailVerificationConnector][getEmailVerification] Unable to parse Json as EmailVerificationErrorResponse: $formatted")
-              Left(EmailVerificationErrorResponse(err.message, Some(err.body), Some(statusCode)))
-          }
+          val err = logBackendError(LOG_PREFIX, response)
+          Left(new Exception(s"4XX error occurred: ${err.body}"))
+
+        case _ =>
+          val err = logBackendError(LOG_PREFIX, response)
+          Left(new Exception(s"Downstream error ${response.status}: ${err.message}"))
       }
   }
 }

@@ -61,7 +61,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response) mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) must include("Unable to parse JSON as GetVerificationStatusResponse")
+      contentAsString(response) must include("Unable to parse JSON")
 
       verifyGet(url)
     }

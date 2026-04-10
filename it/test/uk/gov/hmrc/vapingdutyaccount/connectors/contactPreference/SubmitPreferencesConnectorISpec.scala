@@ -18,8 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
-import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubmitPreferencesErrorResponse
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
@@ -39,73 +37,74 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         }
       }
 
-      "return an UnexpectedResponse error if the call returns an invalid response json" in new SetUp {
+      "return an error if the call returns an invalid response json" in new SetUp {
         stubPut(submitReturnUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), """{"wrongField": "value"}""")
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
           result.isLeft mustBe true
-          result.left.toOption.get mustBe a[SubmitPreferencesErrorResponse]
-          result.left.toOption.get.asInstanceOf[SubmitPreferencesErrorResponse].error must include("Unable to parse JSON as PaperlessPreferenceSubmittedSuccess")
+          result.left.toOption.get mustBe an[Exception]
+          result.left.toOption.get.getMessage must include("Unable to parse JSON")
           verifyPut(submitReturnUrl)
         }
       }
 
-      "return a BadRequest error without retry if the call returns a 400 response" in new SetUp {
+      "return an error if the call returns a 400 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           BAD_REQUEST,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           Json.toJson(badRequest).toString()
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(SubmitPreferencesErrorResponse("Bad request", None, Some(400)))
-            verifyPutWithoutRetry(submitReturnUrl)
+        whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe an[Exception]
+          result.left.toOption.get.getMessage must include("You messed up")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return a NotFound error without retry if the call returns a 404 response" in new SetUp {
+      "return an error if the call returns a 404 response" in new SetUp {
         stubPut(submitReturnUrl, NOT_FOUND, Json.toJson(contactPreferenceSubmissionEmail).toString(), "")
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(SubmitPreferencesErrorResponse("Entity not found", None, Some(404)))
-            verifyPutWithoutRetry(submitReturnUrl)
+        whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe an[Exception]
+          result.left.toOption.get.getMessage must include("4XX error occurred")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return an UnprocessableEntity error without retry if the call returns a 422 response" in new SetUp {
+      "return an error if the call returns a 422 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           Json.toJson(unprocessable).toString()
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(SubmitPreferencesErrorResponse("Unprocessable entity", None, Some(422)))
-            verifyPutWithoutRetry(submitReturnUrl)
+        whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe an[Exception]
+          result.left.toOption.get.getMessage must include("Unprocessable")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return an UnexpectedResponse error with retry if the call returns a 500 response" in new SetUp {
+      "return an error if the call returns a 500 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           INTERNAL_SERVER_ERROR,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           Json.toJson(internalServerError).toString()
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result.isLeft mustBe true
-            result.left.toOption.get mustBe a[SubmitPreferencesErrorResponse]
-            verifyPutWithRetry(submitReturnUrl)
+        whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
+          result.isLeft mustBe true
+          result.left.toOption.get mustBe an[Exception]
+          verifyPut(submitReturnUrl)
         }
       }
     }
   }
 
   abstract class SetUp extends ConnectorFixture {
-    val connector          = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
-    val connectorWithRetry = appWithHttpClientV2WithRetry.injector.instanceOf[SubmitPreferencesConnector]
-    val submitReturnUrl    = config.submitPreferencesUrl(vpdId)
+    val connector       = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
+    val submitReturnUrl = config.submitPreferencesUrl(vpdId)
   }
 }

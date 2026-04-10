@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps}
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationParser.{EmailVerificationDetailsType, GetEmailVerificationHttpReads}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.EmailVerificationErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
 import uk.gov.hmrc.vapingdutyaccount.utils.DownstreamLogging
 
@@ -29,7 +28,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class EmailVerificationConnector @Inject()(
   config: AppConfig,
-  implicit val httpClient: HttpClientV2
+  httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends DownstreamLogging {
 
@@ -42,6 +41,6 @@ class EmailVerificationConnector @Inject()(
         .execute[EmailVerificationDetailsType](GetEmailVerificationHttpReads, ec)
         .recover { case ex: Exception =>
           val errMsg = logNonHttpError(LOG_PREFIX, hc, ex)
-          Left(EmailVerificationErrorResponse(errMsg, None, None))
+          Left(new Exception(errMsg))
         }
 }

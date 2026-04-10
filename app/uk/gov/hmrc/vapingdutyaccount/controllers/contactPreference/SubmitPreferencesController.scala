@@ -23,7 +23,7 @@ import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, SubmitPreferencesErrorResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import scala.concurrent.ExecutionContext
@@ -46,11 +46,8 @@ class SubmitPreferencesController @Inject() (
           .map {
             case Right(submissionResponse) =>
               Ok(Json.toJson(submissionResponse))
-            case Left(error) =>
-              logger.warn(s"[submitContactPreferences] Connector failure for vpdId $vpdId: ${error}")
-              error match {
-                case SubmitPreferencesErrorResponse(msg, _, _) => InternalServerError(msg)
-              }
+            case Left(exception) =>
+              InternalServerError(exception.getMessage)
           }
       }
     }

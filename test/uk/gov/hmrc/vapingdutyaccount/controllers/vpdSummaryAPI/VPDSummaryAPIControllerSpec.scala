@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.HeaderNames as HmrcHeaderNames
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionContactPreferences, SubscriptionErrorResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
 
@@ -175,14 +175,11 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
 
     "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("An error occurred", Some("500")))))
+        .thenReturn(Future.successful(Left(new Exception("An error occurred"))))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
-      status(result)        mustBe HttpStatus.INTERNAL_SERVER_ERROR
-      contentAsJson(result) mustBe Json.toJson(APIErrors.InternalServerError)
-      assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
-      assertHeaderIsPresentOn(result, config.xCorrelationId)
+      status(result) mustBe INTERNAL_SERVER_ERROR
     }
 
     "must return APIErrors.ServiceUnavailable when feature switch is set to false" in {

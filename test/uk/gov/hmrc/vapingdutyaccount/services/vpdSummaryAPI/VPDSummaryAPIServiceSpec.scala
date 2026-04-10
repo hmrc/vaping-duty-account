@@ -28,7 +28,6 @@ import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import scala.concurrent.Future
@@ -70,14 +69,14 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
       result.contactPreference mustBe ContactMethod.Post
     }
 
-    "return a failed Future with RuntimeException when the connector returns an error" in {
+    "return a failed Future with Exception when the connector returns an error" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Left(SubscriptionErrorResponse("An error occurred", Some("500")))))
+        .thenReturn(Future.successful(Left(new Exception("An error occurred"))))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
 
       ScalaFutures.whenReady(result.failed) { e =>
-        e shouldBe a[RuntimeException]
+        e shouldBe an[Exception]
       }
     }
   }
