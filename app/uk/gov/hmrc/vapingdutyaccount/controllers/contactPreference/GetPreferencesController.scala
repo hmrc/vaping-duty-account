@@ -41,7 +41,7 @@ class GetPreferencesController @Inject()(
           case Right(response) =>
             Ok(Json.toJson(response))
           case Left(exception) =>
-              InternalServerError(exception.getMessage)
+            InternalServerError(exception.getMessage)
         }
   }
 }
