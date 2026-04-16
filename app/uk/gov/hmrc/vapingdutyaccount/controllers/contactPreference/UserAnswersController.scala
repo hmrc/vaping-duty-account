@@ -106,4 +106,8 @@ class UserAnswersController @Inject()(
   def clear(internalId: InternalId): Action[AnyContent] = checkSignedInAction.async {
     userAnswersRepository.clearUserAnswersById(internalId).map(_ => Results.NoContent)
   }
+
+  def keepAlive(internalId: InternalId): Action[AnyContent] = authorise.async {
+    userAnswersRepository.keepAlive(internalId).map(_ => NoContent)
+  }
 }
