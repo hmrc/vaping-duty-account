@@ -163,4 +163,30 @@ class UserAnswersRepositorySpec extends ISpecBase with DefaultPlayMongoRepositor
       ChronoUnit.MILLIS
     )
   }
+
+  ".keepAlive" - {
+
+    "when there is a record for this id" - {
+
+      "must update its lastUpdated to `now` and return true" in {
+
+        insert(userAnswers).futureValue
+
+        val _ = repository.keepAlive(internalId).futureValue
+
+        val expectedUpdatedAnswers = userAnswers copy (lastUpdated = instant)
+
+        val updatedAnswers = find(Filters.equal("internalId", userAnswers.internalId)).futureValue.headOption.value
+        updatedAnswers mustEqual expectedUpdatedAnswers
+      }
+    }
+
+    "when there is no record for this id" - {
+
+      "must return true" in {
+
+        repository.keepAlive(InternalId("id that does not exist")).futureValue mustEqual true
+      }
+    }
+  }
 }
