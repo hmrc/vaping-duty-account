@@ -34,7 +34,7 @@ class InternalIdSpec extends SpecBase with TestData {
       Json.parse(json).as[InternalId] mustBe internalId
     }
 
-    "fail to bind an invalid VPD ID" in {
+    "fail to bind an invalid InternalId" in {
       val binder = InternalId.given_PathBindable_InternalId
       val result = binder.bind("id", "tooShort")
       result mustBe Left("Invalid InternalId") // Assumes your Left value

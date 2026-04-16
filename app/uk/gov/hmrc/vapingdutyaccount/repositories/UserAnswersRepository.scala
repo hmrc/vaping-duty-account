@@ -77,7 +77,16 @@ class UserAnswersRepository @Inject() (
   private def byVpdId(vpdId: String) = Filters.equal("vpdId", vpdId)
   private def byInternalId(internalId: String) = Filters.equal("internalId", internalId)
 
-  private def keepAlive(vpdId: VpdId): Future[Boolean] =
+  def keepAlive(internalId: InternalId): Future[Boolean] =
+    collection
+      .updateOne(
+        filter = byInternalId(internalId.toString),
+        update = Updates.set("lastUpdated", Instant.now(clock))
+      )
+      .toFuture()
+      .map(_ => true)
+
+  private def keepAliveByVpdId(vpdId: VpdId): Future[Boolean] =
     collection
       .updateOne(
         filter = byVpdId(vpdId.toString),
@@ -87,7 +96,7 @@ class UserAnswersRepository @Inject() (
       .map(_ => true)
 
   def get(vpdId: VpdId): Future[Option[UserAnswers]] = {
-    keepAlive(vpdId).flatMap { _ =>
+    keepAliveByVpdId(vpdId).flatMap { _ =>
       Mdc.preservingMdc {
         collection
           .find(byVpdId(vpdId.toString))
