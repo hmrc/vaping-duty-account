@@ -36,6 +36,17 @@ class EmailVerificationConnector @Inject()(
     extends HttpReadsInstances
     with Logging {
 
+  def getEmailVerificationLight(credId: CredentialId)
+                               (implicit hc: HeaderCarrier): Future[GetVerificationStatusResponse] = {
+    getEmailVerification(credId).flatMap {
+      case Right(successResponse: GetVerificationStatusResponse) =>
+        Future.successful(successResponse)
+
+      case Left(errorResponse: ErrorResponse) =>
+        Future.failed(InternalServerException(s"Error: ${errorResponse.message}"))
+    }
+  }
+
   def getEmailVerification(credId: CredentialId)
                           (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, GetVerificationStatusResponse]] =
     
