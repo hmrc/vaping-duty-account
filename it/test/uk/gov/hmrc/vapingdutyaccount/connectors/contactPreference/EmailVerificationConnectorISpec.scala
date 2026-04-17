@@ -27,7 +27,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
   "EmailVerificationConnector must" - {
     "successfully get a list of email verification statuses" in new SetUp {
       stubGet(url, OK, Json.toJson(getVerificationStatusResponse).toString)
-      whenReady(connector.getEmailVerificationLight(credId)) { result =>
+      whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe getVerificationStatusResponse
         verifyGet(url)
       }
@@ -35,7 +35,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
 
     "return a successful response with an empty list if no records are found" in new SetUp {
       stubGet(url, NOT_FOUND, Json.toJson(GetVerificationStatusResponse(List.empty)).toString)
-      whenReady(connector.getEmailVerificationLight(credId)) { result =>
+      whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe GetVerificationStatusResponse(List.empty)
         verifyGet(url)
       }
@@ -44,7 +44,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
     "return INTERNAL_SERVER_ERROR" - {
       "if the data retrieved cannot be parsed" in new SetUp {
         stubGet(url, OK, "blah")
-        whenReady(connector.getEmailVerificationLight(credId).failed) { result =>
+        whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Unable to parse email records successful response")
           verifyGet(url)
         }
@@ -52,7 +52,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
 
       "if BAD_REQUEST is returned" in new SetUp {
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
-        whenReady(connector.getEmailVerificationLight(credId).failed) { result =>
+        whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Error: Invalid request for email verification list")
           verifyGet(url)
         }
@@ -60,7 +60,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
 
       "if an error other than BAD_REQUEST or NOT_FOUND is returned" in new SetUp {
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
-        whenReady(connector.getEmailVerificationLight(credId).failed) { result =>
+        whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Error: Unexpected response for email verification list")
           verifyGet(url)
         }
@@ -68,7 +68,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
 
       "if an exception is thrown when fetching email verification statuses" in new SetUp {
         stubGetFault(url)
-        whenReady(connector.getEmailVerificationLight(credId).failed) { result =>
+        whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Error: Exception returned while trying to fetch email verification list")
           verifyGet(url)
         }

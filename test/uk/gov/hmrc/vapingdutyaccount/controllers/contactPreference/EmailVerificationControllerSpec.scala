@@ -38,7 +38,7 @@ class EmailVerificationControllerSpec extends SpecBase {
 
   "getEmailVerification must" - {
     "return 200 OK when GetVerificationStatusResponse is returned for the credId" in {
-      when(mockEmailVerificationConnector.getEmailVerificationLight(eqTo(credId))(any()))
+      when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
         .thenReturn(Future[GetVerificationStatusResponse](getVerificationStatusResponse))
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
@@ -48,7 +48,7 @@ class EmailVerificationControllerSpec extends SpecBase {
     }
 
     "return 500 INTERNAL_SERVER_ERROR when an error is returned from the connector" in {
-      when(mockEmailVerificationConnector.getEmailVerificationLight(eqTo(credId))(any()))
+      when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
         .thenReturn(
           Future.failed(InternalServerException("Unexpected response for email verification list"))
         )
