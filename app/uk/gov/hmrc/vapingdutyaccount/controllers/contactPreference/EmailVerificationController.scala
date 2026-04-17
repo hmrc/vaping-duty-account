@@ -39,7 +39,7 @@ class EmailVerificationController @Inject() (
   def getEmailVerification(credId: CredentialId): Action[AnyContent] = authorise.async { implicit request =>
     emailVerificationConnector.getEmailVerificationLight(credId)
       .map(successResponse => Ok(Json.toJson(successResponse)))
-      .recover(errorResponse => InternalServerError(s"Error: ${errorResponse.getMessage}"))
+      .recover(errorResponse => InternalServerError(errorResponse.getMessage))
   }
 
 }

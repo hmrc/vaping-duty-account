@@ -53,34 +53,7 @@ class EmailVerificationConnector @Inject()(
       httpClient
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
         .execute[Either[UpstreamErrorResponse, HttpResponse]]
-        .map {
-          case Right(response) =>
-            Try {
-              response.json
-                .as[GetVerificationStatusResponse]
-            } match {
-              case Success(response) =>
-                Right(response)
-              case Failure(_)        =>
-                logger.warn(s"Unable to parse email records successful response for credId $credId")
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse email records successful response"))
-            }
-          case Left(error)     =>
-            error.statusCode match {
-              case NOT_FOUND   =>
-                Right(GetVerificationStatusResponse(emails = List.empty))
-              case BAD_REQUEST =>
-                logger.warn(
-                  s"Invalid request for email verification list for credId $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
-              case _           =>
-                logger.warn(
-                  s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list"))
-            }
-        }
+        .map(response =>  emailVerificationParser(credId, response))
         .recoverWith { case _: Exception =>
           logger.warn(s"An exception was returned while trying to fetch the email verification list for credId $credId")
           Future.successful(
@@ -90,4 +63,34 @@ class EmailVerificationConnector @Inject()(
           )
         }
 
+  private def emailVerificationParser(credId: CredentialId, response: Either[UpstreamErrorResponse, HttpResponse]) = {
+    response.match {
+      case Right(response) =>
+        Try {
+          response.json
+            .as[GetVerificationStatusResponse]
+        } match {
+          case Success(response) =>
+            Right(response)
+          case Failure(_) =>
+            logger.warn(s"Unable to parse email records successful response for credId $credId")
+            Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse email records successful response"))
+        }
+      case Left(error) =>
+        error.statusCode match {
+          case NOT_FOUND =>
+            Right(GetVerificationStatusResponse(emails = List.empty))
+          case BAD_REQUEST =>
+            logger.warn(
+              s"Invalid request for email verification list for credId $credId. status: ${error.statusCode}"
+            )
+            Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
+          case _ =>
+            logger.warn(
+              s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}"
+            )
+            Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list"))
+        }
+    }
+  }
 }
