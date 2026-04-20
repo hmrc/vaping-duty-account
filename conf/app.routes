@@ -1,10 +1,11 @@
 # microservice specific routes
 
 
-POST         /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.createUserAnswers()
-PUT          /user-answers                       uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.set()
-GET          /user-answers/:vpdId                uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.getUserAnswers(vpdId: VpdId)
-DELETE       /user-answers/clear/:internalId     uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.clear(internalId: InternalId)
+POST         /user-answers                                  uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.createUserAnswers()
+PUT          /user-answers                                  uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.set()
+GET          /user-answers/:vpdId                           uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.getUserAnswers(vpdId: VpdId)
+DELETE       /user-answers/clear/:internalId                uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.clear(internalId: InternalId)
+POST         /user-answers/keep-alive/:internalId           uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.keepAlive(internalId: InternalId)
 
 GET          /get-email-verification/:credId     uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.EmailVerificationController.getEmailVerification(credId: CredentialId)
 
