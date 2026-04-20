@@ -45,7 +45,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if the data retrieved cannot be parsed" in new SetUp {
         stubGet(url, OK, "blah")
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Unable to parse email records successful response")
+          assertExceptionMessage(result, "Failed to get email verification data")
           verifyGet(url)
         }
       }
@@ -53,7 +53,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if BAD_REQUEST is returned" in new SetUp {
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Error: Unexpected response for email verification list")
+          assertExceptionMessage(result, "Failed to get email verification data")
           verifyGet(url)
         }
       }
@@ -61,7 +61,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if an error other than BAD_REQUEST or NOT_FOUND is returned" in new SetUp {
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Error: Unexpected response for email verification list")
+          assertExceptionMessage(result, "Failed to get email verification data")
           verifyGet(url)
         }
       }
@@ -69,7 +69,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if an exception is thrown when fetching email verification statuses" in new SetUp {
         stubGetFault(url)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Error: Exception returned while trying to fetch email verification list")
+          assertExceptionMessage(result, "Failed to get email verification data")
           verifyGet(url)
         }
       }

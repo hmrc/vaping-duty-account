@@ -43,7 +43,7 @@ class EmailVerificationConnector @Inject()(
         Future.successful(successResponse)
 
       case Left(errorResponse: ErrorResponse) =>
-        Future.failed(InternalServerException(s"Error: ${errorResponse.message}"))
+        Future.failed(InternalServerException("Failed to get email verification data"))
     }
   }
 
