@@ -54,12 +54,10 @@ class EmailVerificationConnector @Inject()(
         .get(url"${config.getVerifiedEmailsUrl(credId)}")
         .execute[Either[UpstreamErrorResponse, HttpResponse]]
         .map(response =>  emailVerificationParser(credId, response))
-        .recoverWith { case _: Exception =>
+        .recover { case _: Exception =>
           logger.warn(s"An exception was returned while trying to fetch the email verification list for credId $credId")
-          Future.successful(
-            Left(
-              ErrorResponse(INTERNAL_SERVER_ERROR, "Exception returned while trying to fetch email verification list")
-            )
+          Left(
+            ErrorResponse(INTERNAL_SERVER_ERROR, "Exception returned while trying to fetch email verification list")
           )
         }
 
