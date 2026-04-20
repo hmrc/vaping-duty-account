@@ -18,98 +18,48 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
+import play.api.http.Status.*
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status}
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmittedResponse
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import scala.concurrent.Future
 
 class SubmitPreferencesControllerSpec extends SpecBase {
-  val mockSubmitPreferencesConnector: SubmitPreferencesConnector = mock[SubmitPreferencesConnector]
-  val errorHandler: ErrorResponseHandler = ErrorResponseHandler()
+
+  val mockConnector: SubmitPreferencesConnector = mock[SubmitPreferencesConnector]
 
   val controller = new SubmitPreferencesController(
     cc,
-    mockSubmitPreferencesConnector,
+    mockConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction,
-    errorHandler
+    fakeCheckVpdIdAction
   )
 
   "submitContactPreferences must" - {
-    "return 200 OK and the submission response when successful" in {
-      when(
-        mockSubmitPreferencesConnector
-          .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Right(testSubmissionResponse)))
+    "return 200 OK when the connector successfully submits preferences" in {
+      when(mockConnector.submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(testSubmissionResponse))
 
-      val result: Future[Result] =
-        controller.submitContactPreferences(vpdId)(
-          fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail))
-        )
+      val result = controller.submitContactPreferences(vpdId)(fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail)))
 
       status(result)        mustBe OK
       contentAsJson(result) mustBe Json.toJson(testSubmissionResponse)
     }
 
-    "return 422 UNPROCESSABLE_ENTITY when the submission response could not be parsed" in {
-      when(
-        mockSubmitPreferencesConnector
-          .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.invalidJson)))
+    "return 500 INTERNAL_SERVER_ERROR when the connector fails" in {
+      val errorMessage = "Failed to submit contact preferences"
+      when(mockConnector.submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any()))
+        .thenReturn(Future.failed(InternalServerException(errorMessage)))
 
-      val result: Future[Result] =
-        controller.submitContactPreferences(vpdId)(
-          fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail))
-        )
+      val result = controller.submitContactPreferences(vpdId)(fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail)))
 
-      status(result) mustBe UNPROCESSABLE_ENTITY
-    }
-
-    "return 400 BAD_REQUEST when there is a BAD_REQUEST" in {
-      when(
-        mockSubmitPreferencesConnector
-          .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.badRequest)))
-
-      val result: Future[Result] =
-        controller.submitContactPreferences(vpdId)(
-          fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail))
-        )
-
-      status(result) mustBe BAD_REQUEST
-    }
-
-    "return 404 NOT_FOUND when not found" in {
-      when(
-        mockSubmitPreferencesConnector
-          .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.entityNotFound)))
-
-      val result: Future[Result] =
-        controller.submitContactPreferences(vpdId)(
-          fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail))
-        )
-
-      status(result) mustBe NOT_FOUND
-    }
-
-    "return 500 INTERNAL_SERVER_ERROR when there is an unexpected response" in {
-      when(
-        mockSubmitPreferencesConnector
-          .submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.unexpectedResponse)))
-
-      val result: Future[Result] =
-        controller.submitContactPreferences(vpdId)(
-          fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail))
-        )
-
-      status(result) mustBe INTERNAL_SERVER_ERROR
+      status(result)          mustBe INTERNAL_SERVER_ERROR
+      contentAsString(result) mustBe errorMessage
     }
   }
 }

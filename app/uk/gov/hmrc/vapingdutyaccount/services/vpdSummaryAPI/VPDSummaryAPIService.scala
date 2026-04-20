@@ -35,7 +35,7 @@ class VPDSummaryAPIService @Inject()(
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     subscriptionConnector
-      .getSubscriptionContactPreferencesLight(vpdId)
+      .getSubscriptionContactPreferences(vpdId)
       .map(createVPDSummary(vpdId, _))
   }
 

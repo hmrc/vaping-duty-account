@@ -40,15 +40,15 @@ class EmailVerificationConnector @Inject()(
     httpClient
       .get(url"${config.getVerifiedEmailsUrl(credId)}")
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
-      .flatMap((response: Either[UpstreamErrorResponse, HttpResponse]) => emailVerificationParser(credId, response))
+      .flatMap(response => emailVerificationParser(response))
       .recoverWith { case _: Exception =>
-        logger.warn(s"An exception was returned while trying to fetch the email verification list for credId $credId")
+        logger.warn("An exception was returned while trying to fetch the email verification data")
         Future.failed(InternalServerException("Failed to get email verification data"))
       }
   }
 
-  private def emailVerificationParser(credId: CredentialId, response: Either[UpstreamErrorResponse, HttpResponse]) = {
-    response.match {
+  private def emailVerificationParser(response: Either[UpstreamErrorResponse, HttpResponse]) = {
+    response match {
       case Right(response) =>
         Try {
           response.json
@@ -57,7 +57,7 @@ class EmailVerificationConnector @Inject()(
           case Success(response) =>
             Future.successful(response)
           case Failure(_) =>
-            logger.warn(s"Unable to parse email records successful response for credId $credId")
+            logger.warn("Unable to parse email records successful response for credId")
             Future.failed(InternalServerException("Failed to get email verification data"))
         }
       case Left(error) =>
@@ -65,7 +65,7 @@ class EmailVerificationConnector @Inject()(
           case NOT_FOUND =>
             Future.successful(GetVerificationStatusResponse(emails = List.empty))
           case _ =>
-            logger.warn(s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}")
+            logger.warn(s"Unexpected response for email verification list. status: ${error.statusCode}")
             Future.failed(InternalServerException("Failed to get email verification data"))
         }
     }

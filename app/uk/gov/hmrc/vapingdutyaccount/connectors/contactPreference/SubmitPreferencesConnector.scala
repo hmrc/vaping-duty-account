@@ -16,18 +16,13 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import org.apache.pekko.actor.{ActorSystem, Scheduler}
-import org.apache.pekko.pattern.retry
 import play.api.Logging
-import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReadsInstances, HttpResponse, InternalServerException, StringContextOps}
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
-import uk.gov.hmrc.vapingdutyaccount.config.{AppConfig, CircuitBreakerProvider}
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -36,70 +31,43 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class SubmitPreferencesConnector @Inject() (
-                                             config: AppConfig,
-                                             headers: HIPHeaders,
-                                             circuitBreakerProvider: CircuitBreakerProvider,
-                                             implicit val system: ActorSystem,
-                                             implicit val httpClient: HttpClientV2
-                                           )(implicit ec: ExecutionContext)
-  extends HttpReadsInstances
+  config: AppConfig,
+  headers: HIPHeaders,
+  implicit val httpClient: HttpClientV2
+)(implicit ec: ExecutionContext)
+    extends HttpReadsInstances
     with Logging {
 
-  implicit val scheduler: Scheduler = system.scheduler
-
   def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                              (implicit hc: HeaderCarrier):
-  Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] =
-      retry(
-        () => submitCall(contactPreferenceSubmission, vpdId),
-        attempts = config.retryAttemptsPost,
-        delay = config.retryAttemptsDelay
-      ).recoverWith { _ =>
-        Future.successful(Left(ErrorCodes.unexpectedResponse))
+                              (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] =
+    httpClient
+      .put(url"${config.submitPreferencesUrl(vpdId)}")
+      .setHeader(headers.submissionHeaders(): _*)
+      .withBody(Json.toJson(contactPreferenceSubmission))
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .flatMap(response => submitPreferencesParser(response))
+      .recoverWith { case _: Exception =>
+        logger.warn("An exception was returned while trying to submit contact preferences")
+        Future.failed(InternalServerException("Failed to submit contact preferences"))
       }
 
-  private def submitCall(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
-                        (implicit hc: HeaderCarrier):
-  Future[Either[ErrorResponse, PaperlessPreferenceSubmittedResponse]] = {
-
-    circuitBreakerProvider.get().withCircuitBreaker {
-      httpClient
-        .put(url"${config.submitPreferencesUrl(vpdId)}")
-        .setHeader(headers.submissionHeaders(): _*)
-        .withBody(Json.toJson(contactPreferenceSubmission))
-        .execute[HttpResponse]
-        .flatMap{ parseResponse(_, vpdId) }
+  private def submitPreferencesParser(response: Either[UpstreamErrorResponse, HttpResponse]): Future[PaperlessPreferenceSubmittedResponse] = {
+    response match {
+      case Right(response) =>
+          Try{
+            response.json.
+              as[PaperlessPreferenceSubmittedSuccess]
+          } match {
+            case Success(submissionResponse) =>
+              Future.successful(submissionResponse.success)
+            case Failure(_) =>
+              logger.warn("Parsing failed for submission response")
+              Future.failed(InternalServerException("Failed to submit contact preferences"))
+          }
+      case Left(error) =>
+            logger.warn(s"Unexpected response from contact preference submission API. Status: ${error.statusCode}")
+            Future.failed(InternalServerException("Failed to submit contact preferences"))
     }
   }
 
-  private def parseResponse(response: HttpResponse, vpdId: VpdId) = {
-      response match {
-        case response if response.status == OK                   =>
-          tryParse(vpdId, response)
-        case response if response.status == BAD_REQUEST          =>
-          logger.warn(s"Bad request returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.badRequest))
-        case response if response.status == NOT_FOUND            =>
-          logger.warn(s"Not found returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.entityNotFound))
-        case response if response.status == UNPROCESSABLE_ENTITY =>
-          logger.warn(s"Unprocessable entity returned for contact preference submission for vpdId $vpdId")
-          Future.successful(Left(ErrorCodes.invalidJson))
-        case response =>
-          logger.warn(
-            s"Received unexpected response from contact preference submission API (vpdId $vpdId). Status: ${response.status}"
-          )
-          Future.failed(new InternalServerException(response.body))
-    }
-  }
-
-  private def tryParse(vpdId: VpdId, response: HttpResponse) = {
-    Try(response.json.as[PaperlessPreferenceSubmittedSuccess]) match {
-      case Success(submissionResponse) =>
-        Future.successful(Right(submissionResponse.success))
-      case Failure(_) =>
-        logger.warn(s"Parsing failed for submission response for vpdId $vpdId")
-        Future.successful(Left(ErrorCodes.unexpectedResponse))
-    }
-  }
 }

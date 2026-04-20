@@ -24,24 +24,20 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
 class GetPreferencesController @Inject()(
-                                          cc: ControllerComponents,
-                                          connector: SubscriptionConnector,
-                                          authorise: AuthorisedAction,
-                                          checkVpdId: CheckVpdIdAction,
-                                          errorHandler: ErrorResponseHandler
-                                        )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
+  cc: ControllerComponents,
+  connector: SubscriptionConnector,
+  authorise: AuthorisedAction,
+  checkVpdId: CheckVpdIdAction
+)(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
   def getContactPreferences(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
     implicit request =>
       connector.getSubscriptionContactPreferences(vpdId)
-        .map(_.fold(
-          e => errorHandler.toResult(e),
-          response => Ok(Json.toJson(response))
-        ))
+        .map(successResponse => Ok(Json.toJson(successResponse)))
+        .recover(errorResponse => InternalServerError(errorResponse.getMessage))
   }
 }

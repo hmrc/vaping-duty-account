@@ -25,30 +25,25 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferen
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.PaperlessPreferenceSubmission
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.ExecutionContext
 
-class SubmitPreferencesController @Inject() (
-  cc: ControllerComponents,
-  submitPreferencesConnector: SubmitPreferencesConnector,
-  authorise: AuthorisedAction,
-  checkVpdId: CheckVpdIdAction,
-  errorHandler: ErrorResponseHandler
-)(implicit ec: ExecutionContext)
-    extends BackendController(cc)
+class SubmitPreferencesController @Inject()(
+                                             cc: ControllerComponents,
+                                             submitPreferencesConnector: SubmitPreferencesConnector,
+                                             authorise: AuthorisedAction,
+                                             checkVpdId: CheckVpdIdAction
+                                           )(implicit ec: ExecutionContext)
+  extends BackendController(cc)
     with Logging {
 
   def submitContactPreferences(vpdId: VpdId): Action[JsValue] =
     (authorise(parse.json) andThen checkVpdId(vpdId)).async { implicit request =>
       withJsonBody[PaperlessPreferenceSubmission] { contactPreferenceSubmission =>
-
         submitPreferencesConnector
           .submitContactPreferences(contactPreferenceSubmission, vpdId)
-          .map(_.fold(
-            e => errorHandler.toResult(e),
-            submissionResponse => Ok(Json.toJson(submissionResponse))
-          ))
+          .map(successResponse => Ok(Json.toJson(successResponse)))
+          .recover(errorResponse => InternalServerError(errorResponse.getMessage))
       }
     }
 }

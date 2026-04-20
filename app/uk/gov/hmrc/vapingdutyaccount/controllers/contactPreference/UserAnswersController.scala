@@ -17,13 +17,10 @@
 package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import com.google.inject.Inject
-import org.apache.pekko.util.ByteString
 import play.api.Logging
-import play.api.http.HttpEntity
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.{AuthorisedAction, CheckSignedInAction, CheckVpdIdAction}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{DecryptedUA, UserAnswers}
@@ -32,7 +29,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.UserDetails
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
 
 import java.time.Clock
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 class UserAnswersController @Inject()(
                                        cc: ControllerComponents,
@@ -44,6 +41,37 @@ class UserAnswersController @Inject()(
                                        clock: Clock
                                       )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
 
+//  def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
+//    withJsonBody[UserDetails] { userDetails =>
+//      val vpdId = userDetails.getVpdId
+//
+//      checkVpdId(vpdId).invokeBlock[JsValue](
+//        request,
+//        { implicit request =>
+//          val subscriptionContactPreferences = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+//          subscriptionContactPreferences.flatMap(
+//            _.fold(
+//            err => {
+//              logger.warn(
+//                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString} - status ${err.statusCode}"
+//              )
+//              Future.successful(error(err))
+//            },
+//            contactPreferences => {
+//              val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
+//                userDetails = userDetails,
+//                contactPreferences = contactPreferences,
+//                clock = clock
+//              )
+//              userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
+//            }
+//          )
+//          )
+//        }
+//      )
+//    }
+//  }
+
   def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[UserDetails] { userDetails =>
       val vpdId = userDetails.getVpdId
@@ -51,16 +79,8 @@ class UserAnswersController @Inject()(
       checkVpdId(vpdId).invokeBlock[JsValue](
         request,
         { implicit request =>
-          val subscriptionContactPreferences = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-          subscriptionContactPreferences.flatMap(
-            _.fold(
-            err => {
-              logger.warn(
-                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString} - status ${err.statusCode}"
-              )
-              Future.successful(error(err))
-            },
-            contactPreferences => {
+          subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+            .flatMap { contactPreferences =>
               val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
                 userDetails = userDetails,
                 contactPreferences = contactPreferences,
@@ -68,8 +88,12 @@ class UserAnswersController @Inject()(
               )
               userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
             }
-          )
-          )
+            .recover { errorResponse =>
+              logger.warn(
+                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString} - ${errorResponse.getMessage}"
+              )
+              InternalServerError(errorResponse.getMessage)
+            }
         }
       )
     }
@@ -97,11 +121,6 @@ class UserAnswersController @Inject()(
         )
       }
     }
-
-  def error(errorResponse: ErrorResponse): Result = Result(
-    header = ResponseHeader(errorResponse.statusCode),
-    body = HttpEntity.Strict(ByteString(Json.toBytes(Json.toJson(errorResponse))), Some("application/json"))
-  )
 
   def clear(internalId: InternalId): Action[AnyContent] = checkSignedInAction.async {
     userAnswersRepository.clearUserAnswersById(internalId).map(_ => Results.NoContent)
