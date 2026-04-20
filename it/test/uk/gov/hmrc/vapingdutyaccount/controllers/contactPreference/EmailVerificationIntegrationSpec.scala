@@ -75,7 +75,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Invalid request for email verification list"
+      contentAsString(response) mustBe "Error: Unexpected response for email verification list"
 
       verifyGet(url)
     }

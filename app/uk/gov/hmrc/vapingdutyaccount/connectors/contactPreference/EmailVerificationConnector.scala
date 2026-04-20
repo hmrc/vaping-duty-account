@@ -80,11 +80,6 @@ class EmailVerificationConnector @Inject()(
         error.statusCode match {
           case NOT_FOUND =>
             Right(GetVerificationStatusResponse(emails = List.empty))
-          case BAD_REQUEST =>
-            logger.warn(
-              s"Invalid request for email verification list for credId $credId. status: ${error.statusCode}"
-            )
-            Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
           case _ =>
             logger.warn(
               s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}"

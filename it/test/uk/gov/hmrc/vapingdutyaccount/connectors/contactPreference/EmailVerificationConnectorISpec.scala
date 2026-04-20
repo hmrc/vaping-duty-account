@@ -53,7 +53,7 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if BAD_REQUEST is returned" in new SetUp {
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Error: Invalid request for email verification list")
+          assertExceptionMessage(result, "Error: Unexpected response for email verification list")
           verifyGet(url)
         }
       }
