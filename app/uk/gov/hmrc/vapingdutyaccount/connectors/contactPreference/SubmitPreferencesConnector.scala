@@ -55,8 +55,7 @@ class SubmitPreferencesConnector @Inject() (
     response match {
       case Right(response) =>
           Try{
-            response.json.
-              as[PaperlessPreferenceSubmittedSuccess]
+            response.json.as[PaperlessPreferenceSubmittedSuccess]
           } match {
             case Success(submissionResponse) =>
               Future.successful(submissionResponse.success)

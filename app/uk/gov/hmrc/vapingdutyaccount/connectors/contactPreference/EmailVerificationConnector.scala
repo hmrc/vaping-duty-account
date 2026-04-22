@@ -51,8 +51,7 @@ class EmailVerificationConnector @Inject()(
     response match {
       case Right(response) =>
         Try {
-          response.json
-            .as[GetVerificationStatusResponse]
+          response.json.as[GetVerificationStatusResponse]
         } match {
           case Success(response) =>
             Future.successful(response)

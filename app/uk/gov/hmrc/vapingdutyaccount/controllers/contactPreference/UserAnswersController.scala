@@ -40,38 +40,7 @@ class UserAnswersController @Inject()(
                                        checkSignedInAction: CheckSignedInAction,
                                        clock: Clock
                                       )(implicit ec: ExecutionContext) extends BackendController(cc) with Logging {
-
-//  def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
-//    withJsonBody[UserDetails] { userDetails =>
-//      val vpdId = userDetails.getVpdId
-//
-//      checkVpdId(vpdId).invokeBlock[JsValue](
-//        request,
-//        { implicit request =>
-//          val subscriptionContactPreferences = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-//          subscriptionContactPreferences.flatMap(
-//            _.fold(
-//            err => {
-//              logger.warn(
-//                s"[UserAnswersController] [createUserAnswers] Unable to get existing contact preferences for ${vpdId.toString} - status ${err.statusCode}"
-//              )
-//              Future.successful(error(err))
-//            },
-//            contactPreferences => {
-//              val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
-//                userDetails = userDetails,
-//                contactPreferences = contactPreferences,
-//                clock = clock
-//              )
-//              userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))
-//            }
-//          )
-//          )
-//        }
-//      )
-//    }
-//  }
-
+  
   def createUserAnswers(): Action[JsValue] = authorise(parse.json).async { implicit request =>
     withJsonBody[UserDetails] { userDetails =>
       val vpdId = userDetails.getVpdId
