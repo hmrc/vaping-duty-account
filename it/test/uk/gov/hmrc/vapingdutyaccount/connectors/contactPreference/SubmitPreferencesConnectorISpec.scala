@@ -17,9 +17,9 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
@@ -34,75 +34,94 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           Json.toJson(testSubmissionSuccess).toString()
         )
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
-          result mustBe Right(testSubmissionResponse)
+          result mustBe testSubmissionResponse
           verifyPut(submitReturnUrl)
         }
       }
 
-      "return an UnexpectedResponse error if the call returns an invalid response json" in new SetUp {
+      "fail with InternalServerException if the call returns an invalid response json" in new SetUp {
         stubPut(submitReturnUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), "invalid")
-        whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitReturnUrl)
         }
       }
 
-      "return a BadRequest error without retry if the call returns a 400 response" in new SetUp {
+      "fail with InternalServerException if the call returns a 400 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           BAD_REQUEST,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          Json.toJson(badRequest).toString()
+          ""
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(ErrorCodes.badRequest)
-            verifyPutWithoutRetry(submitReturnUrl)
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return a NotFound error without retry if the call returns a 404 response" in new SetUp {
+      "fail with InternalServerException if the call returns a 404 response" in new SetUp {
         stubPut(submitReturnUrl, NOT_FOUND, Json.toJson(contactPreferenceSubmissionEmail).toString(), "")
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(ErrorCodes.entityNotFound)
-            verifyPutWithoutRetry(submitReturnUrl)
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return an UnprocessableEntity error without retry if the call returns a 422 response" in new SetUp {
+      "fail with InternalServerException if the call returns a 422 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          Json.toJson(unprocessable).toString()
+          ""
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(ErrorCodes.invalidJson)
-            verifyPutWithoutRetry(submitReturnUrl)
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
         }
       }
 
-      "return an UnexpectedResponse error with retry if the call returns a 500 response" in new SetUp {
+      "fail with InternalServerException if the call returns a 500 response" in new SetUp {
         stubPut(
           submitReturnUrl,
           INTERNAL_SERVER_ERROR,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          Json.toJson(internalServerError).toString()
+          ""
         )
-        whenReady(connectorWithRetry.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) {
-          result =>
-            result mustBe Left(ErrorCodes.unexpectedResponse)
-            verifyPutWithRetry(submitReturnUrl)
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
         }
       }
     }
   }
 
+  private def assertExceptionMessage(exception: Throwable, expectedMessage: String) = {
+    exception match {
+      case ex: InternalServerException =>
+        ex.getMessage must include(expectedMessage)
+      case _ =>
+        fail(s"Expected an InternalServerException but got ${exception.getClass.getSimpleName}")
+    }
+  }
+
   abstract class SetUp extends ConnectorFixture {
-    val connector          = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
-    val connectorWithRetry = appWithHttpClientV2WithRetry.injector.instanceOf[SubmitPreferencesConnector]
-    val submitReturnUrl    = config.submitPreferencesUrl(vpdId)
+    val connector       = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
+    val submitReturnUrl = config.submitPreferencesUrl(vpdId)
   }
 }

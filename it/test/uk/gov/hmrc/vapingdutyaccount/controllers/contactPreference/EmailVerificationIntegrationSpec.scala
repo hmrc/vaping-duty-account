@@ -61,7 +61,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Unable to parse email records successful response"
+      contentAsString(response) mustBe "Failed to get email verification data"
 
       verifyGet(url)
     }
@@ -75,7 +75,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Invalid request for email verification list"
+      contentAsString(response) mustBe "Failed to get email verification data"
 
       verifyGet(url)
     }
@@ -89,7 +89,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Error: Unexpected response for email verification list"
+      contentAsString(response) mustBe "Failed to get email verification data"
 
       verifyGet(url)
     }

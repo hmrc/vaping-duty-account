@@ -18,10 +18,12 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
+import play.api.http.Status.*
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status}
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.repositories.{UpdateFailure, UpdateSuccess, UserAnswersRepository}
@@ -94,7 +96,7 @@ class UserAnswersControllerSpec extends SpecBase {
     "return 201 CREATED with the user answers that was created" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(Right(contactPreferencesEmailSelected)))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result: Future[Result] =
         controller.createUserAnswers()(
@@ -105,28 +107,18 @@ class UserAnswersControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(decryptedUA)
     }
 
-    Seq(
-      ("NotFound", ErrorResponse(NOT_FOUND, "Subscription summary not found")),
-      ("BadRequest", ErrorResponse(BAD_REQUEST, "Bad request")),
-      (
-        "InternalServerError (unable to parse)",
-        ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success")
-      ),
-      ("InternalServerError (other error)", ErrorResponse(INTERNAL_SERVER_ERROR, "An error occurred"))
-    ).foreach { case (errorName, errorResponse) =>
-      s"return status ${errorResponse.statusCode} if the subscription connector returns the error $errorName when getting the subscription summary" in {
-        when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(Left(errorResponse)))
+    "return 500 INTERNAL_SERVER_ERROR if the subscription connector fails" in {
+      val errorMessage = "Failed to get subscription contact preferences"
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.failed(InternalServerException(errorMessage)))
 
-        val result: Future[Result] =
-          controller.createUserAnswers()(
-            fakeRequestWithJsonBody(Json.toJson(userDetails))
-          )
+      val result: Future[Result] =
+        controller.createUserAnswers()(
+          fakeRequestWithJsonBody(Json.toJson(userDetails))
+        )
 
-        status(result)        mustBe errorResponse.statusCode
-        contentAsJson(result) mustBe Json.toJson(errorResponse)
-      }
+      status(result)          mustBe INTERNAL_SERVER_ERROR
+      contentAsString(result) mustBe errorMessage
     }
   }
 

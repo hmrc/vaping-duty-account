@@ -17,10 +17,9 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.Logging
-import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, NOT_FOUND}
+import play.api.http.Status.NOT_FOUND
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.CredentialId
@@ -37,46 +36,38 @@ class EmailVerificationConnector @Inject()(
     with Logging {
 
   def getEmailVerification(credId: CredentialId)
-                          (implicit hc: HeaderCarrier): Future[Either[ErrorResponse, GetVerificationStatusResponse]] =
-    
-      httpClient
-        .get(url"${config.getVerifiedEmailsUrl(credId)}")
-        .execute[Either[UpstreamErrorResponse, HttpResponse]]
-        .map {
-          case Right(response) =>
-            Try {
-              response.json
-                .as[GetVerificationStatusResponse]
-            } match {
-              case Success(response) =>
-                Right(response)
-              case Failure(_)        =>
-                logger.warn(s"Unable to parse email records successful response for credId $credId")
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse email records successful response"))
-            }
-          case Left(error)     =>
-            error.statusCode match {
-              case NOT_FOUND   =>
-                Right(GetVerificationStatusResponse(emails = List.empty))
-              case BAD_REQUEST =>
-                logger.warn(
-                  s"Invalid request for email verification list for credId $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Invalid request for email verification list"))
-              case _           =>
-                logger.warn(
-                  s"Unexpected response for email verification list for credId: $credId. status: ${error.statusCode}"
-                )
-                Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list"))
-            }
+                          (implicit hc: HeaderCarrier): Future[GetVerificationStatusResponse] = {
+    httpClient
+      .get(url"${config.getVerifiedEmailsUrl(credId)}")
+      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .flatMap(response => emailVerificationParser(credId, response))
+      .recoverWith { case _: Exception =>
+        logger.warn("An exception was returned while trying to fetch the email verification data")
+        Future.failed(InternalServerException("Failed to get email verification data"))
+      }
+  }
+
+  private def emailVerificationParser(credId: CredentialId, response: Either[UpstreamErrorResponse, HttpResponse]) = {
+    response match {
+      case Right(response) =>
+        Try {
+          response.json.as[GetVerificationStatusResponse]
+        } match {
+          case Success(response) =>
+            Future.successful(response)
+          case Failure(_) =>
+            logger.warn(s"Unable to parse email records successful response for credId: $credId")
+            Future.failed(InternalServerException("Failed to get email verification data"))
         }
-        .recoverWith { case _: Exception =>
-          logger.warn(s"An exception was returned while trying to fetch the email verification list for credId $credId")
-          Future.successful(
-            Left(
-              ErrorResponse(INTERNAL_SERVER_ERROR, "Exception returned while trying to fetch email verification list")
-            )
-          )
+      case Left(error) =>
+        error.statusCode match {
+          case NOT_FOUND =>
+            Future.successful(GetVerificationStatusResponse(emails = List.empty))
+          case _ =>
+            logger.warn(s"Unexpected response for email verification list. status: ${error.statusCode}")
+            Future.failed(InternalServerException("Failed to get email verification data"))
         }
+    }
+  }
 
 }

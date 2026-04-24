@@ -17,11 +17,9 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
 
 class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
@@ -30,75 +28,81 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "successfully get subscription contact preferences" in new SetUp {
       stubGet(url, OK, Json.toJson(contactPreferencesEmailSelected).toString)
       whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Right(contactPreferencesEmailSelected)
+        result mustBe contactPreferencesEmailSelected
         verifyGet(url)
       }
     }
 
-    "return BAD_REQUEST if a bad request received with no retry" in new SetUp {
-      stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
-      whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(BAD_REQUEST, "Bad request"))
-        verifyGetWithoutRetry(url)
+    "fail with InternalServerException if a bad request received" in new SetUp {
+      stubGet(url, BAD_REQUEST, "")
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
     }
 
-    "return UNPROCESSABLE_ENTITY if a 422 is received with no retry" in new SetUp {
-      stubGet(url, UNPROCESSABLE_ENTITY, Json.toJson(unprocessable).toString)
-      whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(UNPROCESSABLE_ENTITY, "Unprocessable entity"))
-        verifyGetWithoutRetry(url)
+    "fail with InternalServerException if a 422 is received" in new SetUp {
+      stubGet(url, UNPROCESSABLE_ENTITY, "")
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
     }
 
-    "return NOT_FOUND if subscription summary data cannot be found with no retry" in new SetUp {
+    "fail with InternalServerException if subscription summary data cannot be found" in new SetUp {
       stubGet(url, NOT_FOUND, "")
-      whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-        result mustBe Left(ErrorResponse(NOT_FOUND, "Subscription summary not found"))
-        verifyGetWithoutRetry(url)
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
     }
 
-    "return INTERNAL_SERVER_ERROR" - {
-      "if the data retrieved cannot be parsed" in new SetUp {
-        stubGet(url, OK, "blah")
-        whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorResponse(INTERNAL_SERVER_ERROR, "Unable to parse subscription summary success"))
-          verifyGet(url)
-        }
+    "fail with InternalServerException if the data retrieved cannot be parsed" in new SetUp {
+      stubGet(url, OK, "blah")
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
+    }
 
-      "if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned" in new SetUp {
-        stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
-        whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
-          verifyGet(url)
-        }
+    "fail with InternalServerException if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned" in new SetUp {
+      stubGet(url, INTERNAL_SERVER_ERROR, "")
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
+    }
 
-      "if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned, the connector will invoke a retry" in new SetUp {
-        stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
-        whenReady(connectorWithRetry.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
-          verifyGetWithRetry(url)
-        }
-      }
-
-      "if an exception is thrown when fetching subscription summary" in new SetUp {
-        stubGetFault(url)
-        whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
-          result mustBe Left(ErrorCodes.unexpectedResponse)
-          verifyGet(url)
-        }
+    "fail with InternalServerException if an exception is thrown when fetching subscription summary" in new SetUp {
+      stubGetFault(url)
+      
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+      
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
       }
     }
   }
 
   class SetUp extends ConnectorFixture {
-    val headers                                   = new HIPHeaders(fakeUUIDGenerator, appConfig, clock)
-    val connector: SubscriptionConnector          = appWithHttpClientV2.injector.instanceOf[SubscriptionConnector]
-    val connectorWithRetry: SubscriptionConnector =
-      appWithHttpClientV2WithRetry.injector.instanceOf[SubscriptionConnector]
-    lazy val url: String                          = appConfig.getSubscriptionUrl(vpdId)
+    val headers                          = new HIPHeaders(fakeUUIDGenerator, appConfig, clock)
+    val connector: SubscriptionConnector = appWithHttpClientV2.injector.instanceOf[SubscriptionConnector]
+    lazy val url: String                 = appConfig.getSubscriptionUrl(vpdId)
   }
 }

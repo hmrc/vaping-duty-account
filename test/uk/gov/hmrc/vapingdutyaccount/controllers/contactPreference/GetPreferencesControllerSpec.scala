@@ -18,33 +18,29 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
+import play.api.http.Status.*
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.test.Helpers.{contentAsJson, contentAsString, defaultAwaitTimeout, status}
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.ErrorCodes
-import uk.gov.hmrc.vapingdutyaccount.utils.ErrorResponseHandler
 
 import scala.concurrent.Future
 
 class GetPreferencesControllerSpec extends SpecBase {
-  val mockSubmitPreferencesConnector: SubscriptionConnector = mock[SubscriptionConnector]
-  val errorHandler: ErrorResponseHandler = ErrorResponseHandler()
-  
+  val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
+
   val controller = new GetPreferencesController(
     cc,
-    mockSubmitPreferencesConnector,
+    mockSubscriptionConnector,
     fakeAuthorisedAction,
-    fakeCheckVpdIdAction,
-    errorHandler
+    fakeCheckVpdIdAction
   )
 
   "getContactPreferences must" - {
-    "return 200 OK and the response when successful" in {
-      when(
-        mockSubmitPreferencesConnector
-          .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Right(contactPreferencesEmailSelected)))
+    "return 200 OK and the contact preferences when successful" in {
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result = controller.getContactPreferences(vpdId)(fakeRequest)
 
@@ -52,52 +48,15 @@ class GetPreferencesControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(contactPreferencesEmailSelected)
     }
 
-    "return 422 UNPROCESSABLE_ENTITY when the response could not be parsed" in {
-      when(
-        mockSubmitPreferencesConnector
-          .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.invalidJson)))
+    "return 500 INTERNAL_SERVER_ERROR when the connector fails" in {
+      val errorMessage = "Failed to get subscription contact preferences"
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.failed(InternalServerException(errorMessage)))
 
-      val result: Future[Result] =
-        controller.getContactPreferences(vpdId)(fakeRequest)
+      val result = controller.getContactPreferences(vpdId)(fakeRequest)
 
-      status(result) mustBe UNPROCESSABLE_ENTITY
-    }
-
-    "return 400 BAD_REQUEST when there is a BAD_REQUEST" in {
-      when(
-        mockSubmitPreferencesConnector
-          .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.badRequest)))
-
-      val result: Future[Result] =
-        controller.getContactPreferences(vpdId)(fakeRequest)
-
-      status(result) mustBe BAD_REQUEST
-    }
-
-    "return 404 NOT_FOUND when not found" in {
-      when(
-        mockSubmitPreferencesConnector
-          .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.entityNotFound)))
-
-      val result: Future[Result] =
-        controller.getContactPreferences(vpdId)(fakeRequest)
-
-      status(result) mustBe NOT_FOUND
-    }
-
-    "return 500 INTERNAL_SERVER_ERROR when there is an unexpected response" in {
-      when(
-        mockSubmitPreferencesConnector
-          .getSubscriptionContactPreferences(eqTo(vpdId))(any())
-      ).thenReturn(Future.successful(Left(ErrorCodes.unexpectedResponse)))
-
-      val result: Future[Result] =
-        controller.getContactPreferences(vpdId)(fakeRequest)
-
-      status(result) mustBe INTERNAL_SERVER_ERROR
+      status(result)          mustBe INTERNAL_SERVER_ERROR
+      contentAsString(result) mustBe errorMessage
     }
   }
 }

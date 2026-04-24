@@ -43,7 +43,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
   "SummaryAPIService must " - {
     "must return correct URLs as part of VPDSummary" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
@@ -53,7 +53,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
     }
 
     "must return ContactMethod.Email when PaperlessPreference is true" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
@@ -62,7 +62,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
     }
 
     "must return ContactMethod.Post when PaperlessPreference is false" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
@@ -71,7 +71,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
     }
 
     "return APIErrors.InternalServerError when appropriate status code received from stub connector" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferencesLight(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("look I'm an internal server exception! fear me!")))
 
       val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)

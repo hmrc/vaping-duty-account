@@ -20,7 +20,7 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import play.api.libs.json.Json
 import play.api.mvc.Result
-import uk.gov.hmrc.play.bootstrap.http.ErrorResponse
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.EmailVerificationConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
@@ -39,7 +39,7 @@ class EmailVerificationControllerSpec extends SpecBase {
   "getEmailVerification must" - {
     "return 200 OK when GetVerificationStatusResponse is returned for the credId" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
-        .thenReturn(Future[Either[ErrorResponse, GetVerificationStatusResponse]](Right(getVerificationStatusResponse)))
+        .thenReturn(Future[GetVerificationStatusResponse](getVerificationStatusResponse))
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
 
@@ -50,9 +50,7 @@ class EmailVerificationControllerSpec extends SpecBase {
     "return 500 INTERNAL_SERVER_ERROR when an error is returned from the connector" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
         .thenReturn(
-          Future.successful(Left(
-            ErrorResponse(INTERNAL_SERVER_ERROR, "Unexpected response for email verification list")
-          ))
+          Future.failed(InternalServerException("Unexpected response for email verification list"))
         )
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
