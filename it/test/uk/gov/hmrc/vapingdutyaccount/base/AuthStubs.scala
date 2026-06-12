@@ -20,7 +20,7 @@ import org.scalatest.Suite
 import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.utils.helpers.WireMockHelper
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.{APIErrors, APIErrorFormat}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{APIErrors, APIErrorFormat}
 
 trait AuthStubs extends WireMockHelper {
   this: Suite =>

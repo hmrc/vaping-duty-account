@@ -17,7 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.{CurrentReturn, Returns}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CurrentReturn, Returns}
 
 import java.time.LocalDate
 import javax.inject.Singleton

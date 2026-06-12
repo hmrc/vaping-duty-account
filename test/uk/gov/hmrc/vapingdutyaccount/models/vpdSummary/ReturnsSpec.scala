@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers

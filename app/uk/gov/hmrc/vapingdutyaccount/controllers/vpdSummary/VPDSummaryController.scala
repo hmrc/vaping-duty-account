@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 
 import com.google.inject.Inject
 import play.api.Logging
@@ -29,16 +29,16 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
-import uk.gov.hmrc.vapingdutyaccount.services.VPDSummaryAPIService
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
+import uk.gov.hmrc.vapingdutyaccount.services.VPDSummaryService
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class VPDSummaryAPIController @Inject()(
-                                         config: AppConfig,
-                                         cc: ControllerComponents,
-                                         authorise: AuthorisedAction,
-                                         vpdSummaryAPIService: VPDSummaryAPIService
+class VPDSummaryController @Inject()(
+                                      config: AppConfig,
+                                      cc: ControllerComponents,
+                                      authorise: AuthorisedAction,
+                                      vpdSummaryService: VPDSummaryService
                                        )(implicit ec: ExecutionContext)
   extends BackendController(cc)
     with Logging {
@@ -47,11 +47,7 @@ class VPDSummaryAPIController @Inject()(
 
   def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
     if (config.vpdSummaryRESTAPIEnabled) {
-//      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-//        session = request.session,
-//        request = request.request
-//      )
-      vpdSummaryAPIService.getVPDSummary(vpdId)
+      vpdSummaryService.getVPDSummary(vpdId)
         .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
         .recover { case _ =>
           buildErrorResponse(request, APIErrors.InternalServerError)

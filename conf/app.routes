@@ -7,10 +7,10 @@ GET          /user-answers/:vpdId                           uk.gov.hmrc.vapingdu
 DELETE       /user-answers/clear/:internalId                uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.clear(internalId: InternalId)
 POST         /user-answers/keep-alive/:internalId           uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.UserAnswersController.keepAlive(internalId: InternalId)
 
-GET          /get-email-verification/:credId     uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.EmailVerificationController.getEmailVerification(credId: CredentialId)
+GET          /get-email-verification/:credId                uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.EmailVerificationController.getEmailVerification(credId: CredentialId)
 
-PUT          /submit-preferences/:vpdId          uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController.submitContactPreferences(vpdId: VpdId)
-GET          /get-preferences/:vpdId             uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.GetPreferencesController.getContactPreferences(vpdId: VpdId)
+PUT          /submit-preferences/:vpdId                     uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.SubmitPreferencesController.submitContactPreferences(vpdId: VpdId)
+GET          /get-preferences/:vpdId                        uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference.GetPreferencesController.getContactPreferences(vpdId: VpdId)
 
 # BTA API
-GET          /vpd/summary/:vpdId                 uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI.VPDSummaryAPIController.getVpdSummary(vpdId: VpdId)
+GET          /vpd/summary/:vpdId                            uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary.VPDSummaryController.getVpdSummary(vpdId: VpdId)

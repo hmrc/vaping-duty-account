@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
@@ -33,17 +33,17 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
-import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, VPDSummaryAPIService}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
+import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, VPDSummaryService}
 
 import scala.concurrent.Future
 
-class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
+class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val mockObligationsConnector: ObligationsConnector   = mock[ObligationsConnector]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
+  val mockVPDSummaryService: VPDSummaryService   = new VPDSummaryService(config, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
@@ -92,11 +92,11 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     body = AnyContentAsEmpty
   )
 
-  val controller: VPDSummaryAPIController = new VPDSummaryAPIController(
+  val controller: VPDSummaryController = new VPDSummaryController(
     config,
     cc,
     fakeAuthorisedAction,
-    mockVPDSummaryAPIService
+    mockVPDSummaryService
   )
   val badVpdId: String                    = "bad-invalid-vpdid"
 
@@ -127,13 +127,11 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
        |}
        |""".stripMargin)
 
-  /** This helper method will assert that the specified header is present on received responses
-    */
   private def assertHeaderIsPresentOn(result: Future[Result], header: String) = {
     assert(headers(result).get(header).get.isInstanceOf[String])
   }
 
-  "SummaryAPI must " - {
+  "VPDSummary must " - {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))

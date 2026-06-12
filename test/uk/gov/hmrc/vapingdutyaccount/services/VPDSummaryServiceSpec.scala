@@ -28,12 +28,12 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.LocalDate
 import scala.concurrent.Future
 
-class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
+class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
@@ -46,10 +46,10 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
   when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
-  val vpdSummaryAPIService: VPDSummaryAPIService =
-    new VPDSummaryAPIService(mockConfig, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
+  val vpdSummaryService: VPDSummaryService =
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
 
-  "VPDSummaryAPIService" - {
+  "VPDSummaryService" - {
     "getVPDSummary must" - {
       "return VPDSummary with no returns when obligations returns None" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
@@ -57,7 +57,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(None))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.returns mustBe None
         result.links.completeReturn mustBe None
@@ -83,7 +83,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe defined
         result.links.completeReturn.get.href must include("period=26AA")
@@ -108,7 +108,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdueObligation)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe defined
         result.links.completeReturn.get.href must include("period=25AL")
@@ -144,7 +144,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation, overdueObligation)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
@@ -180,7 +180,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdue1, overdue2)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
@@ -204,7 +204,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(completed)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
@@ -250,7 +250,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Some(ObligationsResponse(Seq(due, overdue, completed)))))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
@@ -262,7 +262,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(None))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.contactPreference mustBe ContactMethod.Email
       }
@@ -273,7 +273,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(None))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.contactPreference mustBe ContactMethod.Post
       }
@@ -284,7 +284,7 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(None))
 
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc)
 
         ScalaFutures.whenReady(result.failed) { e =>
           e shouldBe a[InternalServerException]

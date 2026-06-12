@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.*
+import play.api.libs.json.{JsObject, Json, Writes}
 
-final case class Identifier(vpdId: String)
+case class VPDSummary(
+    service: ServiceInfo,
+    identifiers: Identifier,
+    contactPreference: ContactMethod,
+    returns: Option[Returns] = None,
+    links: Links
+)
 
-object Identifier {
-  given Writes[Identifier] = Json.writes[Identifier]
+object VPDSummary {
+  given Writes[VPDSummary] = Json.writes[VPDSummary]
 }

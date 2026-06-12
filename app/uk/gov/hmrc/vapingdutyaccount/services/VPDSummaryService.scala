@@ -26,12 +26,12 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationsResponse
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.LocalDate
 import scala.concurrent.{ExecutionContext, Future}
 
-class VPDSummaryAPIService @Inject() (
+class VPDSummaryService @Inject()(
   config: AppConfig,
   subscriptionConnector: SubscriptionConnector,
   obligationsConnector: ObligationsConnector,

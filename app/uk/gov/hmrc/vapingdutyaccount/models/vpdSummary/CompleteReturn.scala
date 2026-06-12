@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import play.api.libs.json.{Json, Writes}
 
-final case class ViewReturns(
+final case class CompleteReturn(
   href: String,
   method: String
 )
 
-object ViewReturns {
-  given Writes[ViewReturns] = Json.writes[ViewReturns]
+object CompleteReturn {
+  given Writes[CompleteReturn] = Json.writes[CompleteReturn]
 }
