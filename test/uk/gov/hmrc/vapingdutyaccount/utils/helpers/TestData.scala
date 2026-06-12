@@ -21,6 +21,7 @@ import uk.gov.hmrc.crypto.Sensitive.SensitiveString
 import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
@@ -191,4 +192,39 @@ trait TestData extends ModelGenerators {
   val badRequest          = DownstreamErrorDetails("400", "You messed up", "id")
   val unprocessable       = DownstreamErrorDetails("422", "Unprocessable", "id")
   val internalServerError = DownstreamErrorDetails("500", "Computer says No!", "id")
+
+  val obligationDetails: ObligationDetails = ObligationDetails(
+    openOrFulfilledStatus = "O",
+    iCFromDate = LocalDate.of(2024, 1, 1),
+    iCToDate = LocalDate.of(2024, 3, 31),
+    iCDateReceived = None,
+    iCDueDate = LocalDate.of(2024, 4, 30),
+    periodKey = "24A1"
+  )
+
+  val obligationDetailsCompleted: ObligationDetails = ObligationDetails(
+    openOrFulfilledStatus = "F",
+    iCFromDate = LocalDate.of(2023, 10, 1),
+    iCToDate = LocalDate.of(2023, 12, 31),
+    iCDateReceived = Some(LocalDate.of(2024, 1, 15)),
+    iCDueDate = LocalDate.of(2024, 1, 31),
+    periodKey = "23A4"
+  )
+
+  val obligationItem: ObligationItem = ObligationItem(
+    identification = Some(Identification(
+      referenceType = "ZVPD",
+      referenceNumber = vpdId.toString,
+      incomeSourceType = Some("ZVPD")
+    )),
+    obligationDetails = obligationDetails
+  )
+
+  val obligationsResponse: ObligationsResponse = ObligationsResponse(
+    obligation = Seq(obligationItem)
+  )
+
+  val emptyObligationsResponse: ObligationsResponse = ObligationsResponse(
+    obligation = Seq.empty
+  )
 }

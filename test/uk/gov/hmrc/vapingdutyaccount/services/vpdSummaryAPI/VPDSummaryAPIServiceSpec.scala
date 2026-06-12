@@ -17,10 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito
 import org.mockito.Mockito.when
-import org.scalactic.Prettifier
-import org.scalactic.source.Position
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatestplus.mockito.MockitoSugar
@@ -29,57 +26,314 @@ import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
-  val config: AppConfig                                = mock[AppConfig]
+  val mockObligationsConnector: ObligationsConnector   = mock[ObligationsConnector]
+  val mockConfig: AppConfig                            = mock[AppConfig]
 
-  val vpdSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
+  // Configure mock config
+  when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
+  when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
-  "SummaryAPIService must " - {
-    "must return correct URLs as part of VPDSummary" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+  val vpdSummaryAPIService: VPDSummaryAPIService = 
+    new VPDSummaryAPIService(mockConfig, mockSubscriptionConnector, mockObligationsConnector)
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+  "VPDSummaryAPIService" - {
+    "getVPDSummary must" - {
+      "return VPDSummary with no returns when obligations returns None" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(None))
 
-      result.links.manageContactPreference.href mustEqual "/vaping-duty/contact-preferences/how-should-we-contact-you"
-      result.links.self.href                    mustEqual s"/vaping-duty-account/vpd/summary/$vpdId"
-    }
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-    "must return ContactMethod.Email when PaperlessPreference is true" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        result.returns mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.contactPreference mustBe ContactMethod.Email
+      }
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+      "return VPDSummary with no returns when obligations returns empty list" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq.empty))))
 
-      result.contactPreference mustBe ContactMethod.Email
-    }
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-    "must return ContactMethod.Post when PaperlessPreference is false" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        result.returns mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+      }
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+      "return VPDSummary with single due return and completeReturn link" in {
+        val dueObligation = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(1),
+            iCToDate = LocalDate.now(),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().plusDays(10),
+            periodKey = "26AA"
+          )
+        )
 
-      result.contactPreference mustBe ContactMethod.Post
-    }
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation)))))
 
-    "return APIErrors.InternalServerError when appropriate status code received from stub connector" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.failed(new InternalServerException("look I'm an internal server exception! fear me!")))
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-      val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 1
+        result.returns.get.overdueReturnsCount mustBe 0
+        result.returns.get.completedReturnsCount mustBe 0
+        result.returns.get.currentReturn mustBe defined
+        result.returns.get.currentReturn.get.periodKey mustBe "26AA"
+        
+        result.links.completeReturn mustBe defined
+        result.links.completeReturn.get.href must include("period=26AA")
+        result.links.viewReturns mustBe None
+      }
 
-      ScalaFutures.whenReady(result.failed) { e =>
-        e shouldBe a[InternalServerException]
+      "return VPDSummary with single overdue return and completeReturn link" in {
+        val overdueObligation = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(2),
+            iCToDate = LocalDate.now().minusMonths(1),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().minusDays(5),
+            periodKey = "25AL"
+          )
+        )
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdueObligation)))))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 0
+        result.returns.get.overdueReturnsCount mustBe 1
+        result.returns.get.completedReturnsCount mustBe 0
+        result.returns.get.currentReturn mustBe None
+        
+        result.links.completeReturn mustBe defined
+        result.links.completeReturn.get.href must include("period=25AL")
+        result.links.viewReturns mustBe None
+      }
+
+      "return VPDSummary with due and overdue returns and viewReturns link" in {
+        val dueObligation = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(1),
+            iCToDate = LocalDate.now(),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().plusDays(10),
+            periodKey = "26AA"
+          )
+        )
+        val overdueObligation = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(2),
+            iCToDate = LocalDate.now().minusMonths(1),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().minusDays(5),
+            periodKey = "25AL"
+          )
+        )
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation, overdueObligation)))))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 1
+        result.returns.get.overdueReturnsCount mustBe 1
+        result.returns.get.completedReturnsCount mustBe 0
+        
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe defined
+        result.links.viewReturns.get.href mustBe "/vaping-duty/view-your-returns"
+      }
+
+      "return VPDSummary with multiple overdue returns and viewReturns link" in {
+        val overdue1 = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(3),
+            iCToDate = LocalDate.now().minusMonths(2),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().minusDays(30),
+            periodKey = "25AK"
+          )
+        )
+        val overdue2 = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(2),
+            iCToDate = LocalDate.now().minusMonths(1),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().minusDays(5),
+            periodKey = "25AL"
+          )
+        )
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdue1, overdue2)))))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 0
+        result.returns.get.overdueReturnsCount mustBe 2
+        result.returns.get.completedReturnsCount mustBe 0
+        
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe defined
+      }
+
+      "return VPDSummary with completed returns only and viewReturns link" in {
+        val completed = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "F",
+            iCFromDate = LocalDate.now().minusMonths(2),
+            iCToDate = LocalDate.now().minusMonths(1),
+            iCDateReceived = Some(LocalDate.now().minusDays(10)),
+            iCDueDate = LocalDate.now().minusDays(5),
+            periodKey = "25AL"
+          )
+        )
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(completed)))))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 0
+        result.returns.get.overdueReturnsCount mustBe 0
+        result.returns.get.completedReturnsCount mustBe 1
+        
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe defined
+      }
+
+      "return VPDSummary with mixed returns and viewReturns link" in {
+        val due = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(1),
+            iCToDate = LocalDate.now(),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().plusDays(10),
+            periodKey = "26AA"
+          )
+        )
+        val overdue = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.now().minusMonths(3),
+            iCToDate = LocalDate.now().minusMonths(2),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.now().minusDays(30),
+            periodKey = "25AK"
+          )
+        )
+        val completed = ObligationItem(
+          identification = None,
+          obligationDetails = ObligationDetails(
+            openOrFulfilledStatus = "F",
+            iCFromDate = LocalDate.now().minusMonths(4),
+            iCToDate = LocalDate.now().minusMonths(3),
+            iCDateReceived = Some(LocalDate.now().minusDays(60)),
+            iCDueDate = LocalDate.now().minusDays(55),
+            periodKey = "25AJ"
+          )
+        )
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(due, overdue, completed)))))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe defined
+        result.returns.get.dueReturnsCount mustBe 1
+        result.returns.get.overdueReturnsCount mustBe 1
+        result.returns.get.completedReturnsCount mustBe 1
+        
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe defined
+      }
+
+      "return ContactMethod.Email when PaperlessPreference is true" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(None))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.contactPreference mustBe ContactMethod.Email
+      }
+
+      "return ContactMethod.Post when PaperlessPreference is false" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(None))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.contactPreference mustBe ContactMethod.Post
+      }
+
+      "return InternalServerError when subscription connector fails" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(None))
+
+        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc)
+
+        ScalaFutures.whenReady(result.failed) { e =>
+          e shouldBe a[InternalServerException]
+        }
       }
     }
   }
-
 }

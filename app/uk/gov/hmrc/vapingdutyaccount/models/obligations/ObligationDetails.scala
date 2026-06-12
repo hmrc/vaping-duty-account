@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.obligations
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, OFormat}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactMethod,
-    returns: Option[Returns] = None,
-    links: Links
+import java.time.LocalDate
+
+final case class ObligationDetails(
+  openOrFulfilledStatus: String,
+  iCFromDate: LocalDate,
+  iCToDate: LocalDate,
+  iCDateReceived: Option[LocalDate],
+  iCDueDate: LocalDate,
+  periodKey: String
 )
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object ObligationDetails {
+  implicit val format: OFormat[ObligationDetails] = Json.format[ObligationDetails]
 }

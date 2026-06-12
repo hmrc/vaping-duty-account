@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, OFormat, Writes}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactMethod,
-    returns: Option[Returns] = None,
-    links: Links
+import java.time.LocalDate
+
+final case class CurrentReturn(
+  periodKey: String,
+  dueDate: LocalDate
 )
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object CurrentReturn {
+  //given Writes[CurrentReturn] = Json.writes[CurrentReturn]
+  given format: OFormat[CurrentReturn] = Json.format[CurrentReturn]
 }

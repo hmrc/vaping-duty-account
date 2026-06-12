@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
 import com.google.inject.Inject
 import play.api.Logging
 import play.api.http.ContentTypes
+import play.api.i18n.Lang.logger
 import play.api.libs.json.*
 import play.api.mvc.*
 import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
@@ -45,22 +46,19 @@ class VPDSummaryAPIController @Inject()(
   given Writes[APIError] = APIErrorFormat
 
   def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
-    config.vpdSummaryRESTAPIEnabled match {
-      case false =>
-        logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
-        Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
-
-      case _     => 
-        given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
-          session = request.session,
-          request = request.request
-        )
-
-        vpdSummaryAPIService.getVPDSummary(vpdId)
-          .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
-          .recover { case _ =>
-            buildErrorResponse(request, APIErrors.InternalServerError)
-          }
+    if (config.vpdSummaryRESTAPIEnabled) {
+//      given HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(
+//        session = request.session,
+//        request = request.request
+//      )
+      vpdSummaryAPIService.getVPDSummary(vpdId)
+        .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
+        .recover { case _ =>
+          buildErrorResponse(request, APIErrors.InternalServerError)
+        }
+    } else {
+      logger.warn("[getVpdSummary] Returning 503 ServiceUnavailable because config key `bta.tile.api` == false")
+      Future.successful(buildErrorResponse(request, APIErrors.ServiceUnavailable))
     }
   }
 

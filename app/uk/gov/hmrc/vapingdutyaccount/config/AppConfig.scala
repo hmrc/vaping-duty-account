@@ -50,6 +50,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     "submit-preferences.url.submitPreferences"
   )
 
+  private val vapingDutyHost: String        = servicesConfig.baseUrl("vaping-duty")
+  private val obligationsUrlPrefix     = getConfStringAndThrowIfNotFound("vaping-duty.url.obligations")
+
   val idType: String = config.get[String]("downstream-apis.idType")
   val regime: String = config.get[String]("downstream-apis.regime")
 
@@ -72,6 +75,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   def submitPreferencesUrl(vpdId: VpdId): String =
     s"$submitPreferencesHost$submitPreferencesUrlPrefix/$regime/$idType/$vpdId"
+
+  def getObligationsUrl(vpdId: VpdId): String =
+    s"$vapingDutyHost$obligationsUrlPrefix/$vpdId"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
     servicesConfig.getConfString(key, throw new RuntimeException(s"Could not find services config key '$key'"))
@@ -101,7 +107,11 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val serviceId: String   = config.get[String]("service.id")
 
   def vpdSummaryRESTAPIGetHref(vpdId: VpdId): String = s"/vpd/summary/$vpdId"
-  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String = "/vpd/contact-preference"
+
+  // Link generation constants for returns
+  lazy val completeReturnUrlPrefix: String = "/vaping-duty/complete-return/before-you-start"
+  lazy val viewReturnsUrl: String          = "/vaping-duty/view-your-returns"
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }
