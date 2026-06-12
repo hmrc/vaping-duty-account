@@ -30,7 +30,7 @@ import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
-import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
+import uk.gov.hmrc.vapingdutyaccount.services.VPDSummaryAPIService
 
 import scala.concurrent.{ExecutionContext, Future}
 

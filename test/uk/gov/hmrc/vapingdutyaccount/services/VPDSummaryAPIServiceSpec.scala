@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.services
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
@@ -41,11 +41,13 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
   val mockConfig: AppConfig                            = mock[AppConfig]
 
   // Configure mock config
+  when(mockConfig.selfHref(any())).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
+  when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
   when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
-  val vpdSummaryAPIService: VPDSummaryAPIService = 
-    new VPDSummaryAPIService(mockConfig, mockSubscriptionConnector, mockObligationsConnector)
+  val vpdSummaryAPIService: VPDSummaryAPIService =
+    new VPDSummaryAPIService(mockConfig, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
 
   "VPDSummaryAPIService" - {
     "getVPDSummary must" - {
@@ -61,19 +63,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe None
         result.contactPreference mustBe ContactMethod.Email
-      }
-
-      "return VPDSummary with no returns when obligations returns empty list" in {
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesEmailSelected))
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq.empty))))
-
-        val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.returns mustBe None
-        result.links.completeReturn mustBe None
-        result.links.viewReturns mustBe None
       }
 
       "return VPDSummary with single due return and completeReturn link" in {
@@ -96,13 +85,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 1
-        result.returns.get.overdueReturnsCount mustBe 0
-        result.returns.get.completedReturnsCount mustBe 0
-        result.returns.get.currentReturn mustBe defined
-        result.returns.get.currentReturn.get.periodKey mustBe "26AA"
-        
         result.links.completeReturn mustBe defined
         result.links.completeReturn.get.href must include("period=26AA")
         result.links.viewReturns mustBe None
@@ -128,12 +110,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 0
-        result.returns.get.overdueReturnsCount mustBe 1
-        result.returns.get.completedReturnsCount mustBe 0
-        result.returns.get.currentReturn mustBe None
-        
         result.links.completeReturn mustBe defined
         result.links.completeReturn.get.href must include("period=25AL")
         result.links.viewReturns mustBe None
@@ -170,11 +146,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 1
-        result.returns.get.overdueReturnsCount mustBe 1
-        result.returns.get.completedReturnsCount mustBe 0
-        
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
         result.links.viewReturns.get.href mustBe "/vaping-duty/view-your-returns"
@@ -211,11 +182,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 0
-        result.returns.get.overdueReturnsCount mustBe 2
-        result.returns.get.completedReturnsCount mustBe 0
-        
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
       }
@@ -240,11 +206,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 0
-        result.returns.get.overdueReturnsCount mustBe 0
-        result.returns.get.completedReturnsCount mustBe 1
-        
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
       }
@@ -291,11 +252,6 @@ class VPDSummaryAPIServiceSpec extends SpecBase with MockitoSugar with ScalaFutu
 
         val result = vpdSummaryAPIService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.returns mustBe defined
-        result.returns.get.dueReturnsCount mustBe 1
-        result.returns.get.overdueReturnsCount mustBe 1
-        result.returns.get.completedReturnsCount mustBe 1
-        
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe defined
       }

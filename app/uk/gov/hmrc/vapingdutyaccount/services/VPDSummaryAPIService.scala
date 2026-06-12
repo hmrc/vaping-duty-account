@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.services
 
 import com.google.inject.Inject
 import play.api.http.HttpVerbs
@@ -25,7 +25,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationsResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
 
 import java.time.LocalDate
@@ -34,11 +34,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class VPDSummaryAPIService @Inject() (
   config: AppConfig,
   subscriptionConnector: SubscriptionConnector,
-  obligationsConnector: ObligationsConnector
+  obligationsConnector: ObligationsConnector,
+  obligationService: ObligationService
 )(implicit ec: ExecutionContext) {
-
-  private val STATUS_OPEN      = "O"
-  private val STATUS_FULFILLED = "F"
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     val subscriptionFuture  = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
@@ -55,7 +53,7 @@ class VPDSummaryAPIService @Inject() (
     subscription: SubscriptionContactPreferences,
     obligations: Option[ObligationsResponse]
   ): VPDSummary = {
-    val returns = obligations.flatMap(processObligations)
+    val returns = obligations.flatMap(obligationService.processObligations)
     val links   = buildLinks(vpdId, returns, obligations)
 
     VPDSummary(
@@ -67,62 +65,13 @@ class VPDSummaryAPIService @Inject() (
     )
   }
 
-  private def processObligations(obligations: ObligationsResponse): Option[Returns] = {
-    val today = LocalDate.now()
-    val allObligations = obligations.obligation.map(_.obligationDetails)
-
-    val dueObligations       = allObligations.filter(isDue(_, today))
-    val overdueObligations   = allObligations.filter(isOverdue(_, today))
-    val completedObligations = allObligations.filter(isCompleted)
-
-    val dueCount       = dueObligations.size
-    val overdueCount   = overdueObligations.size
-    val completedCount = completedObligations.size
-
-    if (dueCount == 0 && overdueCount == 0 && completedCount == 0) {
-      None
-    } else {
-      val currentReturn = if (dueCount == 1) {
-        dueObligations.headOption.map(obligation =>
-          CurrentReturn(
-            periodKey = obligation.periodKey,
-            dueDate = obligation.iCDueDate
-          )
-        )
-      } else {
-        None
-      }
-
-      Some(
-        Returns(
-          currentReturn = currentReturn,
-          dueReturnsCount = dueCount,
-          overdueReturnsCount = overdueCount,
-          completedReturnsCount = completedCount
-        )
-      )
-    }
-  }
-
-  private def isDue(obligation: ObligationDetails, today: LocalDate): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_OPEN && !obligation.iCDueDate.isBefore(today)
-
-  private def isOverdue(obligation: ObligationDetails, today: LocalDate): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_OPEN && obligation.iCDueDate.isBefore(today)
-
-  private def isCompleted(obligation: ObligationDetails): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_FULFILLED
-
   private def buildLinks(
     vpdId: VpdId,
     returns: Option[Returns],
     obligations: Option[ObligationsResponse]
   ): Links = {
-    val self = Self(s"/vaping-duty-account/vpd/summary/$vpdId", HttpVerbs.GET)
-    val manageContactPreference = ManageContactPreference(
-      "/vaping-duty/contact-preferences/how-should-we-contact-you",
-      HttpVerbs.GET
-    )
+    val self                    = Self(config.selfHref(vpdId), HttpVerbs.GET)
+    val manageContactPreference = ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)
 
     val (completeReturn, viewReturns) = returns match {
       case Some(r) =>
@@ -141,7 +90,7 @@ class VPDSummaryAPIService @Inject() (
             // Single overdue return also gets completeReturn link
             obligations.flatMap(_.obligation
               .map(_.obligationDetails)
-              .find(isOverdue(_, LocalDate.now()))
+              .find(obligationService.isOverdue(_, LocalDate.now()))
               .map(obligation =>
                 CompleteReturn(
                   s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
