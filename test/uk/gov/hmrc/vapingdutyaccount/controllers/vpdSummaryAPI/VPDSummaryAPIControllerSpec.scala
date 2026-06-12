@@ -34,7 +34,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
-import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
+import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, VPDSummaryAPIService}
 
 import scala.concurrent.Future
 
@@ -43,13 +43,17 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val mockObligationsConnector: ObligationsConnector   = mock[ObligationsConnector]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector, mockObligationsConnector)
+  val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
   when(config.serviceName).thenReturn("Vaping Products Duty")
   when(config.serviceId).thenReturn("VPD")
   when(config.xCorrelationId).thenReturn("X-Correlation-Id")
+  when(config.selfHref(any())).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
+  when(config.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
+  when(config.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
+  when(config.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",

@@ -109,9 +109,12 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   def vpdSummaryRESTAPIGetHref(vpdId: VpdId): String = s"/vpd/summary/$vpdId"
   lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String = "/vpd/contact-preference"
 
-  // Link generation constants for returns
-  lazy val completeReturnUrlPrefix: String = "/vaping-duty/complete-return/before-you-start"
-  lazy val viewReturnsUrl: String          = "/vaping-duty/view-your-returns"
+  // Links for VPD Summary API responses
+  private lazy val selfLinkPrefix: String     = config.get[String]("service.links.self")
+  def selfHref(vpdId: VpdId): String          = s"$selfLinkPrefix/$vpdId"
+  lazy val manageContactPreferenceUrl: String = config.get[String]("service.links.manageContactPreference")
+  lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
+  lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

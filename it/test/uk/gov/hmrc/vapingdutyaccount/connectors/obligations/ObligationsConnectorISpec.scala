@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.obligations
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import play.api.http.Status.*
 import play.api.libs.json.Json
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
@@ -29,6 +30,7 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
 
   private val vpdId = VpdId("GBWK1234567WK")
   private val connector = app.injector.instanceOf[ObligationsConnector]
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   "ObligationsConnector" - {
     "getObligations" - {
@@ -49,7 +51,7 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
           )
         )
 
-        stubGetWithResponseBody(
+        stubGet(
           s"/vaping-duty/obligations/$vpdId",
           OK,
           Json.toJson(obligationsResponse).toString
@@ -61,7 +63,7 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
       }
 
       "must return None when the API returns 404 NOT_FOUND" in {
-        stubGetWithResponseBody(
+        stubGet(
           s"/vaping-duty/obligations/$vpdId",
           NOT_FOUND,
           ""
@@ -73,7 +75,7 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
       }
 
       "must return None when the API returns 500 INTERNAL_SERVER_ERROR" in {
-        stubGetWithResponseBody(
+        stubGet(
           s"/vaping-duty/obligations/$vpdId",
           INTERNAL_SERVER_ERROR,
           ""
@@ -85,7 +87,7 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
       }
 
       "must return None when the API returns invalid JSON" in {
-        stubGetWithResponseBody(
+        stubGet(
           s"/vaping-duty/obligations/$vpdId",
           OK,
           """{"invalid": "json"}"""
