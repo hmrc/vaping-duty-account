@@ -18,14 +18,12 @@ package uk.gov.hmrc.vapingdutyaccount.services
 
 import com.google.inject.Inject
 import play.api.http.HttpVerbs
-import play.api.i18n.Lang.logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationsResponse
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.{Clock, LocalDate}
@@ -34,58 +32,50 @@ import scala.concurrent.{ExecutionContext, Future}
 class VPDSummaryService @Inject()(
                                    config: AppConfig,
                                    subscriptionConnector: SubscriptionConnector,
-                                   obligationsConnector: ObligationsConnector,
+                                   getObligationsService: GetObligationsService,
                                    obligationService: ObligationService,
                                    clock: Clock
-                                 )(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext) {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-    val obligationsFuture: Future[Option[ObligationsResponse]] =
-      obligationsConnector.getObligations(vpdId)
-        .map(Some(_))
-        .recover {
-          case ex =>
-            logger.warn("Failed to retrieve obligations")
-            None
-        }
+    val obligationDetailsFuture  = getObligationsService.getObligationDetails(vpdId)
 
     for {
       contactPreferences <- contactPreferencesFuture
-      obligations <- obligationsFuture
-    } yield createVPDSummary(vpdId, contactPreferences, obligations)
+      obligationDetails  <- obligationDetailsFuture
+    } yield createVPDSummary(vpdId, contactPreferences, obligationDetails)
   }
 
   private def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: SubscriptionContactPreferences,
-                                obligations: Option[ObligationsResponse]
-                              ): VPDSummary = {
-    val returns = obligations.flatMap(obligationService.processObligations)
-    val links = buildLinks(vpdId, returns, obligations)
+                                obligationDetails: Seq[ObligationDetails]
+  ): VPDSummary = {
+    val returns = obligationService.processObligations(obligationDetails)
+    val links   = buildLinks(vpdId, returns, obligationDetails)
 
     VPDSummary(
-      service = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers = Identifier(vpdId.toString),
+      service           = ServiceInfo(config.serviceName, config.serviceId),
+      identifiers       = Identifier(vpdId.toString),
       contactPreference = ContactMethod.resolve(paperlessPreference = contactPreferences.paperlessPreference),
-      returns = returns,
-      links = links
+      returns           = returns,
+      links             = links
     )
   }
 
   private def buildLinks(
                           vpdId: VpdId,
                           returns: Option[Returns],
-                          obligations: Option[ObligationsResponse]
-                        ): Links = {
-    val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
+                          obligationDetails: Seq[ObligationDetails]
+  ): Links = {
+    val self                    = Self(config.selfHref(vpdId), HttpVerbs.GET)
     val manageContactPreference = ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)
 
     val (completeReturn, viewReturns) = returns match {
       case Some(r) =>
         val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
 
-        // completeReturn: present when exactly 1 actionable return exists AND no overdue returns
         val completeReturnLink =
           if (r.dueReturnsCount == 1 && r.overdueReturnsCount == 0) {
             r.currentReturn.map(current =>
@@ -95,21 +85,18 @@ class VPDSummaryService @Inject()(
               )
             )
           } else if (r.overdueReturnsCount == 1 && r.dueReturnsCount == 0) {
-            // Single overdue return also gets completeReturn link
-            obligations.flatMap(_.obligation
-              .map(_.obligationDetails)
+            obligationDetails
               .find(obligationService.isOverdue(_, LocalDate.now(clock)))
               .map(obligation =>
                 CompleteReturn(
                   s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
                   HttpVerbs.GET
                 )
-              ))
+              )
           } else {
             None
           }
 
-        // viewReturns: present when multiple returns OR completed returns exist OR mixed due+overdue
         val viewReturnsLink =
           if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
             Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
@@ -124,10 +111,10 @@ class VPDSummaryService @Inject()(
     }
 
     Links(
-      self = self,
+      self                    = self,
       manageContactPreference = manageContactPreference,
-      completeReturn = completeReturn,
-      viewReturns = viewReturns
+      completeReturn          = completeReturn,
+      viewReturns             = viewReturns
     )
   }
 }

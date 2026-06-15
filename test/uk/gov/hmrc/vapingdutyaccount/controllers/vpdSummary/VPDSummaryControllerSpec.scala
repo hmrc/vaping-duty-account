@@ -31,10 +31,9 @@ import uk.gov.hmrc.http.{InternalServerException, HeaderNames as HmrcHeaderNames
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, VPDSummaryService}
+import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, GetObligationsService, VPDSummaryService}
 
 import java.time.Clock
 import scala.concurrent.Future
@@ -42,9 +41,9 @@ import scala.concurrent.Future
 class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
-  val mockObligationsConnector: ObligationsConnector   = mock[ObligationsConnector]
+  val mockGetObligationsService: GetObligationsService       = mock[GetObligationsService]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryService: VPDSummaryService   = new VPDSummaryService(config, mockSubscriptionConnector, mockObligationsConnector, new ObligationService(), Clock.systemDefaultZone())
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), Clock.systemDefaultZone())
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
@@ -136,8 +135,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
-      when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-        .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
@@ -149,8 +148,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
-      when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-        .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithCorrelationId)
 
@@ -162,8 +161,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id & request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
-      when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-        .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
@@ -176,8 +175,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is false)" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-      when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-        .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
@@ -189,8 +188,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
-      when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-        .thenReturn(Future.successful(obligationsResponse))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq(obligationDetails)))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 

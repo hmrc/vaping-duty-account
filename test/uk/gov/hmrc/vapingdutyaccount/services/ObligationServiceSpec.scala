@@ -17,25 +17,22 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 
 import java.time.LocalDate
 
 class ObligationServiceSpec extends SpecBase {
 
-  val service = new ObligationService()
+  val service: ObligationService = new ObligationService()
 
-  private def obligation(status: String, dueDate: LocalDate, periodKey: String): ObligationItem =
-    ObligationItem(
-      identification = None,
-      obligationDetails = ObligationDetails(
-        openOrFulfilledStatus = status,
-        iCFromDate = dueDate.minusMonths(3),
-        iCToDate = dueDate.minusMonths(1),
-        iCDateReceived = None,
-        iCDueDate = dueDate,
-        periodKey = periodKey
-      )
+  private def createObligation(status: String, dueDate: LocalDate, periodKey: String): ObligationDetails =
+    ObligationDetails(
+      openOrFulfilledStatus = status,
+      iCFromDate            = dueDate.minusMonths(3),
+      iCToDate              = dueDate.minusMonths(1),
+      iCDateReceived        = None,
+      iCDueDate             = dueDate,
+      periodKey             = periodKey
     )
 
   "ObligationService" - {
@@ -43,17 +40,16 @@ class ObligationServiceSpec extends SpecBase {
     "processObligations must" - {
 
       "return None when obligations list is empty" in {
-        service.processObligations(ObligationsResponse(Seq.empty)) mustBe None
+        service.processObligations(Seq.empty) mustBe None
       }
 
       "return None when all obligations have an unrecognised status" in {
-        val obs = ObligationsResponse(Seq(obligation("X", LocalDate.now().plusDays(5), "26AA")))
-        service.processObligations(obs) mustBe None
+        service.processObligations(Seq(createObligation("X", LocalDate.now().plusDays(5), "26AA"))) mustBe None
       }
 
       "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
         val dueDate = LocalDate.now().plusDays(10)
-        val result  = service.processObligations(ObligationsResponse(Seq(obligation("O", dueDate, "26AA")))).value
+        val result  = service.processObligations(Seq(createObligation("O", dueDate, "26AA"))).value
 
         result.dueReturnsCount mustBe 1
         result.overdueReturnsCount mustBe 0
@@ -64,11 +60,10 @@ class ObligationServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with no currentReturn when multiple due obligations" in {
-        val obs = ObligationsResponse(Seq(
-          obligation("O", LocalDate.now().plusDays(5), "26AA"),
-          obligation("O", LocalDate.now().plusDays(10), "26AB")
-        ))
-        val result = service.processObligations(obs).value
+        val result = service.processObligations(Seq(
+          createObligation("O", LocalDate.now().plusDays(5), "26AA"),
+          createObligation("O", LocalDate.now().plusDays(10), "26AB")
+        )).value
 
         result.dueReturnsCount mustBe 2
         result.currentReturn mustBe None
@@ -76,7 +71,7 @@ class ObligationServiceSpec extends SpecBase {
 
       "return Some(Returns) with overdueCount=1 and no currentReturn when single overdue obligation" in {
         val result = service.processObligations(
-          ObligationsResponse(Seq(obligation("O", LocalDate.now().minusDays(5), "25AL")))
+          Seq(createObligation("O", LocalDate.now().minusDays(5), "25AL"))
         ).value
 
         result.dueReturnsCount mustBe 0
@@ -87,7 +82,7 @@ class ObligationServiceSpec extends SpecBase {
 
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
         val result = service.processObligations(
-          ObligationsResponse(Seq(obligation("F", LocalDate.now().minusDays(5), "25AL")))
+          Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
         ).value
 
         result.dueReturnsCount mustBe 0
@@ -97,12 +92,11 @@ class ObligationServiceSpec extends SpecBase {
       }
 
       "return correct counts for mixed due, overdue, and completed obligations" in {
-        val obs = ObligationsResponse(Seq(
-          obligation("O", LocalDate.now().plusDays(10), "26AA"),
-          obligation("O", LocalDate.now().minusDays(5), "25AL"),
-          obligation("F", LocalDate.now().minusDays(30), "25AK")
-        ))
-        val result = service.processObligations(obs).value
+        val result = service.processObligations(Seq(
+          createObligation("O", LocalDate.now().plusDays(10), "26AA"),
+          createObligation("O", LocalDate.now().minusDays(5), "25AL"),
+          createObligation("F", LocalDate.now().minusDays(30), "25AK")
+        )).value
 
         result.dueReturnsCount mustBe 1
         result.overdueReturnsCount mustBe 1
