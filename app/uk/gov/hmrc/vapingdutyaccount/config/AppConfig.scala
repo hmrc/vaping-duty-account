@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.controllers._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
@@ -110,8 +111,8 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String = "/vpd/contact-preference"
 
   // Links for VPD Summary API responses
-  private lazy val selfLinkPrefix: String     = config.get[String]("service.links.self")
-  def selfHref(vpdId: VpdId): String          = s"$selfLinkPrefix/$vpdId"
+  def selfHref(vpdId: VpdId): String =
+    vpdSummary.routes.VPDSummaryController.getVpdSummary(vpdId).url
   lazy val manageContactPreferenceUrl: String = config.get[String]("service.links.manageContactPreference")
   lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
   lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")

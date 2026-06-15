@@ -43,7 +43,6 @@ class SpecBaseWithConfigOverrides extends SpecBase {
     "crypto.isEnabled"                                               -> true,
     "enrolment.serviceName"                                          -> "HMRC-VPD-ORG",
     "features.email-verification-stub"                               -> false,
-    "service.links.self"                                             -> "/vaping-duty-account/vpd/summary",
     "service.links.manageContactPreference"                          -> "/vaping-duty/contact-preferences/how-should-we-contact-you",
     "service.links.completeReturn"                                   -> "/vaping-duty/complete-return/before-you-start",
     "service.links.viewReturns"                                      -> "/vaping-duty/view-your-returns"
