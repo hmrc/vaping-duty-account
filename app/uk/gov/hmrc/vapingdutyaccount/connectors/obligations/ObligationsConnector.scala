@@ -35,29 +35,21 @@ class ObligationsConnector @Inject() (
     extends HttpReadsInstances
     with Logging {
 
-  def getObligations(vpdId: VpdId)(using hc: HeaderCarrier): Future[Option[ObligationsResponse]] =
+  def getObligations(vpdId: VpdId)(using hc: HeaderCarrier): Future[ObligationsResponse] =
     httpClient
       .get(url"${config.getObligationsUrl(vpdId)}")
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
           case OK =>
-            Try {
-              response.json.as[ObligationsResponse]
-            } match {
+            Try(response.json.as[ObligationsResponse]) match {
               case Success(obligations) =>
-                Future.successful(Some(obligations))
+                Future.successful(obligations)
               case Failure(error) =>
-                logger.warn(s"Failed to parse obligations response for vpdId $vpdId: ${error.getMessage}")
-                Future.successful(None)
+                Future.failed(InternalServerException("Parsing failed for obligations response"))
             }
           case status =>
-            logger.warn(s"Unexpected response from obligations API for vpdId $vpdId. Status: $status")
-            Future.successful(None)
+            Future.failed(InternalServerException("Failed to retrieve obligations"))
         }
-      }
-      .recoverWith { case exception: Exception =>
-        logger.warn(s"Exception occurred while fetching obligations for vpdId $vpdId: ${exception.getMessage}")
-        Future.successful(None)
       }
 }

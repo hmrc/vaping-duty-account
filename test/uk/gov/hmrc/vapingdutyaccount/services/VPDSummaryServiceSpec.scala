@@ -30,7 +30,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import scala.concurrent.Future
 
 class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
@@ -47,24 +47,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockObligationsConnector, new ObligationService())
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockObligationsConnector, new ObligationService(), Clock.systemDefaultZone())
 
   "VPDSummaryService" - {
     "getVPDSummary must" - {
-      "return VPDSummary with no returns when obligations returns None" in {
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesEmailSelected))
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(None))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.returns mustBe None
-        result.links.completeReturn mustBe None
-        result.links.viewReturns mustBe None
-        result.contactPreference mustBe ContactMethod.Email
-      }
-
       "return VPDSummary with single due return and completeReturn link" in {
         val dueObligation = ObligationItem(
           identification = None,
@@ -81,7 +67,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(dueObligation))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -106,7 +92,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdueObligation)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(overdueObligation))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -142,7 +128,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(dueObligation, overdueObligation)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(dueObligation, overdueObligation))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -178,7 +164,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(overdue1, overdue2)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(overdue1, overdue2))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -202,7 +188,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(completed)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(completed))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -248,7 +234,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Some(ObligationsResponse(Seq(due, overdue, completed)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(due, overdue, completed))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -260,7 +246,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(None))
+          .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -271,7 +257,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(None))
+          .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -282,13 +268,27 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(None))
+          .thenReturn(Future.failed(new InternalServerException("Obligations not available")))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc)
 
         ScalaFutures.whenReady(result.failed) { e =>
           e shouldBe a[InternalServerException]
         }
+      }
+
+      "return VPDSummary with empty returns when obligations connector fails" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.failed(new InternalServerException("Obligations service error")))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.contactPreference mustBe ContactMethod.Email
       }
     }
   }

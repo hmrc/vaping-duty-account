@@ -28,49 +28,57 @@ import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationsResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
 class VPDSummaryService @Inject()(
-  config: AppConfig,
-  subscriptionConnector: SubscriptionConnector,
-  obligationsConnector: ObligationsConnector,
-  obligationService: ObligationService
-)(implicit ec: ExecutionContext) {
+                                   config: AppConfig,
+                                   subscriptionConnector: SubscriptionConnector,
+                                   obligationsConnector: ObligationsConnector,
+                                   obligationService: ObligationService,
+                                   clock: Clock
+                                 )(implicit ec: ExecutionContext) {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
-    val subscriptionFuture  = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-    val obligationsFuture   = obligationsConnector.getObligations(vpdId)
+    val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+    val obligationsFuture: Future[Option[ObligationsResponse]] =
+      obligationsConnector.getObligations(vpdId)
+        .map(Some(_))
+        .recover {
+          case ex =>
+            logger.warn("Failed to retrieve obligations")
+            None
+        }
 
     for {
-      subscription <- subscriptionFuture
-      obligations  <- obligationsFuture
-    } yield createVPDSummary(vpdId, subscription, obligations)
+      contactPreferences <- contactPreferencesFuture
+      obligations <- obligationsFuture
+    } yield createVPDSummary(vpdId, contactPreferences, obligations)
   }
 
   private def createVPDSummary(
-    vpdId: VpdId,
-    subscription: SubscriptionContactPreferences,
-    obligations: Option[ObligationsResponse]
-  ): VPDSummary = {
+                                vpdId: VpdId,
+                                contactPreferences: SubscriptionContactPreferences,
+                                obligations: Option[ObligationsResponse]
+                              ): VPDSummary = {
     val returns = obligations.flatMap(obligationService.processObligations)
-    val links   = buildLinks(vpdId, returns, obligations)
+    val links = buildLinks(vpdId, returns, obligations)
 
     VPDSummary(
       service = ServiceInfo(config.serviceName, config.serviceId),
       identifiers = Identifier(vpdId.toString),
-      contactPreference = ContactMethod.resolve(paperlessPreference = subscription.paperlessPreference),
+      contactPreference = ContactMethod.resolve(paperlessPreference = contactPreferences.paperlessPreference),
       returns = returns,
       links = links
     )
   }
 
   private def buildLinks(
-    vpdId: VpdId,
-    returns: Option[Returns],
-    obligations: Option[ObligationsResponse]
-  ): Links = {
-    val self                    = Self(config.selfHref(vpdId), HttpVerbs.GET)
+                          vpdId: VpdId,
+                          returns: Option[Returns],
+                          obligations: Option[ObligationsResponse]
+                        ): Links = {
+    val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
     val manageContactPreference = ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)
 
     val (completeReturn, viewReturns) = returns match {
@@ -90,7 +98,7 @@ class VPDSummaryService @Inject()(
             // Single overdue return also gets completeReturn link
             obligations.flatMap(_.obligation
               .map(_.obligationDetails)
-              .find(obligationService.isOverdue(_, LocalDate.now()))
+              .find(obligationService.isOverdue(_, LocalDate.now(clock)))
               .map(obligation =>
                 CompleteReturn(
                   s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
