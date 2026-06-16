@@ -49,6 +49,7 @@ class ObligationsConnector @Inject() (
                 Future.failed(InternalServerException("Parsing failed for obligations response"))
             }
           case status =>
+            logger.warn(s"Failed to retrieve obligations with status: $status")
             Future.failed(InternalServerException("Failed to retrieve obligations"))
         }
       }

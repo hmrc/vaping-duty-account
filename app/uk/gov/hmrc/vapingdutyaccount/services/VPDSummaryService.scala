@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import com.google.inject.Inject
+import play.api.Logging
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -35,11 +36,16 @@ class VPDSummaryService @Inject()(
                                    getObligationsService: GetObligationsService,
                                    obligationService: ObligationService,
                                    clock: Clock
-)(implicit ec: ExecutionContext) {
+)(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
     val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
     val obligationDetailsFuture  = getObligationsService.getObligationDetails(vpdId)
+      .recover {
+        case ex =>
+          logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
+          Seq.empty
+      }
 
     for {
       contactPreferences <- contactPreferencesFuture
@@ -47,7 +53,7 @@ class VPDSummaryService @Inject()(
     } yield createVPDSummary(vpdId, contactPreferences, obligationDetails)
   }
 
-  private def createVPDSummary(
+  def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: SubscriptionContactPreferences,
                                 obligationDetails: Seq[ObligationDetails]

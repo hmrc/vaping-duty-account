@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.obligations
 
-import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
+import org.scalatest.concurrent.IntegrationPatience
 import play.api.http.Status.*
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
@@ -26,7 +26,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, Obligat
 
 import java.time.LocalDate
 
-class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with IntegrationPatience {
+class ObligationsConnectorISpec extends ISpecBase with IntegrationPatience {
 
   private val vpdId = VpdId("GBWK1234567WK")
   private val connector = app.injector.instanceOf[ObligationsConnector]
@@ -59,43 +59,52 @@ class ObligationsConnectorISpec extends ISpecBase with ScalaFutures with Integra
 
         val result = connector.getObligations(vpdId).futureValue
 
-        result mustBe Some(obligationsResponse)
+        result mustBe obligationsResponse
       }
 
-      "must return None when the API returns 404 NOT_FOUND" in {
+      "must fail with InternalServerException when the API returns 404 NOT_FOUND" in {
         stubGet(
           s"/vaping-duty/obligations/$vpdId",
           NOT_FOUND,
           ""
         )
 
-        val result = connector.getObligations(vpdId).futureValue
+        val result = connector.getObligations(vpdId)
 
-        result mustBe None
+        whenReady(result.failed) { exception =>
+          exception mustBe an[Exception]
+          verifyGet(s"/vaping-duty/obligations/$vpdId")
+        }
       }
 
-      "must return None when the API returns 500 INTERNAL_SERVER_ERROR" in {
+      "must fail with InternalServerException when the API returns 500 INTERNAL_SERVER_ERROR" in {
         stubGet(
           s"/vaping-duty/obligations/$vpdId",
           INTERNAL_SERVER_ERROR,
           ""
         )
 
-        val result = connector.getObligations(vpdId).futureValue
+        val result = connector.getObligations(vpdId)
 
-        result mustBe None
+        whenReady(result.failed) { exception =>
+          exception mustBe an[Exception]
+          verifyGet(s"/vaping-duty/obligations/$vpdId")
+        }
       }
 
-      "must return None when the API returns invalid JSON" in {
+      "must fail with InternalServerException when the API returns invalid JSON" in {
         stubGet(
           s"/vaping-duty/obligations/$vpdId",
           OK,
           """{"invalid": "json"}"""
         )
 
-        val result = connector.getObligations(vpdId).futureValue
+        val result = connector.getObligations(vpdId)
 
-        result mustBe None
+        whenReady(result.failed) { exception =>
+          exception mustBe an[Exception]
+          verifyGet(s"/vaping-duty/obligations/$vpdId")
+        }
       }
     }
   }

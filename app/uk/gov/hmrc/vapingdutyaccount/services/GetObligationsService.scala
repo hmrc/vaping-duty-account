@@ -33,10 +33,5 @@ class GetObligationsService @Inject()(
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
     obligationsConnector.getObligations(vpdId)
       .map(_.obligation.map(_.obligationDetails))
-      .recover {
-        case ex =>
-          logger.warn(s"[ObligationsService] Failed to retrieve obligations for $vpdId: ${ex.getMessage}")
-          Seq.empty
-      }
   }
 }

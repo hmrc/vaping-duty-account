@@ -51,13 +51,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
       }
-
-      "return an empty Seq when the connector fails" in {
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.failed(new InternalServerException("Obligations unavailable")))
-
-        service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
-      }
     }
   }
 }

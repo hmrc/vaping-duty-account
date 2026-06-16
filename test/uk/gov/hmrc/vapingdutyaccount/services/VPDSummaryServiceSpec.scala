@@ -244,6 +244,18 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           e shouldBe a[InternalServerException]
         }
       }
+
+      "return an empty Seq when the obligations connector returns none" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+      }
     }
   }
 }
