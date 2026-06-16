@@ -19,12 +19,10 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 import com.google.inject.Inject
 import play.api.Logging
 import play.api.http.ContentTypes
-import play.api.i18n.Lang.logger
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.http.{HeaderCarrier, HeaderNames}
+import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId

@@ -53,7 +53,7 @@ class VPDSummaryService @Inject()(
     } yield createVPDSummary(vpdId, contactPreferences, obligationDetails)
   }
 
-  def createVPDSummary(
+  private def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: SubscriptionContactPreferences,
                                 obligationDetails: Seq[ObligationDetails]
