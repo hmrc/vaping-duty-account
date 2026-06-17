@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
@@ -32,22 +32,28 @@ import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
-import uk.gov.hmrc.vapingdutyaccount.services.vpdSummaryAPI.VPDSummaryAPIService
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
+import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, GetObligationsService, VPDSummaryService}
 
+import java.time.Clock
 import scala.concurrent.Future
 
-class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
+class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
+  val mockGetObligationsService: GetObligationsService       = mock[GetObligationsService]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryAPIService: VPDSummaryAPIService   = new VPDSummaryAPIService(config, mockSubscriptionConnector)
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), Clock.systemDefaultZone())
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
   when(config.serviceName).thenReturn("Vaping Products Duty")
   when(config.serviceId).thenReturn("VPD")
   when(config.xCorrelationId).thenReturn("X-Correlation-Id")
+  when(config.selfHref(any())).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
+  when(config.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
+  when(config.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
+  when(config.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
@@ -86,11 +92,11 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     body = AnyContentAsEmpty
   )
 
-  val controller: VPDSummaryAPIController = new VPDSummaryAPIController(
+  val controller: VPDSummaryController = new VPDSummaryController(
     config,
     cc,
     fakeAuthorisedAction,
-    mockVPDSummaryAPIService
+    mockVPDSummaryService
   )
   val badVpdId: String                    = "bad-invalid-vpdid"
 
@@ -121,16 +127,16 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
        |}
        |""".stripMargin)
 
-  /** This helper method will assert that the specified header is present on received responses
-    */
   private def assertHeaderIsPresentOn(result: Future[Result], header: String) = {
     assert(headers(result).get(header).get.isInstanceOf[String])
   }
 
-  "SummaryAPI must " - {
+  "VPDSummary must " - {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
@@ -142,6 +148,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithCorrelationId)
 
@@ -153,6 +161,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id & request id were received" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
@@ -165,6 +175,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     "return data in expected shape when calling the API (PaperlessPreference is false)" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
@@ -176,6 +188,8 @@ class VPDSummaryAPIControllerSpec extends SpecBase with MockitoSugar {
     "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq(obligationDetails)))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 

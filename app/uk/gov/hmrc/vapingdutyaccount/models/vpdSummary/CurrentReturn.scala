@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.*
+import play.api.libs.json.{Json, OFormat, Writes}
 
-case class ServiceInfo(
-    name: String,
-    id: String
+import java.time.LocalDate
+
+final case class CurrentReturn(
+  periodKey: String,
+  dueDate: LocalDate
 )
 
-object ServiceInfo {
-  given Writes[ServiceInfo] = Json.writes[ServiceInfo]
+object CurrentReturn {
+  given format: OFormat[CurrentReturn] = Json.format[CurrentReturn]
 }

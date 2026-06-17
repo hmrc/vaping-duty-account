@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 
 /*
  * Copyright 2025 HM Revenue & Customs
@@ -34,20 +34,20 @@ package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummaryAPI
 
 import play.api.test.FakeRequest
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.{APIErrorFormat, APIErrors}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{APIErrorFormat, APIErrors}
 import play.api.libs.json.Json
 import play.api.mvc.Result
 
 import scala.concurrent.Future
 
-class VPDSummaryAPIIntegrationSpec extends ISpecBase {
+class VPDSummaryIntegrationSpec extends ISpecBase {
 
-  "the VPD Summary API must " - {
+  "the VPD Summary must " - {
     "return 401 when incoming requests are not appropriately authorised" in new SetUp {
       stubNotAuthorised(vpdId.toString)
 
       val response: Future[Result] = callRoute(
-        FakeRequest("GET", routes.VPDSummaryAPIController.getVpdSummary(vpdId).url)
+        FakeRequest("GET", routes.VPDSummaryController.getVpdSummary(vpdId).url)
       )
 
       status(response)        mustBe UNAUTHORIZED

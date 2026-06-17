@@ -34,7 +34,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvide
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{InternalId, VpdId}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 trait AuthorisedAction
     extends ActionBuilder[IdentifierRequest, AnyContent]

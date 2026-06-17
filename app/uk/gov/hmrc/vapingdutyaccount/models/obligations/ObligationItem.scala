@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.obligations
 
-import play.api.libs.json.*
+import play.api.libs.json.{Json, OFormat}
 
-final case class Identifier(vpdId: String)
+final case class ObligationItem(
+  identification: Option[Identification],
+  obligationDetails: ObligationDetails
+)
 
-object Identifier {
-  given Writes[Identifier] = Json.writes[Identifier]
+object ObligationItem {
+  implicit val format: OFormat[ObligationItem] = Json.format[ObligationItem]
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummaryAPI
+package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import play.api.libs.json.{Json, Writes}
 
@@ -23,14 +23,14 @@ case class ManageContactPreference(href: String, method: String)
 
 implicit val selfFormats: Writes[Self]                                       = Json.writes[Self]
 implicit val manageContactPreferenceFormats: Writes[ManageContactPreference] = Json.writes[ManageContactPreference]
+implicit val completeReturnFormats: Writes[CompleteReturn]                   = Json.writes[CompleteReturn]
+implicit val viewReturnsFormats: Writes[ViewReturns]                         = Json.writes[ViewReturns]
 
-/** The links that will be appended to the VPDSummary.
-  *
-  * @param self
-  *   The link that will be sent along under the "self" field.
-  * @param manageContactPreferences
-  *   The link that will be sent along under the "manageContactPreference" field.
-  */
-case class Links(self: Self, manageContactPreference: ManageContactPreference)
+case class Links(
+  self: Self,
+  manageContactPreference: ManageContactPreference,
+  completeReturn: Option[CompleteReturn] = None,
+  viewReturns: Option[ViewReturns] = None
+)
 
 implicit val linksFormats: Writes[Links] = Json.writes[Links]

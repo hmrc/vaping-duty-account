@@ -19,6 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.config
 import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, VpdId}
+import uk.gov.hmrc.vapingdutyaccount.controllers._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.FiniteDuration
@@ -50,6 +51,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     "submit-preferences.url.submitPreferences"
   )
 
+  private val vapingDutyHost: String        = servicesConfig.baseUrl("vaping-duty")
+  private val obligationsUrlPrefix     = getConfStringAndThrowIfNotFound("vaping-duty.url.obligations")
+
   val idType: String = config.get[String]("downstream-apis.idType")
   val regime: String = config.get[String]("downstream-apis.regime")
 
@@ -72,6 +76,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   def submitPreferencesUrl(vpdId: VpdId): String =
     s"$submitPreferencesHost$submitPreferencesUrlPrefix/$regime/$idType/$vpdId"
+
+  def getObligationsUrl(vpdId: VpdId): String =
+    s"$vapingDutyHost$obligationsUrlPrefix/$vpdId"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
     servicesConfig.getConfString(key, throw new RuntimeException(s"Could not find services config key '$key'"))
@@ -101,7 +108,14 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val serviceId: String   = config.get[String]("service.id")
 
   def vpdSummaryRESTAPIGetHref(vpdId: VpdId): String = s"/vpd/summary/$vpdId"
-  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String   = "/vpd/contact-preference"
+  lazy val vpdSummaryRESTAPIGetContactPreferencesHref: String = "/vpd/contact-preference"
+
+  // Links for VPD Summary API responses
+  def selfHref(vpdId: VpdId): String =
+    vpdSummary.routes.VPDSummaryController.getVpdSummary(vpdId).url
+  lazy val manageContactPreferenceUrl: String = config.get[String]("service.links.manageContactPreference")
+  lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
+  lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

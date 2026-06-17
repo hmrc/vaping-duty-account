@@ -42,7 +42,10 @@ class SpecBaseWithConfigOverrides extends SpecBase {
     "crypto.key"                                                     -> "cryptokey",
     "crypto.isEnabled"                                               -> true,
     "enrolment.serviceName"                                          -> "HMRC-VPD-ORG",
-    "features.email-verification-stub"                               -> false
+    "features.email-verification-stub"                               -> false,
+    "service.links.manageContactPreference"                          -> "/vaping-duty/contact-preferences/how-should-we-contact-you",
+    "service.links.completeReturn"                                   -> "/vaping-duty/complete-return/before-you-start",
+    "service.links.viewReturns"                                      -> "/vaping-duty/view-your-returns"
   )
 }
 
@@ -135,6 +138,24 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
 
       "for xCorrelationId" in {
         appConfig.xCorrelationId mustBe "X-Correlation-Id"
+      }
+    }
+
+    "for summary API links" - {
+      "must return selfHref with vpdId" in {
+        appConfig.selfHref(vpdId) mustBe s"/vaping-duty-account/vpd/summary/$vpdId"
+      }
+
+      "must return manageContactPreferenceUrl" in {
+        appConfig.manageContactPreferenceUrl mustBe "/vaping-duty/contact-preferences/how-should-we-contact-you"
+      }
+
+      "must return completeReturnUrlPrefix" in {
+        appConfig.completeReturnUrlPrefix mustBe "/vaping-duty/complete-return/before-you-start"
+      }
+
+      "must return viewReturnsUrl" in {
+        appConfig.viewReturnsUrl mustBe "/vaping-duty/view-your-returns"
       }
     }
 
