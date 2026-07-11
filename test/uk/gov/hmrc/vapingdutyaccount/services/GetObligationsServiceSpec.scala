@@ -20,8 +20,8 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
-import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
 
@@ -31,7 +31,9 @@ import scala.concurrent.Future
 class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
   val mockObligationsConnector: ObligationsConnector = mock[ObligationsConnector]
-  val service: GetObligationsService                    = new GetObligationsService(mockObligationsConnector)
+  val mockAppConfig: AppConfig = mock[AppConfig]
+
+  val service: GetObligationsService = new GetObligationsService(mockAppConfig, mockObligationsConnector)
 
   private val obligationDetails = ObligationDetails(
     openOrFulfilledStatus = "O",
@@ -46,10 +48,21 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
     "getObligationDetails must" - {
 
       "return the Seq[ObligationDetails] extracted from the connector response" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+      }
+      
+      "return an empty list of obligations when the phase-2-enabled feature switch is turned off" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(false)
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
+
+        service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
       }
     }
   }
