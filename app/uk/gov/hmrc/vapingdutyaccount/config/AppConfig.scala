@@ -102,6 +102,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     * Types extracted from OpenAPI specification
     */
   lazy val vpdSummaryRESTAPIEnabled: Boolean = config.get[Boolean]("features.bta.tile.api")
+  lazy val phase2Enabled: Boolean = config.get[Boolean]("features.phase-2-enabled")
 
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")

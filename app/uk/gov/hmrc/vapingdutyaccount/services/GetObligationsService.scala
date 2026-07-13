@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.services
 
 import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
@@ -27,11 +28,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class GetObligationsService @Inject()(
+                                       config: AppConfig,
                                        obligationsConnector: ObligationsConnector
                                      )(implicit ec: ExecutionContext) extends Logging {
 
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
-    obligationsConnector.getObligations(vpdId)
-      .map(_.obligation.map(_.obligationDetails))
+    if (config.phase2Enabled)    
+      obligationsConnector.getObligations(vpdId)
+        .map(_.obligation.map(_.obligationDetails))
+    else
+      Future(Seq.empty)
   }
 }
