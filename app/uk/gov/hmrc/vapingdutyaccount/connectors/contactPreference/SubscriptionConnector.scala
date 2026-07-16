@@ -17,10 +17,11 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.Logging
+import play.api.http.Status.UNPROCESSABLE_ENTITY
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, UpstreamErrorLogging}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -34,7 +35,8 @@ class SubscriptionConnector @Inject() (
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances
-    with Logging {
+    with Logging
+    with UpstreamErrorLogging {
 
   def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] =
     httpClient
@@ -60,7 +62,12 @@ class SubscriptionConnector @Inject() (
             Future.failed(InternalServerException("Failed to get subscription contact preferences"))
         }
       case Left(error) =>
-            logger.warn(s"Unexpected response from subscription summary API. Status: ${error.statusCode}")
+            error.statusCode match {
+              case UNPROCESSABLE_ENTITY =>
+                logUnprocessableEntity("Subscription summary API", error)
+              case _ =>
+                logger.warn(s"Unexpected response from subscription summary API. Status: ${error.statusCode}")
+            }
             Future.failed(InternalServerException("Failed to get subscription contact preferences"))
     }
   }

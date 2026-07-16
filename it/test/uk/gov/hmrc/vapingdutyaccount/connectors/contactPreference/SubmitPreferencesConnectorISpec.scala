@@ -82,11 +82,27 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           submitReturnUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          ""
+          unprocessableEntityBody
         )
-        
+
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
-        
+
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
+        }
+      }
+
+      "fail with InternalServerException if the call returns a 422 response with a body that cannot be parsed" in new SetUp {
+        stubPut(
+          submitReturnUrl,
+          UNPROCESSABLE_ENTITY,
+          Json.toJson(contactPreferenceSubmissionEmail).toString(),
+          "not json"
+        )
+
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitReturnUrl)
@@ -123,5 +139,14 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
   abstract class SetUp extends ConnectorFixture {
     val connector       = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
     val submitReturnUrl = config.submitPreferencesUrl(vpdId)
+
+    val unprocessableEntityBody: String =
+      """{
+        |  "errors": {
+        |    "processingDate": "2025-01-31T09:26:17Z",
+        |    "code": "014",
+        |    "text": "Email Address missing or invalid"
+        |  }
+        |}""".stripMargin
   }
 }

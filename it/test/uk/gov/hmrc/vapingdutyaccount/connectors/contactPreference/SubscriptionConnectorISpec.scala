@@ -45,10 +45,21 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     }
 
     "fail with InternalServerException if a 422 is received" in new SetUp {
-      stubGet(url, UNPROCESSABLE_ENTITY, "")
-      
+      stubGet(url, UNPROCESSABLE_ENTITY, unprocessableEntityBody)
+
       val result = connector.getSubscriptionContactPreferences(vpdId)
-      
+
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
+      }
+    }
+
+    "fail with InternalServerException if a 422 is received with a body that cannot be parsed" in new SetUp {
+      stubGet(url, UNPROCESSABLE_ENTITY, "not json")
+
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
@@ -104,5 +115,14 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     val headers                          = new HIPHeaders(fakeUUIDGenerator, appConfig, clock)
     val connector: SubscriptionConnector = appWithHttpClientV2.injector.instanceOf[SubscriptionConnector]
     lazy val url: String                 = appConfig.getSubscriptionUrl(vpdId)
+
+    val unprocessableEntityBody: String =
+      """{
+        |  "errors": {
+        |    "processingDate": "2025-01-31T09:26:17Z",
+        |    "code": "001",
+        |    "text": "Inactive VPD Reference"
+        |  }
+        |}""".stripMargin
   }
 }
