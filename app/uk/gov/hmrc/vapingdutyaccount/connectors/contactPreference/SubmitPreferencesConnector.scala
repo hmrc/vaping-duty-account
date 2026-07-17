@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.Logging
 import play.api.http.Status.UNPROCESSABLE_ENTITY
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, UpstreamErrorLogging}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{ConnectorLogger, HIPHeaders, UpstreamErrorLogging}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -34,10 +33,10 @@ import scala.util.{Failure, Success, Try}
 class SubmitPreferencesConnector @Inject() (
   config: AppConfig,
   headers: HIPHeaders,
+  logger: ConnectorLogger,
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances
-    with Logging
     with UpstreamErrorLogging {
 
   def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
@@ -68,7 +67,7 @@ class SubmitPreferencesConnector @Inject() (
       case Left(error) =>
             error.statusCode match {
               case UNPROCESSABLE_ENTITY =>
-                logUnprocessableEntity("Contact preference submission API", error)
+                logger.warn(unprocessableEntityMessage("Contact preference submission API", error))
               case _ =>
                 logger.warn(s"Unexpected response from contact preference submission API. Status: ${error.statusCode}")
             }

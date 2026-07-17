@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.Logging
 import play.api.http.Status.UNPROCESSABLE_ENTITY
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, UpstreamErrorLogging}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{ConnectorLogger, HIPHeaders, UpstreamErrorLogging}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -32,10 +31,10 @@ import scala.util.{Failure, Success, Try}
 class SubscriptionConnector @Inject() (
   config: AppConfig,
   headers: HIPHeaders,
+  logger: ConnectorLogger,
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances
-    with Logging
     with UpstreamErrorLogging {
 
   def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] =
@@ -64,7 +63,7 @@ class SubscriptionConnector @Inject() (
       case Left(error) =>
             error.statusCode match {
               case UNPROCESSABLE_ENTITY =>
-                logUnprocessableEntity("Subscription summary API", error)
+                logger.warn(unprocessableEntityMessage("Subscription summary API", error))
               case _ =>
                 logger.warn(s"Unexpected response from subscription summary API. Status: ${error.statusCode}")
             }

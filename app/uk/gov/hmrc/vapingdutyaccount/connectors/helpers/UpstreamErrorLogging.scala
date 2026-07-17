@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.helpers
 
-import play.api.Logging
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UpstreamErrorResponseBody
 
 import scala.util.Try
 
-trait UpstreamErrorLogging { self: Logging =>
+trait UpstreamErrorLogging {
 
   // UpstreamErrorResponse doesn't expose the raw response body directly - HttpReadsInstances
   // wraps it inside `message` as `"... returned $status. Response body: '$responseBody'"`.
@@ -35,13 +34,13 @@ trait UpstreamErrorLogging { self: Logging =>
       case other                     => other
     }
 
-  protected def logUnprocessableEntity(apiName: String, error: UpstreamErrorResponse): Unit = {
+  protected def unprocessableEntityMessage(apiName: String, error: UpstreamErrorResponse): String = {
     val body = responseBodyOf(error)
     Try(Json.parse(body)).toOption.flatMap(_.validate[UpstreamErrorResponseBody].asOpt) match {
       case Some(UpstreamErrorResponseBody(detail)) =>
-        logger.warn(s"$apiName returned 422 Unprocessable Entity. code=${detail.code}, text=${detail.text}")
+        s"$apiName returned 422 Unprocessable Entity. code=${detail.code}, text=${detail.text}"
       case None =>
-        logger.warn(s"$apiName returned 422 Unprocessable Entity but the error body could not be parsed. Body: $body")
+        s"$apiName returned 422 Unprocessable Entity but the error body could not be parsed. Body: $body"
     }
   }
 }

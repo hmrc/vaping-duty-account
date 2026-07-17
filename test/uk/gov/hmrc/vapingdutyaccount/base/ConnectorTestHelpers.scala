@@ -42,13 +42,15 @@ trait ConnectorTestHelpers extends HttpClientV2Support with WireMockHelper with 
 
     val config = new AppConfig(application.configuration, new ServicesConfig(application.configuration))
 
-    val appWithHttpClientV2: Application = new GuiceApplicationBuilder()
-      .configure(getWireMockAppConfig(Seq(endpointName)))
-      .overrides(
-        bind[HttpClientV2].toInstance(httpClientV2),
-        bind[Clock].toInstance(clock)
-      )
-      .build()
+    def appWithHttpClientV2Builder: GuiceApplicationBuilder =
+      new GuiceApplicationBuilder()
+        .configure(getWireMockAppConfig(Seq(endpointName)))
+        .overrides(
+          bind[HttpClientV2].toInstance(httpClientV2),
+          bind[Clock].toInstance(clock)
+        )
+
+    val appWithHttpClientV2: Application = appWithHttpClientV2Builder.build()
 
     val appWithHttpClientV2WithRetry: Application = new GuiceApplicationBuilder()
       .configure(getWireMockAppConfigWithRetry(Seq(endpointName)))
