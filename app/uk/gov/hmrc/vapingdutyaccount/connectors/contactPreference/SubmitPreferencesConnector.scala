@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.http.Status.UNPROCESSABLE_ENTITY
+import play.api.http.Status.{OK, UNPROCESSABLE_ENTITY}
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.http.*
@@ -45,34 +45,31 @@ class SubmitPreferencesConnector @Inject() (
       .put(url"${config.submitPreferencesUrl(vpdId)}")
       .setHeader(headers.submissionHeaders(): _*)
       .withBody(Json.toJson(contactPreferenceSubmission))
-      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .execute[HttpResponse]
       .flatMap(response => submitPreferencesParser(response))
       .recoverWith { case _: Exception =>
         logger.warn("An exception was returned while trying to submit contact preferences")
         Future.failed(InternalServerException("Failed to submit contact preferences"))
       }
 
-  private def submitPreferencesParser(response: Either[UpstreamErrorResponse, HttpResponse]): Future[PaperlessPreferenceSubmittedResponse] = {
-    response match {
-      case Right(response) =>
-          Try{
-            response.json.as[PaperlessPreferenceSubmittedSuccess]
-          } match {
-            case Success(submissionResponse) =>
-              Future.successful(submissionResponse.success)
-            case Failure(_) =>
-              logger.warn("Parsing failed for submission response")
-              Future.failed(InternalServerException("Failed to submit contact preferences"))
-          }
-      case Left(error) =>
-            error.statusCode match {
-              case UNPROCESSABLE_ENTITY =>
-                logger.warn(unprocessableEntityMessage("Contact preference submission API", error))
-              case _ =>
-                logger.warn(s"Unexpected response from contact preference submission API. Status: ${error.statusCode}")
-            }
+  private def submitPreferencesParser(response: HttpResponse): Future[PaperlessPreferenceSubmittedResponse] =
+    response.status match {
+      case OK =>
+        Try {
+          response.json.as[PaperlessPreferenceSubmittedSuccess]
+        } match {
+          case Success(submissionResponse) =>
+            Future.successful(submissionResponse.success)
+          case Failure(_) =>
+            logger.warn("Parsing failed for submission response")
             Future.failed(InternalServerException("Failed to submit contact preferences"))
+        }
+      case UNPROCESSABLE_ENTITY =>
+        logger.warn(unprocessableEntityMessage("Contact preference submission API", response))
+        Future.failed(InternalServerException("Failed to submit contact preferences"))
+      case status =>
+        logger.warn(s"Unexpected response from contact preference submission API. Status: $status")
+        Future.failed(InternalServerException("Failed to submit contact preferences"))
     }
-  }
 
 }

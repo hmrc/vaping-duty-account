@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.http.Status.UNPROCESSABLE_ENTITY
+import play.api.http.Status.{OK, UNPROCESSABLE_ENTITY}
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -41,18 +41,18 @@ class SubscriptionConnector @Inject() (
     httpClient
       .get(url"${config.getSubscriptionUrl(vpdId)}")
       .setHeader(headers.subscriptionHeaders(): _*)
-      .execute[Either[UpstreamErrorResponse, HttpResponse]]
+      .execute[HttpResponse]
       .flatMap(response => subscriptionParser(response))
       .recoverWith { case _: Exception =>
         logger.warn("An exception was returned while trying to fetch subscription contact preferences")
         Future.failed(InternalServerException("Failed to get subscription contact preferences"))
       }
 
-  private def subscriptionParser(response: Either[UpstreamErrorResponse, HttpResponse]): Future[SubscriptionContactPreferences] = {
-    response match {
-      case Right(httpResponse) =>
+  private def subscriptionParser(response: HttpResponse): Future[SubscriptionContactPreferences] =
+    response.status match {
+      case OK =>
         Try {
-          httpResponse.json.as[SubscriptionContactPreferences]
+          response.json.as[SubscriptionContactPreferences]
         } match {
           case Success(contactPreferences) =>
             Future.successful(contactPreferences)
@@ -60,14 +60,11 @@ class SubscriptionConnector @Inject() (
             logger.warn("Unable to parse subscription summary successful response")
             Future.failed(InternalServerException("Failed to get subscription contact preferences"))
         }
-      case Left(error) =>
-            error.statusCode match {
-              case UNPROCESSABLE_ENTITY =>
-                logger.warn(unprocessableEntityMessage("Subscription summary API", error))
-              case _ =>
-                logger.warn(s"Unexpected response from subscription summary API. Status: ${error.statusCode}")
-            }
-            Future.failed(InternalServerException("Failed to get subscription contact preferences"))
+      case UNPROCESSABLE_ENTITY =>
+        logger.warn(unprocessableEntityMessage("Subscription summary API", response))
+        Future.failed(InternalServerException("Failed to get subscription contact preferences"))
+      case status =>
+        logger.warn(s"Unexpected response from subscription summary API. Status: $status")
+        Future.failed(InternalServerException("Failed to get subscription contact preferences"))
     }
-  }
 }
