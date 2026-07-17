@@ -64,7 +64,10 @@ class VPDSummaryService @Inject()(
     VPDSummary(
       service           = ServiceInfo(config.serviceName, config.serviceId),
       identifiers       = Identifier(vpdId.toString),
-      contactPreference = ContactMethod.resolve(paperlessPreference = contactPreferences.paperlessPreference),
+      contactPreference = ContactPreference.resolve(
+        paperlessPreference = contactPreferences.paperlessPreference,
+        bouncedEmail        = contactPreferences.bouncedEmail
+      ),
       returns           = returns,
       links             = links
     )

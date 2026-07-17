@@ -16,16 +16,22 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, Writes}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactPreference,
-    returns: Option[Returns] = None,
-    links: Links
+case class ContactPreference(
+    contactMethod: ContactMethod,
+    bouncedEmail: Option[Boolean]
 )
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object ContactPreference {
+
+  given Writes[ContactPreference] = Json.writes[ContactPreference]
+
+  def resolve(paperlessPreference: Boolean, bouncedEmail: Option[Boolean]): ContactPreference = {
+    val contactMethod = ContactMethod.resolve(paperlessPreference)
+    ContactPreference(
+      contactMethod = contactMethod,
+      bouncedEmail  = if (contactMethod == ContactMethod.Email) bouncedEmail else None
+    )
+  }
 }
