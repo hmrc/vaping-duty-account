@@ -20,7 +20,7 @@ import play.api.http.Status.{OK, UNPROCESSABLE_ENTITY}
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{ConnectorLogger, HIPHeaders, UpstreamErrorLogging}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger, UpstreamErrorLogging}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -31,7 +31,7 @@ import scala.util.{Failure, Success, Try}
 class SubscriptionConnector @Inject() (
   config: AppConfig,
   headers: HIPHeaders,
-  logger: ConnectorLogger,
+  logger: SubscriptionConnectorLogger,
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances

@@ -20,7 +20,7 @@ import play.api.Logging
 
 import javax.inject.Inject
 
-class ConnectorLogger @Inject() extends Logging {
+class SubmitPreferencesConnectorLogger @Inject() extends Logging {
 
   def warn(message: String): Unit = logger.warn(message)
 

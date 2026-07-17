@@ -21,12 +21,12 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{ConnectorLogger, HIPHeaders}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger}
 
 class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
 
-  private val mockLogger = mock[ConnectorLogger]
+  private val mockLogger = mock[SubscriptionConnectorLogger]
 
   "SubscriptionConnector must" - {
     "successfully get subscription contact preferences" in new SetUp {
@@ -121,7 +121,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     val headers                          = new HIPHeaders(fakeUUIDGenerator, appConfig, clock)
     val connector: SubscriptionConnector =
       appWithHttpClientV2Builder
-        .overrides(bind[ConnectorLogger].toInstance(mockLogger))
+        .overrides(bind[SubscriptionConnectorLogger].toInstance(mockLogger))
         .build()
         .injector.instanceOf[SubscriptionConnector]
     lazy val url: String                 = appConfig.getSubscriptionUrl(vpdId)

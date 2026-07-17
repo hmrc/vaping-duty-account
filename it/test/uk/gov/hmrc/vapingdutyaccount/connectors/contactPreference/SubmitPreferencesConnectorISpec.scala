@@ -22,12 +22,12 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.ConnectorLogger
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.SubmitPreferencesConnectorLogger
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
 
-  private val mockLogger = mock[ConnectorLogger]
+  private val mockLogger = mock[SubmitPreferencesConnectorLogger]
 
   "SubmitPreferencesConnector when" - {
     "submitContactPreferences is called must" - {
@@ -146,7 +146,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
   abstract class SetUp extends ConnectorFixture {
     val connector =
       appWithHttpClientV2Builder
-        .overrides(bind[ConnectorLogger].toInstance(mockLogger))
+        .overrides(bind[SubmitPreferencesConnectorLogger].toInstance(mockLogger))
         .build()
         .injector.instanceOf[SubmitPreferencesConnector]
     val submitReturnUrl = config.submitPreferencesUrl(vpdId)
