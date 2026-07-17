@@ -87,7 +87,13 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           submitReturnUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          unprocessableEntityBody
+          """{
+            |  "errors": {
+            |    "processingDate": "2025-01-31T09:26:17Z",
+            |    "code": "014",
+            |    "text": "Email Address missing or invalid"
+            |  }
+            |}""".stripMargin
         )
 
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
@@ -150,14 +156,5 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         .build()
         .injector.instanceOf[SubmitPreferencesConnector]
     val submitReturnUrl = config.submitPreferencesUrl(vpdId)
-
-    val unprocessableEntityBody: String =
-      """{
-        |  "errors": {
-        |    "processingDate": "2025-01-31T09:26:17Z",
-        |    "code": "014",
-        |    "text": "Email Address missing or invalid"
-        |  }
-        |}""".stripMargin
   }
 }
