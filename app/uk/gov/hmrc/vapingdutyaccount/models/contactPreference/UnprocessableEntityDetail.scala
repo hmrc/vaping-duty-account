@@ -18,14 +18,14 @@ package uk.gov.hmrc.vapingdutyaccount.models.contactPreference
 
 import play.api.libs.json.{Json, Reads}
 
-case class UpstreamErrorDetail(code: String, text: String)
+case class UnprocessableEntityDetail(code: String, text: String)
 
-object UpstreamErrorDetail {
-  implicit val reads: Reads[UpstreamErrorDetail] = Json.reads[UpstreamErrorDetail]
+object UnprocessableEntityDetail {
+  implicit val reads: Reads[UnprocessableEntityDetail] = Json.reads[UnprocessableEntityDetail]
 }
 
-case class UpstreamErrorResponseBody(errors: UpstreamErrorDetail)
+case class UnprocessableEntityResponse(errors: UnprocessableEntityDetail)
 
-object UpstreamErrorResponseBody {
-  implicit val reads: Reads[UpstreamErrorResponseBody] = Json.reads[UpstreamErrorResponseBody]
+object UnprocessableEntityResponse {
+  implicit val reads: Reads[UnprocessableEntityResponse] = Json.reads[UnprocessableEntityResponse]
 }

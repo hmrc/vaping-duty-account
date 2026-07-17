@@ -18,15 +18,15 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.helpers
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UpstreamErrorResponseBody
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.UnprocessableEntityResponse
 
 import scala.util.Try
 
-trait UpstreamErrorLogging {
+trait UnprocessableEntityLogging {
 
   protected def unprocessableEntityMessage(apiName: String, response: HttpResponse): String =
-    Try(Json.parse(response.body)).toOption.flatMap(_.validate[UpstreamErrorResponseBody].asOpt) match {
-      case Some(UpstreamErrorResponseBody(detail)) =>
+    Try(Json.parse(response.body)).toOption.flatMap(_.validate[UnprocessableEntityResponse].asOpt) match {
+      case Some(UnprocessableEntityResponse(detail)) =>
         s"$apiName returned 422 Unprocessable Entity. code=${detail.code}, text=${detail.text}"
       case None =>
         s"$apiName returned 422 Unprocessable Entity but the error body could not be parsed. Body: ${response.body}"

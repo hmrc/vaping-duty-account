@@ -22,7 +22,7 @@ import play.api.libs.ws.JsonBodyWritables.*
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubmitPreferencesConnectorLogger, UpstreamErrorLogging}
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubmitPreferencesConnectorLogger, UnprocessableEntityLogging}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{PaperlessPreferenceSubmission, PaperlessPreferenceSubmittedResponse, PaperlessPreferenceSubmittedSuccess}
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
@@ -37,7 +37,7 @@ class SubmitPreferencesConnector @Inject() (
   implicit val httpClient: HttpClientV2
 )(implicit ec: ExecutionContext)
     extends HttpReadsInstances
-    with UpstreamErrorLogging {
+    with UnprocessableEntityLogging {
 
   def submitContactPreferences(contactPreferenceSubmission: PaperlessPreferenceSubmission, vpdId: VpdId)
                               (implicit hc: HeaderCarrier): Future[PaperlessPreferenceSubmittedResponse] =
