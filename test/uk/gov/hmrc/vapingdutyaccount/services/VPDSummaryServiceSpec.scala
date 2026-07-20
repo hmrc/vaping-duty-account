@@ -210,7 +210,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.viewReturns mustBe defined
       }
 
-      "return ContactPreference with contactMethod Email and bouncedEmail when PaperlessPreference is true" in {
+      "return contactPreference Email and contactPreferenceStatus with bouncedEmail false when PaperlessPreference is true" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -218,10 +218,11 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactPreference(ContactMethod.Email, Some(false))
+        result.contactPreference mustBe ContactMethod.Email
+        result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(false))
       }
 
-      "return ContactPreference with contactMethod Email and bouncedEmail true when the email has bounced" in {
+      "return contactPreference Email and contactPreferenceStatus with bouncedEmail true when the email has bounced" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesEmailSelected.copy(bouncedEmail = Some(true))))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -229,10 +230,11 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactPreference(ContactMethod.Email, Some(true))
+        result.contactPreference mustBe ContactMethod.Email
+        result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(true))
       }
 
-      "return ContactPreference with contactMethod Post and no bouncedEmail when PaperlessPreference is false" in {
+      "return contactPreference Post and no contactPreferenceStatus when PaperlessPreference is false" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -240,7 +242,8 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactPreference(ContactMethod.Post, None)
+        result.contactPreference mustBe ContactMethod.Post
+        result.contactPreferenceStatus mustBe None
       }
 
       "return InternalServerError when subscription connector fails" in {

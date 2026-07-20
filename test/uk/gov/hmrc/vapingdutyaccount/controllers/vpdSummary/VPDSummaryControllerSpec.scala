@@ -104,16 +104,17 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     if (preference == true) "EMAIL" else "POST"
   }
 
-  private def getContactPreferenceJson(subscription: SubscriptionContactPreferences): String = {
-    val contactMethod    = getContactMethod(subscription.paperlessPreference)
-    val bouncedEmailLine =
+  private def getContactPreferenceLines(subscription: SubscriptionContactPreferences): String = {
+    val contactMethod = getContactMethod(subscription.paperlessPreference)
+    val statusLine     =
       if (subscription.paperlessPreference) {
-        subscription.bouncedEmail.map(b => s""","bouncedEmail" : $b""").getOrElse("")
+        val bounced = subscription.bouncedEmail.getOrElse(false)
+        s""","contactPreferenceStatus" : { "bouncedEmail" : $bounced }"""
       } else {
         ""
       }
 
-    s"""{ "contactMethod" : "$contactMethod"$bouncedEmailLine }"""
+    s""""contactPreference" : "$contactMethod"$statusLine"""
   }
 
   def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
@@ -125,7 +126,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |  "identifiers" : {
        |    "vpdId" : "$vpdId"
        |  },
-       |  "contactPreference" : ${getContactPreferenceJson(subscription)},
+       |  ${getContactPreferenceLines(subscription)},
        |  "links" : {
        |    "self" : {
        |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",

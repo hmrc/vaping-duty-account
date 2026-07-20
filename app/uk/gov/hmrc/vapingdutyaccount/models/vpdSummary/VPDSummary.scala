@@ -21,7 +21,8 @@ import play.api.libs.json.{JsObject, Json, Writes}
 case class VPDSummary(
     service: ServiceInfo,
     identifiers: Identifier,
-    contactPreference: ContactPreference,
+    contactPreference: ContactMethod,
+    contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
     returns: Option[Returns] = None,
     links: Links
 )

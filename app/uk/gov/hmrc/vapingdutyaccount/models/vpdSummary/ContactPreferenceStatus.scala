@@ -18,20 +18,13 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import play.api.libs.json.{Json, Writes}
 
-case class ContactPreference(
-    contactMethod: ContactMethod,
-    bouncedEmail: Option[Boolean]
-)
+case class ContactPreferenceStatus(bouncedEmail: Boolean)
 
-object ContactPreference {
+object ContactPreferenceStatus {
 
-  given Writes[ContactPreference] = Json.writes[ContactPreference]
+  given Writes[ContactPreferenceStatus] = Json.writes[ContactPreferenceStatus]
 
-  def resolve(paperlessPreference: Boolean, bouncedEmail: Option[Boolean]): ContactPreference = {
-    val contactMethod = ContactMethod.resolve(paperlessPreference)
-    ContactPreference(
-      contactMethod = contactMethod,
-      bouncedEmail  = if (contactMethod == ContactMethod.Email) bouncedEmail else None
-    )
-  }
+  def resolve(contactMethod: ContactMethod, bouncedEmail: Option[Boolean]): Option[ContactPreferenceStatus] =
+    if (contactMethod == ContactMethod.Email) Some(ContactPreferenceStatus(bouncedEmail.getOrElse(false)))
+    else None
 }
