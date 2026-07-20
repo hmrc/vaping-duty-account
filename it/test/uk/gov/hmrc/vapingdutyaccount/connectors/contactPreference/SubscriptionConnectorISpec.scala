@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
+import org.mockito.Mockito.verify
+import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.HIPHeaders
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger}
 
 class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
+
+  private val mockLogger = mock[SubscriptionConnectorLogger]
 
   "SubscriptionConnector must" - {
     "successfully get subscription contact preferences" in new SetUp {
@@ -45,13 +49,36 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     }
 
     "fail with InternalServerException if a 422 is received" in new SetUp {
-      stubGet(url, UNPROCESSABLE_ENTITY, "")
-      
+      stubGet(
+        url,
+        UNPROCESSABLE_ENTITY,
+        """{
+          |  "errors": {
+          |    "processingDate": "2025-01-31T09:26:17Z",
+          |    "code": "001",
+          |    "text": "Inactive VPD Reference"
+          |  }
+          |}""".stripMargin
+      )
+
       val result = connector.getSubscriptionContactPreferences(vpdId)
-      
+
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
+        verify(mockLogger).warn("Subscription summary API returned 422 Unprocessable Entity. code=001, text=Inactive VPD Reference")
+      }
+    }
+
+    "fail with InternalServerException if a 422 is received with a body that cannot be parsed" in new SetUp {
+      stubGet(url, UNPROCESSABLE_ENTITY, "not json")
+
+      val result = connector.getSubscriptionContactPreferences(vpdId)
+
+      whenReady(result.failed) { exception =>
+        exception mustBe an[Exception]
+        verifyGet(url)
+        verify(mockLogger).warn("Subscription summary API returned 422 Unprocessable Entity but the error body could not be parsed. Body: not json")
       }
     }
 
@@ -102,7 +129,11 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
 
   class SetUp extends ConnectorFixture {
     val headers                          = new HIPHeaders(fakeUUIDGenerator, appConfig, clock)
-    val connector: SubscriptionConnector = appWithHttpClientV2.injector.instanceOf[SubscriptionConnector]
+    val connector: SubscriptionConnector =
+      appWithHttpClientV2Builder
+        .overrides(bind[SubscriptionConnectorLogger].toInstance(mockLogger))
+        .build()
+        .injector.instanceOf[SubscriptionConnector]
     lazy val url: String                 = appConfig.getSubscriptionUrl(vpdId)
   }
 }

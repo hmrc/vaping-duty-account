@@ -16,13 +16,18 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
+import org.mockito.Mockito.verify
+import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.SubmitPreferencesConnectorLogger
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
+
+  private val mockLogger = mock[SubmitPreferencesConnectorLogger]
 
   "SubmitPreferencesConnector when" - {
     "submitContactPreferences is called must" - {
@@ -82,14 +87,38 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           submitReturnUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          ""
+          """{
+            |  "errors": {
+            |    "processingDate": "2025-01-31T09:26:17Z",
+            |    "code": "014",
+            |    "text": "Email Address missing or invalid"
+            |  }
+            |}""".stripMargin
         )
-        
+
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
-        
+
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitReturnUrl)
+          verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity. code=014, text=Email Address missing or invalid")
+        }
+      }
+
+      "fail with InternalServerException if the call returns a 422 response with a body that cannot be parsed" in new SetUp {
+        stubPut(
+          submitReturnUrl,
+          UNPROCESSABLE_ENTITY,
+          Json.toJson(contactPreferenceSubmissionEmail).toString(),
+          "not json"
+        )
+
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+
+        whenReady(result.failed) { exception =>
+          assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verifyPut(submitReturnUrl)
+          verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity but the error body could not be parsed. Body: not json")
         }
       }
 
@@ -121,7 +150,11 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
   }
 
   abstract class SetUp extends ConnectorFixture {
-    val connector       = appWithHttpClientV2.injector.instanceOf[SubmitPreferencesConnector]
+    val connector =
+      appWithHttpClientV2Builder
+        .overrides(bind[SubmitPreferencesConnectorLogger].toInstance(mockLogger))
+        .build()
+        .injector.instanceOf[SubmitPreferencesConnector]
     val submitReturnUrl = config.submitPreferencesUrl(vpdId)
   }
 }
