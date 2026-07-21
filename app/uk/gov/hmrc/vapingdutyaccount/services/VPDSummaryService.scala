@@ -58,19 +58,31 @@ class VPDSummaryService @Inject()(
                                 contactPreferences: SubscriptionContactPreferences,
                                 obligationDetails: Seq[ObligationDetails]
   ): VPDSummary = {
-    val returns       = obligationService.processObligations(obligationDetails)
-    val links         = buildLinks(vpdId, returns, obligationDetails)
-    val contactMethod = ContactMethod.resolve(contactPreferences.paperlessPreference)
+    val returns                 = obligationService.processObligations(obligationDetails)
+    val links                   = buildLinks(vpdId, returns, obligationDetails)
+    val contactMethod           = resolveContactMethod(contactPreferences)
+    val contactPreferenceStatus = resolveContactPreferenceStatus(contactMethod, contactPreferences)
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
       identifiers             = Identifier(vpdId.toString),
       contactPreference       = contactMethod,
-      contactPreferenceStatus = ContactPreferenceStatus.resolve(contactMethod, contactPreferences.bouncedEmail),
+      contactPreferenceStatus = contactPreferenceStatus,
       returns                 = returns,
       links                   = links
     )
   }
+
+  private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
+    if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
+
+  private def resolveContactPreferenceStatus(
+                                              contactMethod: ContactMethod,
+                                              contactPreferences: SubscriptionContactPreferences
+  ): Option[ContactPreferenceStatus] =
+    if (contactMethod == ContactMethod.Email)
+      Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
+    else None
 
   private def buildLinks(
                           vpdId: VpdId,

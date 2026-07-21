@@ -23,8 +23,4 @@ case class ContactPreferenceStatus(bouncedEmail: Boolean)
 object ContactPreferenceStatus {
 
   given Writes[ContactPreferenceStatus] = Json.writes[ContactPreferenceStatus]
-
-  def resolve(contactMethod: ContactMethod, bouncedEmail: Option[Boolean]): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email) Some(ContactPreferenceStatus(bouncedEmail.getOrElse(false)))
-    else None
 }
