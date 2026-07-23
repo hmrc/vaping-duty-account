@@ -16,17 +16,11 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, Writes}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactMethod,
-    contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
-    returns: Option[Returns] = None,
-    links: Links
-)
+case class ContactPreferenceStatus(bouncedEmail: Boolean)
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object ContactPreferenceStatus {
+
+  given Writes[ContactPreferenceStatus] = Json.writes[ContactPreferenceStatus]
 }
