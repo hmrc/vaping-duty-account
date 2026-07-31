@@ -74,7 +74,7 @@ abstract class ISpecBase
     "metrics.enabled"  -> false,
     "auditing.enabled" -> false
   ) ++ getWireMockAppConfig(
-    Seq("auth", "subscription", "email-verification", "vaping-duty-stubs", "vaping-duty", "submit-preferences")
+    Seq("auth", "subscription", "email-verification", "vaping-duty-stubs", "vaping-duty", "vaping-duty-finance", "submit-preferences")
   )
 
   override def fakeApplication(): Application =

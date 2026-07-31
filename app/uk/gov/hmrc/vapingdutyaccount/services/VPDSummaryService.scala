@@ -22,9 +22,11 @@ import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.payments.{PaymentsResponse as UpstreamPaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.{Clock, LocalDate}
@@ -35,6 +37,7 @@ class VPDSummaryService @Inject()(
                                    subscriptionConnector: SubscriptionConnector,
                                    getObligationsService: GetObligationsService,
                                    obligationService: ObligationService,
+                                   paymentsConnector: PaymentsConnector,
                                    clock: Clock
 )(implicit ec: ExecutionContext) extends Logging {
 
@@ -46,20 +49,45 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
           Seq.empty
       }
+    val paymentsFuture: Future[Payments] = paymentsConnector.getPayments(vpdId)
+      .map(toPayments)
+      .recover {
+        case ex =>
+          logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
+          Payments(hasPaymentsError = true)
+      }
 
     for {
       contactPreferences <- contactPreferencesFuture
       obligationDetails  <- obligationDetailsFuture
-    } yield createVPDSummary(vpdId, contactPreferences, obligationDetails)
+      payments           <- paymentsFuture
+    } yield createVPDSummary(vpdId, contactPreferences, obligationDetails, payments)
+  }
+
+  private def toPayments(response: UpstreamPaymentsResponse): Payments = {
+    val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
+    val distinctChargeRefs   = positiveOutstanding.flatMap(_.chargeReference).distinct
+    val amount               = response.totalAccountBalance.getOrElse(BigDecimal(0))
+    val isMultiplePaymentDue = distinctChargeRefs.size > 1
+
+    val balance = PaymentBalance(
+      amount               = amount,
+      isMultiplePaymentDue = isMultiplePaymentDue,
+      chargeReference      =
+        if (amount > 0 && !isMultiplePaymentDue) distinctChargeRefs.headOption else None
+    )
+
+    Payments(hasPaymentsError = false, balance = Some(balance))
   }
 
   private def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: SubscriptionContactPreferences,
-                                obligationDetails: Seq[ObligationDetails]
+                                obligationDetails: Seq[ObligationDetails],
+                                payments: Payments
   ): VPDSummary = {
     val returns                 = obligationService.processObligations(obligationDetails)
-    val links                   = buildLinks(vpdId, returns, obligationDetails)
+    val links                   = buildLinks(vpdId, returns, obligationDetails, payments)
     val contactMethod           = resolveContactMethod(contactPreferences)
     val contactPreferenceStatus = resolveContactPreferenceStatus(contactMethod, contactPreferences)
 
@@ -69,6 +97,7 @@ class VPDSummaryService @Inject()(
       contactPreference       = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
       returns                 = returns,
+      payments                = Some(payments),
       links                   = links
     )
   }
@@ -87,7 +116,8 @@ class VPDSummaryService @Inject()(
   private def buildLinks(
                           vpdId: VpdId,
                           returns: Option[Returns],
-                          obligationDetails: Seq[ObligationDetails]
+                          obligationDetails: Seq[ObligationDetails],
+                          payments: Payments
   ): Links = {
     val self                    = Self(config.selfHref(vpdId), HttpVerbs.GET)
     val manageContactPreference = ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)
@@ -130,11 +160,25 @@ class VPDSummaryService @Inject()(
         (None, None)
     }
 
+    val makePayment = payments match {
+      case Payments(true, _) =>
+        Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
+      case Payments(false, Some(balance)) if balance.amount > 0 =>
+        val href = balance.chargeReference match {
+          case Some(ref) => s"${config.makePaymentUrl}?chargeReference=$ref"
+          case None      => config.makePaymentUrl
+        }
+        Some(MakePayment(href, HttpVerbs.GET))
+      case _ =>
+        None
+    }
+
     Links(
       self                    = self,
       manageContactPreference = manageContactPreference,
       completeReturn          = completeReturn,
-      viewReturns             = viewReturns
+      viewReturns             = viewReturns,
+      makePayment             = makePayment
     )
   }
 }
