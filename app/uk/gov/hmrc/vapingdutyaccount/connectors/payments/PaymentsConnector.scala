@@ -21,7 +21,6 @@ import play.api.http.Status.OK
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse
 
 import javax.inject.Inject
@@ -35,9 +34,9 @@ class PaymentsConnector @Inject() (
     extends HttpReadsInstances
     with Logging {
 
-  def getPayments(vpdId: VpdId)(using hc: HeaderCarrier): Future[PaymentsResponse] =
+  def getPayments()(using hc: HeaderCarrier): Future[PaymentsResponse] =
     httpClient
-      .get(url"${config.getPaymentsUrl(vpdId)}")
+      .get(url"${config.getPaymentsUrl}")
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {

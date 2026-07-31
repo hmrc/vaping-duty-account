@@ -48,7 +48,7 @@ class PaymentsConnectorISpec extends ISpecBase with IntegrationPatience {
           responseBody
         )
 
-        val result = connector.getPayments(vpdId).futureValue
+        val result = connector.getPayments().futureValue
 
         result mustBe PaymentsResponse(
           outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
@@ -63,7 +63,7 @@ class PaymentsConnectorISpec extends ISpecBase with IntegrationPatience {
           ""
         )
 
-        val result = connector.getPayments(vpdId)
+        val result = connector.getPayments()
 
         whenReady(result.failed) { exception =>
           exception mustBe an[Exception]
@@ -78,7 +78,7 @@ class PaymentsConnectorISpec extends ISpecBase with IntegrationPatience {
           """{"invalid": "json"}"""
         )
 
-        val result = connector.getPayments(vpdId)
+        val result = connector.getPayments()
 
         whenReady(result.failed) { exception =>
           exception mustBe an[Exception]

@@ -82,7 +82,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   def getObligationsUrl(vpdId: VpdId): String =
     s"$vapingDutyHost$obligationsUrlPrefix/$vpdId"
 
-  def getPaymentsUrl(vpdId: VpdId): String =
+  def getPaymentsUrl: String =
     s"$financeHost/vaping-duty-finance/financial-data/payments"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
