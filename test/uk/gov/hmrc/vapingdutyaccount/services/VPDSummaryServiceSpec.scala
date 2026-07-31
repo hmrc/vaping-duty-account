@@ -294,7 +294,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.payments mustBe defined
         result.payments.get.hasPaymentsError mustBe false
         result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
-        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay?chargeReference=XVP123456789", "GET"))
+        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
       }
 
       "return isMultiplePaymentDue true and no charge reference on the makePayment link when multiple charges are outstanding" in {

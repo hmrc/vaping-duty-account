@@ -164,11 +164,7 @@ class VPDSummaryService @Inject()(
       case Payments(true, _) =>
         Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
       case Payments(false, Some(balance)) if balance.amount > 0 =>
-        val href = balance.chargeReference match {
-          case Some(ref) => s"${config.makePaymentUrl}?chargeReference=$ref"
-          case None      => config.makePaymentUrl
-        }
-        Some(MakePayment(href, HttpVerbs.GET))
+        Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
       case _ =>
         None
     }
