@@ -26,7 +26,6 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
-import uk.gov.hmrc.vapingdutyaccount.models.payments.{PaymentsResponse as UpstreamPaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.{Clock, LocalDate}
@@ -38,6 +37,7 @@ class VPDSummaryService @Inject()(
                                    getObligationsService: GetObligationsService,
                                    obligationService: ObligationService,
                                    paymentsConnector: PaymentsConnector,
+                                   paymentsService: PaymentsService,
                                    clock: Clock
 )(implicit ec: ExecutionContext) extends Logging {
 
@@ -49,8 +49,8 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
           Seq.empty
       }
-    val paymentsFuture: Future[Payments] = paymentsConnector.getPayments(vpdId)
-      .map(toPayments)
+    val paymentsFuture: Future[Payments] = paymentsConnector.getPayments()
+      .map(paymentsService.toPayments)
       .recover {
         case ex =>
           logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
@@ -62,22 +62,6 @@ class VPDSummaryService @Inject()(
       obligationDetails  <- obligationDetailsFuture
       payments           <- paymentsFuture
     } yield createVPDSummary(vpdId, contactPreferences, obligationDetails, payments)
-  }
-
-  private def toPayments(response: UpstreamPaymentsResponse): Payments = {
-    val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
-    val distinctChargeRefs   = positiveOutstanding.flatMap(_.chargeReference).distinct
-    val amount               = response.totalAccountBalance.getOrElse(BigDecimal(0))
-    val isMultiplePaymentDue = distinctChargeRefs.size > 1
-
-    val balance = PaymentBalance(
-      amount               = amount,
-      isMultiplePaymentDue = isMultiplePaymentDue,
-      chargeReference      =
-        if (amount > 0 && !isMultiplePaymentDue) distinctChargeRefs.headOption else None
-    )
-
-    Payments(hasPaymentsError = false, balance = Some(balance))
   }
 
   private def createVPDSummary(
@@ -160,14 +144,11 @@ class VPDSummaryService @Inject()(
         (None, None)
     }
 
-    val makePayment = payments match {
-      case Payments(true, _) =>
+    val makePayment =
+      if (payments.hasPaymentsError || payments.balance.exists(_.amount > 0))
         Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
-      case Payments(false, Some(balance)) if balance.amount > 0 =>
-        Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
-      case _ =>
+      else
         None
-    }
 
     Links(
       self                    = self,

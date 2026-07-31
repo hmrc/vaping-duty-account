@@ -48,11 +48,11 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
   when(mockConfig.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
 
-  when(mockPaymentsConnector.getPayments(any())(using any()))
+  when(mockPaymentsConnector.getPayments()(using any()))
     .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockPaymentsConnector, Clock.systemDefaultZone())
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockPaymentsConnector, new PaymentsService(), Clock.systemDefaultZone())
 
   "VPDSummaryService" - {
     "getVPDSummary must" - {
@@ -283,7 +283,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
-        when(mockPaymentsConnector.getPayments(eqTo(vpdId))(using any()))
+        when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
             totalAccountBalance = Some(BigDecimal(4574.84))
@@ -302,7 +302,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
-        when(mockPaymentsConnector.getPayments(eqTo(vpdId))(using any()))
+        when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq(
               OutstandingPayment(Some("XVP111111111"), BigDecimal(5000), None, "Due"),
@@ -322,7 +322,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
-        when(mockPaymentsConnector.getPayments(eqTo(vpdId))(using any()))
+        when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq.empty,
             totalAccountBalance = Some(BigDecimal(-325.50))
@@ -339,7 +339,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
-        when(mockPaymentsConnector.getPayments(eqTo(vpdId))(using any()))
+        when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
@@ -353,7 +353,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
-        when(mockPaymentsConnector.getPayments(eqTo(vpdId))(using any()))
+        when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
