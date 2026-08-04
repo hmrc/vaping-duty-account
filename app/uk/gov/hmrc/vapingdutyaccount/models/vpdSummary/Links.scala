@@ -20,17 +20,20 @@ import play.api.libs.json.{Json, Writes}
 
 case class Self(href: String, method: String)
 case class ManageContactPreference(href: String, method: String)
+case class MakePayment(href: String, method: String)
 
 implicit val selfFormats: Writes[Self]                                       = Json.writes[Self]
 implicit val manageContactPreferenceFormats: Writes[ManageContactPreference] = Json.writes[ManageContactPreference]
 implicit val completeReturnFormats: Writes[CompleteReturn]                   = Json.writes[CompleteReturn]
 implicit val viewReturnsFormats: Writes[ViewReturns]                         = Json.writes[ViewReturns]
+implicit val makePaymentFormats: Writes[MakePayment]                         = Json.writes[MakePayment]
 
 case class Links(
   self: Self,
   manageContactPreference: ManageContactPreference,
   completeReturn: Option[CompleteReturn] = None,
-  viewReturns: Option[ViewReturns] = None
+  viewReturns: Option[ViewReturns] = None,
+  makePayment: Option[MakePayment] = None
 )
 
 implicit val linksFormats: Writes[Links] = Json.writes[Links]

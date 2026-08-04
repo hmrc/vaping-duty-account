@@ -14,20 +14,28 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
+package uk.gov.hmrc.vapingdutyaccount.models.payments
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, Reads}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactMethod,
-    contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
-    returns: Option[Returns] = None,
-    payments: Option[Payments] = None,
-    links: Links
+import java.time.LocalDate
+
+final case class OutstandingPayment(
+  chargeReference: Option[String],
+  amountDue: BigDecimal,
+  dueDate: Option[LocalDate],
+  status: String
 )
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object OutstandingPayment {
+  given Reads[OutstandingPayment] = Json.reads[OutstandingPayment]
+}
+
+final case class PaymentsResponse(
+  outstanding: Seq[OutstandingPayment],
+  totalAccountBalance: Option[BigDecimal]
+)
+
+object PaymentsResponse {
+  given Reads[PaymentsResponse] = Json.reads[PaymentsResponse]
 }

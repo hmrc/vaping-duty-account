@@ -16,18 +16,23 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, Writes}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    contactPreference: ContactMethod,
-    contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
-    returns: Option[Returns] = None,
-    payments: Option[Payments] = None,
-    links: Links
+final case class PaymentBalance(
+  amount: BigDecimal,
+  isMultiplePaymentDue: Boolean,
+  chargeReference: Option[String]
 )
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object PaymentBalance {
+  given Writes[PaymentBalance] = Json.writes[PaymentBalance]
+}
+
+final case class Payments(
+  hasPaymentsError: Boolean,
+  balance: Option[PaymentBalance]
+)
+
+object Payments {
+  given Writes[Payments] = Json.writes[Payments]
 }

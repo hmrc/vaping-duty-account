@@ -26,7 +26,9 @@ import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse as UpstreamPaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.{Clock, LocalDate}
@@ -37,15 +39,20 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val mockGetObligationsService: GetObligationsService       = mock[GetObligationsService]
+  val mockPaymentsConnector: PaymentsConnector         = mock[PaymentsConnector]
   val mockConfig: AppConfig                            = mock[AppConfig]
 
   when(mockConfig.selfHref(any())).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
   when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
   when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
+  when(mockConfig.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
+
+  when(mockPaymentsConnector.getPayments()(using any()))
+    .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), Clock.systemDefaultZone())
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockPaymentsConnector, new PaymentsService(), Clock.systemDefaultZone())
 
   "VPDSummaryService" - {
     "getVPDSummary must" - {
@@ -269,6 +276,90 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.links.completeReturn mustBe None
         result.links.viewReturns mustBe None
+      }
+
+      "return a single charge reference and makePayment link when one charge is outstanding" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(
+            outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
+            totalAccountBalance = Some(BigDecimal(4574.84))
+          )))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.payments mustBe defined
+        result.payments.get.hasPaymentsError mustBe false
+        result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
+        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+      }
+
+      "return isMultiplePaymentDue true and no charge reference on the makePayment link when multiple charges are outstanding" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(
+            outstanding         = Seq(
+              OutstandingPayment(Some("XVP111111111"), BigDecimal(5000), None, "Due"),
+              OutstandingPayment(Some("XVP222222222"), BigDecimal(3250), None, "Overdue")
+            ),
+            totalAccountBalance = Some(BigDecimal(8250))
+          )))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
+        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+      }
+
+      "return a negative balance and no makePayment link when the account is in credit" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(
+            outstanding         = Seq.empty,
+            totalAccountBalance = Some(BigDecimal(-325.50))
+          )))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
+        result.links.makePayment mustBe None
+      }
+
+      "return a zero balance and no makePayment link when nothing is owed" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
+        result.links.makePayment mustBe None
+      }
+
+      "return hasPaymentsError true and a generic makePayment link when the payments connector fails" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.payments mustBe Some(Payments(hasPaymentsError = true, balance = None))
+        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
       }
     }
   }

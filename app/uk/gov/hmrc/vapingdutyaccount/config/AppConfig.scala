@@ -54,6 +54,8 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   private val vapingDutyHost: String        = servicesConfig.baseUrl("vaping-duty")
   private val obligationsUrlPrefix     = getConfStringAndThrowIfNotFound("vaping-duty.url.obligations")
 
+  private val financeHost: String = servicesConfig.baseUrl("vaping-duty-finance")
+
   val idType: String = config.get[String]("downstream-apis.idType")
   val regime: String = config.get[String]("downstream-apis.regime")
 
@@ -79,6 +81,9 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
 
   def getObligationsUrl(vpdId: VpdId): String =
     s"$vapingDutyHost$obligationsUrlPrefix/$vpdId"
+
+  def getPaymentsUrl: String =
+    s"$financeHost/vaping-duty-finance/financial-data/payments"
 
   private[config] def getConfStringAndThrowIfNotFound(key: String) =
     servicesConfig.getConfString(key, throw new RuntimeException(s"Could not find services config key '$key'"))
@@ -117,6 +122,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val manageContactPreferenceUrl: String = config.get[String]("service.links.manageContactPreference")
   lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
   lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
+  lazy val makePaymentUrl: String             = config.get[String]("service.links.makePayment")
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }
