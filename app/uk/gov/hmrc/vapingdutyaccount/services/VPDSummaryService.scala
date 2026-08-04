@@ -54,7 +54,7 @@ class VPDSummaryService @Inject()(
       .recover {
         case ex =>
           logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-          Payments(hasPaymentsError = true)
+          Payments(hasPaymentsError = true, balance = None)
       }
 
     for {

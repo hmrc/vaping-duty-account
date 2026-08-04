@@ -21,7 +21,7 @@ import play.api.libs.json.{Json, Writes}
 final case class PaymentBalance(
   amount: BigDecimal,
   isMultiplePaymentDue: Boolean,
-  chargeReference: Option[String] = None
+  chargeReference: Option[String]
 )
 
 object PaymentBalance {
@@ -30,7 +30,7 @@ object PaymentBalance {
 
 final case class Payments(
   hasPaymentsError: Boolean,
-  balance: Option[PaymentBalance] = None
+  balance: Option[PaymentBalance]
 )
 
 object Payments {
