@@ -53,6 +53,17 @@ class VPDSummaryIntegrationSpec extends ISpecBase {
       status(response)        mustBe UNAUTHORIZED
       contentAsJson(response) mustBe Json.toJson(APIErrors.Unauthorised)
     }
+
+    "return 406 when an authorised request has no Accept header" in new SetUp {
+      stubAuthorised(vpdId.toString)
+
+      val response: Future[Result] = callRoute(
+        FakeRequest("GET", routes.VPDSummaryController.getVpdSummary(vpdId).url)
+      )
+
+      status(response)        mustBe NOT_ACCEPTABLE
+      contentAsJson(response) mustBe Json.toJson(APIErrors.NotAcceptable)
+    }
   }
 
   class SetUp {

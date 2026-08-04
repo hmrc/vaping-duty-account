@@ -50,7 +50,9 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      postCode = Some("AB1 2CD")
+      postCode = Some("AB1 2CD"),
+      approvalStatus = SubscriptionApprovalStatus.Approved,
+      insolvencyStatus = None
     )
   val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
     SubscriptionContactPreferences(
@@ -61,8 +63,19 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
-      postCode = Some("AB1 2CD")
+      postCode = Some("AB1 2CD"),
+      approvalStatus = SubscriptionApprovalStatus.Approved,
+      insolvencyStatus = None
     )
+
+  val contactPreferencesApproved: SubscriptionContactPreferences        =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("N"))
+  val contactPreferencesDeregistered: SubscriptionContactPreferences    =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("N"))
+  val contactPreferencesRevoked: SubscriptionContactPreferences         =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("N"))
+  val contactPreferencesInsolvent: SubscriptionContactPreferences       =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("Y"))
 
   val userAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,

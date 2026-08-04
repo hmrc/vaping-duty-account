@@ -43,6 +43,8 @@ object APIErrors {
   val InternalServerError = APIError("Internal server error", INTERNAL_SERVER_ERROR)
 
   val ServiceUnavailable = APIError("Service unavailable (feature is switched OFF)", SERVICE_UNAVAILABLE)
+
+  val NotAcceptable = APIError("The requested API version is not supported", NOT_ACCEPTABLE)
 }
 
 implicit val APIErrorFormat: Writes[APIError] = Json.writes[APIError]

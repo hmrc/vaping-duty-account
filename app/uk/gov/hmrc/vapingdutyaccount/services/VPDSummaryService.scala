@@ -42,7 +42,12 @@ class VPDSummaryService @Inject()(
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
-    val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+    val contactPreferencesFuture: Future[Option[SubscriptionContactPreferences]] =
+      subscriptionConnector.getSubscriptionContactPreferences(vpdId).map(Some(_)).recover {
+        case ex =>
+          logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
+          None
+      }
     val obligationDetailsFuture  = getObligationsService.getObligationDetails(vpdId)
       .recover {
         case ex =>
@@ -66,18 +71,32 @@ class VPDSummaryService @Inject()(
 
   private def createVPDSummary(
                                 vpdId: VpdId,
-                                contactPreferences: SubscriptionContactPreferences,
+                                contactPreferences: Option[SubscriptionContactPreferences],
                                 obligationDetails: Seq[ObligationDetails],
                                 payments: Payments
   ): VPDSummary = {
-    val returns                 = obligationService.processObligations(obligationDetails)
-    val links                   = buildLinks(vpdId, returns, obligationDetails, payments)
-    val contactMethod           = resolveContactMethod(contactPreferences)
-    val contactPreferenceStatus = resolveContactPreferenceStatus(contactMethod, contactPreferences)
+    val returns = obligationService.processObligations(obligationDetails)
+    val links   = buildLinks(vpdId, returns, obligationDetails, payments)
+
+    val (contactMethod, contactPreferenceStatus) = contactPreferences match {
+      case Some(contactPreferences) =>
+        val cm = resolveContactMethod(contactPreferences)
+        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+      case None                     =>
+        (None, None)
+    }
+
+    val access = contactPreferences match {
+      case Some(contactPreferences) =>
+        Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.fromSubscription(contactPreferences)))
+      case None                     =>
+        Access(hasSubscriptionSummaryError = true)
+    }
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
       identifiers             = Identifier(vpdId.toString),
+      access                  = access,
       contactPreference       = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
       returns                 = returns,

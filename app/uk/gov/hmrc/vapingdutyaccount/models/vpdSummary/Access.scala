@@ -16,21 +16,10 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
-import play.api.libs.json.{JsObject, Json, Writes}
+import play.api.libs.json.{Json, Writes}
 
-case class VPDSummary(
-    service: ServiceInfo,
-    identifiers: Identifier,
-    access: Access,
-    // None only when the subscription call failed (see access.hasSubscriptionSummaryError) -
-    // there's no data to derive a contact method from in that case.
-    contactPreference: Option[ContactMethod] = None,
-    contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
-    returns: Option[Returns] = None,
-    payments: Option[Payments] = None,
-    links: Links
-)
+case class Access(hasSubscriptionSummaryError: Boolean, approvalStatus: Option[AccessApprovalStatus] = None)
 
-object VPDSummary {
-  given Writes[VPDSummary] = Json.writes[VPDSummary]
+object Access {
+  given Writes[Access] = Json.writes[Access]
 }

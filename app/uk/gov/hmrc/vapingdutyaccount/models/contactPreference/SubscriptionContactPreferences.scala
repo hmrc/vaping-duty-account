@@ -27,8 +27,13 @@ final case class SubscriptionContactPreferences(
                                                  addressLine1: Option[String],
                                                  addressLine2: Option[String],
                                                  addressLine3: Option[String],
-                                                 postCode: Option[String]
-                                               )
+                                                 postCode: Option[String],
+                                                 approvalStatus: SubscriptionApprovalStatus,
+                                                 insolvencyStatus: Option[String]
+                                               ) {
+
+  def isInsolvent: Boolean = insolvencyStatus.contains("Y")
+}
 
 object SubscriptionContactPreferences {
 

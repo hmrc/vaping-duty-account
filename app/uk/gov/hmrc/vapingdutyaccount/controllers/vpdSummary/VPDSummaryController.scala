@@ -21,12 +21,11 @@ import play.api.Logging
 import play.api.http.ContentTypes
 import play.api.libs.json.*
 import play.api.mvc.*
-import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.controllers.actions.AuthorisedAction
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.requests.IdentifierRequest
+import uk.gov.hmrc.vapingdutyaccount.models.requests.VersionedIdentifierRequest
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.services.VPDSummaryService
 
@@ -36,6 +35,7 @@ class VPDSummaryController @Inject()(
                                       config: AppConfig,
                                       cc: ControllerComponents,
                                       authorise: AuthorisedAction,
+                                      versionAction: VPDSummaryVersionAction,
                                       vpdSummaryService: VPDSummaryService
                                        )(implicit ec: ExecutionContext)
   extends BackendController(cc)
@@ -43,7 +43,7 @@ class VPDSummaryController @Inject()(
 
   given Writes[APIError] = APIErrorFormat
 
-  def getVpdSummary(vpdId: VpdId): Action[AnyContent] = authorise.async { implicit request =>
+  def getVpdSummary(vpdId: VpdId): Action[AnyContent] = (authorise andThen versionAction).async { implicit request =>
     if (config.vpdSummaryRESTAPIEnabled) {
       vpdSummaryService.getVPDSummary(vpdId)
         .map(vpdSummary => buildSuccessResponse(vpdSummary, request))
@@ -56,25 +56,16 @@ class VPDSummaryController @Inject()(
     }
   }
 
-  private def extractHeaders(request: IdentifierRequest[_]) = {
-    val xRequestId     = request.headers.get(HeaderNames.xRequestId)
-    val xCorrelationId = request.headers.get(config.xCorrelationId)
-
-    Map[String, String]() ++
-      xRequestId.map(HeaderNames.xRequestId -> _) ++
-      xCorrelationId.map(config.xCorrelationId -> _)
-  }
-
-  private def buildErrorResponse(request: IdentifierRequest[AnyContent], error: APIError) = {
+  private def buildErrorResponse(request: VersionedIdentifierRequest[AnyContent], error: APIError) = {
 
     new Status(error.code)(Json.toJson(error))
-      .withHeaders(extractHeaders(request).toSeq: _*)
+      .withHeaders(ResponseHeaders.extract(request.headers, config.xCorrelationId).toSeq: _*)
       .as(ContentTypes.JSON)
   }
 
-  private def buildSuccessResponse(vpdSummary: VPDSummary, request: IdentifierRequest[_]): Result =
+  private def buildSuccessResponse(vpdSummary: VPDSummary, request: VersionedIdentifierRequest[_]): Result =
 
       Ok(Json.toJson(vpdSummary))
-        .withHeaders(extractHeaders(request).toSeq: _*)
+        .withHeaders(ResponseHeaders.extract(request.headers, config.xCorrelationId).toSeq: _*)
         .as(ContentTypes.JSON)
 }
