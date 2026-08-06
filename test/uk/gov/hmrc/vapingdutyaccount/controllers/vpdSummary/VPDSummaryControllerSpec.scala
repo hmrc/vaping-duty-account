@@ -124,7 +124,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     s""""contactPreference" : "$contactMethod"$statusLine"""
   }
 
-  def getExpectedAPIResponse(subscription: SubscriptionContactPreferences): JsValue = Json.parse(s"""
+  def getExpectedAPIResponse(subscription: SubscriptionContactPreferences, approvalStatus: String = "APPROVED"): JsValue = Json.parse(s"""
        |{
        |  "service" : {
        |    "name" : "${config.serviceName}",
@@ -133,7 +133,43 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |  "identifiers" : {
        |    "vpdId" : "$vpdId"
        |  },
+       |  "access" : {
+       |    "hasSubscriptionSummaryError" : false,
+       |    "approvalStatus" : "$approvalStatus"
+       |  },
        |  ${getContactPreferenceLines(subscription)},
+       |  "payments" : {
+       |    "hasPaymentsError" : false,
+       |    "balance" : {
+       |      "amount" : 0,
+       |      "isMultiplePaymentDue" : false
+       |    }
+       |  },
+       |  "links" : {
+       |    "self" : {
+       |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
+       |      "method" : "GET"
+       |    },
+       |    "manageContactPreference" : {
+       |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
+       |      "method" : "GET"
+       |    }
+       |  }
+       |}
+       |""".stripMargin)
+
+  val expectedDegradedResponse: JsValue = Json.parse(s"""
+       |{
+       |  "service" : {
+       |    "name" : "${config.serviceName}",
+       |    "id" : "${config.serviceId}"
+       |  },
+       |  "identifiers" : {
+       |    "vpdId" : "$vpdId"
+       |  },
+       |  "access" : {
+       |    "hasSubscriptionSummaryError" : true
+       |  },
        |  "payments" : {
        |    "hasPaymentsError" : false,
        |    "balance" : {
@@ -212,16 +248,16 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
     }
 
-    "must return APIErrors.InternalServerError and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
+    "must return a degraded response and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-        .thenReturn(Future.successful(Seq(obligationDetails)))
+        .thenReturn(Future.successful(Seq.empty))
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
-      status(result)        mustBe HttpStatus.INTERNAL_SERVER_ERROR
-      contentAsJson(result) mustBe Json.toJson(APIErrors.InternalServerError)
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe expectedDegradedResponse
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
       assertHeaderIsPresentOn(result, config.xCorrelationId)
     }
@@ -235,6 +271,58 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       contentAsJson(result) mustBe Json.toJson(APIErrors.ServiceUnavailable)
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
       assertHeaderIsPresentOn(result, config.xCorrelationId)
+    }
+
+    "return access APPROVED when the subscription is approved and not insolvent" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesApproved))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesApproved, "APPROVED")
+    }
+
+    "return access DEREGISTERED when the subscription is deregistered" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesDeregistered))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesDeregistered, "DEREGISTERED")
+    }
+
+    "return access REVOKED when the subscription is revoked" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesRevoked))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesRevoked, "REVOKED")
+    }
+
+    "return access INSOLVENT when the subscription is approved but insolvent" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesInsolvent))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesInsolvent, "INSOLVENT")
     }
   }
 }

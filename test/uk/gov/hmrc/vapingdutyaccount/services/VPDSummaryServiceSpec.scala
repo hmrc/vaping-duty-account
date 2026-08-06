@@ -19,7 +19,6 @@ package uk.gov.hmrc.vapingdutyaccount.services
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.matchers.should.Matchers.shouldBe
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.InternalServerException
@@ -225,7 +224,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactMethod.Email
+        result.contactPreference mustBe Some(ContactMethod.Email)
         result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(false))
       }
 
@@ -237,7 +236,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactMethod.Email
+        result.contactPreference mustBe Some(ContactMethod.Email)
         result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(true))
       }
 
@@ -249,21 +248,22 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.contactPreference mustBe ContactMethod.Post
+        result.contactPreference mustBe Some(ContactMethod.Post)
         result.contactPreferenceStatus mustBe None
       }
 
-      "return InternalServerError when subscription connector fails" in {
+      "return a degraded VPDSummary with hasSubscriptionSummaryError true when the subscription connector fails" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc)
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        ScalaFutures.whenReady(result.failed) { e =>
-          e shouldBe a[InternalServerException]
-        }
+        result.access mustBe Access(hasSubscriptionSummaryError = true, approvalStatus = None)
+        result.contactPreference mustBe None
+        result.contactPreferenceStatus mustBe None
+        result.payments mustBe defined
       }
 
       "return an empty Seq when the obligations connector returns none" in {
@@ -360,6 +360,50 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments mustBe Some(Payments(hasPaymentsError = true, balance = None))
         result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+      }
+
+      "return access APPROVED when the subscription is approved and not insolvent" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesApproved))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Approved))
+      }
+
+      "return access DEREGISTERED when the subscription is deregistered" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesDeregistered))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Deregistered))
+      }
+
+      "return access REVOKED when the subscription is revoked" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesRevoked))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Revoked))
+      }
+
+      "return access INSOLVENT when the subscription is approved but insolvent" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesInsolvent))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent))
       }
     }
   }
