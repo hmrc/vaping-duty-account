@@ -62,16 +62,12 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(mockPaymentsConnector.getPayments()(using any()))
     .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
 
-  val acceptV1_0: String = "application/vnd.hmrc.vpd-summary.1.0+json"
-  val acceptV1_4: String = "application/vnd.hmrc.vpd-summary.1.4+json"
-
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
     uri = "/",
     headers = FakeHeaders(
       Seq(
         PlayHeaderNames.HOST       -> "localhost",
-        PlayHeaderNames.ACCEPT     -> acceptV1_0,
         HmrcHeaderNames.xRequestId -> "a request id"
       )
     ),
@@ -83,9 +79,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     uri = "/",
     headers = FakeHeaders(
       Seq(
-        PlayHeaderNames.HOST   -> "localhost",
-        PlayHeaderNames.ACCEPT -> acceptV1_0,
-        config.xCorrelationId  -> "a correlation id"
+        PlayHeaderNames.HOST  -> "localhost",
+        config.xCorrelationId -> "a correlation id"
       )
     ),
     body = AnyContentAsEmpty
@@ -97,19 +92,9 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     headers = FakeHeaders(
       Seq(
         PlayHeaderNames.HOST       -> "localhost",
-        PlayHeaderNames.ACCEPT     -> acceptV1_0,
         config.xCorrelationId      -> "a correlation id",
         HmrcHeaderNames.xRequestId -> "a request id"
       )
-    ),
-    body = AnyContentAsEmpty
-  )
-
-  def fakeRequestWithAccept(accept: Option[String]): FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
-    method = "GET",
-    uri = "/",
-    headers = FakeHeaders(
-      Seq(PlayHeaderNames.HOST -> "localhost") ++ accept.map(PlayHeaderNames.ACCEPT -> _).toSeq
     ),
     body = AnyContentAsEmpty
   )
@@ -118,7 +103,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     config,
     cc,
     fakeAuthorisedAction,
-    new VPDSummaryVersionAction(config),
     mockVPDSummaryService
   )
   val badVpdId: String                    = "bad-invalid-vpdid"
@@ -289,36 +273,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       assertHeaderIsPresentOn(result, config.xCorrelationId)
     }
 
-    "must return APIErrors.NotAcceptable when no Accept header is present" in {
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(None))
-
-      status(result)        mustBe HttpStatus.NOT_ACCEPTABLE
-      contentAsJson(result) mustBe Json.toJson(APIErrors.NotAcceptable)
-    }
-
-    "must return APIErrors.NotAcceptable when the Accept header is malformed" in {
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some("application/json")))
-
-      status(result)        mustBe HttpStatus.NOT_ACCEPTABLE
-      contentAsJson(result) mustBe Json.toJson(APIErrors.NotAcceptable)
-    }
-
-    "must return APIErrors.NotAcceptable when the Accept header requests an unsupported version" in {
-      val result: Future[Result] =
-        controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some("application/vnd.hmrc.vpd-summary.2.0+json")))
-
-      status(result)        mustBe HttpStatus.NOT_ACCEPTABLE
-      contentAsJson(result) mustBe Json.toJson(APIErrors.NotAcceptable)
-    }
-
-    "must return APIErrors.NotAcceptable when the Accept header requests the old 1.1 version" in {
-      val result: Future[Result] =
-        controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some("application/vnd.hmrc.vpd-summary.1.1+json")))
-
-      status(result)        mustBe HttpStatus.NOT_ACCEPTABLE
-      contentAsJson(result) mustBe Json.toJson(APIErrors.NotAcceptable)
-    }
-
     "return access APPROVED when the subscription is approved and not insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
@@ -326,7 +280,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_4)))
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesApproved, "APPROVED")
@@ -339,7 +293,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_4)))
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesDeregistered, "DEREGISTERED")
@@ -352,7 +306,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_4)))
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesRevoked, "REVOKED")
@@ -365,24 +319,10 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
 
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_4)))
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesInsolvent, "INSOLVENT")
-    }
-
-    "must return an identical body regardless of whether Accept requests 1.0 or 1.4" in {
-      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesApproved))
-      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-        .thenReturn(Future.successful(Seq.empty))
-
-      val v1_0Result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_0)))
-      val v1_4Result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithAccept(Some(acceptV1_4)))
-
-      contentAsJson(v1_0Result) mustBe contentAsJson(v1_4Result)
-      contentAsJson(v1_0Result) mustBe getExpectedAPIResponse(contactPreferencesApproved, "APPROVED")
     }
   }
 }
