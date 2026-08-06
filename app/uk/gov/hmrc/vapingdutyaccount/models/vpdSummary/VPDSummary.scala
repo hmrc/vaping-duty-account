@@ -22,8 +22,6 @@ case class VPDSummary(
     service: ServiceInfo,
     identifiers: Identifier,
     access: Access,
-    // None only when the subscription call failed (see access.hasSubscriptionSummaryError) -
-    // there's no data to derive a contact method from in that case.
     contactPreference: Option[ContactMethod] = None,
     contactPreferenceStatus: Option[ContactPreferenceStatus] = None,
     returns: Option[Returns] = None,
