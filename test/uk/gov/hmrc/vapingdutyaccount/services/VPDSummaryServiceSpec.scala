@@ -44,6 +44,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
   when(mockConfig.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
+  when(mockConfig.phase2Enabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
     .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))
@@ -258,7 +259,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe Access(hasSubscriptionSummaryError = true, approvalStatus = None)
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = true, approvalStatus = None))
         result.contactPreference mustBe None
         result.contactPreferenceStatus mustBe None
         result.payments mustBe defined
@@ -368,7 +369,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Approved))
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Approved)))
       }
 
       "return access DEREGISTERED when the subscription is deregistered" in {
@@ -379,7 +380,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Deregistered))
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Deregistered)))
       }
 
       "return access REVOKED when the subscription is revoked" in {
@@ -390,7 +391,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Revoked))
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Revoked)))
       }
 
       "return access INSOLVENT when the subscription is approved but insolvent" in {
@@ -401,7 +402,22 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent))
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+      }
+
+      "return no access when the phase-2-enabled feature switch is turned off" in {
+        when(mockConfig.phase2Enabled).thenReturn(false)
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesApproved))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe None
+
+        when(mockConfig.phase2Enabled).thenReturn(true)
       }
 
       "return no payments and no makePayment link when payments are not returned" in {

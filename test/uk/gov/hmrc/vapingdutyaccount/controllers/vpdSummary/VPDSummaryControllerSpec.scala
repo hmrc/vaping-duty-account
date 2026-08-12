@@ -56,6 +56,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(config.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
   when(config.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
+  when(config.phase2Enabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
     .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))

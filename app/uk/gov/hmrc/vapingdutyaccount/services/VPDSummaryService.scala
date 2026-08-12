@@ -78,12 +78,16 @@ class VPDSummaryService @Inject()(
         (None, None)
     }
 
-    val access = contactPreferences match {
-      case Some(contactPreferences) =>
-        Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.fromSubscription(contactPreferences)))
-      case None                     =>
-        Access(hasSubscriptionSummaryError = true)
-    }
+    val access =
+      if (config.phase2Enabled)
+        Some(contactPreferences match {
+          case Some(contactPreferences) =>
+            Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.fromSubscription(contactPreferences)))
+          case None                     =>
+            Access(hasSubscriptionSummaryError = true)
+        })
+      else
+        None
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
