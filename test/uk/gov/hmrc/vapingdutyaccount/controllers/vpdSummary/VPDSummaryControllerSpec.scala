@@ -153,6 +153,10 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    "manageContactPreference" : {
        |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
        |      "method" : "GET"
+       |    },
+       |    "setUpDirectDebit" : {
+       |      "href" : "/vaping-duty-finance/direct-debit/bta/start",
+       |      "method" : "GET"
        |    }
        |  }
        |}
@@ -184,6 +188,10 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    },
        |    "manageContactPreference" : {
        |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
+       |      "method" : "GET"
+       |    },
+       |    "setUpDirectDebit" : {
+       |      "href" : "/vaping-duty-finance/direct-debit/bta/start",
        |      "method" : "GET"
        |    }
        |  }

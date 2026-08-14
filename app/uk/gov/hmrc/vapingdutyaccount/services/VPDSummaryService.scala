@@ -166,12 +166,7 @@ class VPDSummaryService @Inject()(
         None
     }
 
-    val startDirectDebit = payments match {
-      case Some(p) if p.hasPaymentsError || p.balance.exists(_.amount > 0) =>
-        Some(StartDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-      case _ =>
-        None
-    }
+    val startDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
 
     Links(
       self                    = self,
@@ -179,7 +174,7 @@ class VPDSummaryService @Inject()(
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
       makePayment             = makePayment,
-      startDirectDebit        = startDirectDebit
+      setUpDirectDebit        = startDirectDebit
     )
   }
 }

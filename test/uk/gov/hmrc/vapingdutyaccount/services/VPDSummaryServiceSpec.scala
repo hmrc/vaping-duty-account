@@ -295,7 +295,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.payments.get.hasPaymentsError mustBe false
         result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
         result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
-        result.links.startDirectDebit mustBe Some(StartDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return isMultiplePaymentDue true and no charge reference on the makePayment link when multiple charges are outstanding" in {
@@ -313,7 +313,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
         result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
-        result.links.startDirectDebit mustBe Some(StartDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return a negative balance and no makePayment link when the account is in credit" in {
@@ -331,7 +331,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
         result.links.makePayment mustBe None
-        result.links.startDirectDebit mustBe None
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return a zero balance and no makePayment link when nothing is owed" in {
@@ -349,7 +349,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
         result.links.makePayment mustBe None
-        result.links.startDirectDebit mustBe None
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return hasPaymentsError true and a generic makePayment link when payments are unavailable" in {
@@ -364,7 +364,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments mustBe Some(Payments(hasPaymentsError = true, balance = None))
         result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
-        result.links.startDirectDebit mustBe Some(StartDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return access APPROVED when the subscription is approved and not insolvent" in {
@@ -438,7 +438,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         result.payments mustBe None
         result.links.makePayment mustBe None
-        result.links.startDirectDebit mustBe None
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
     }
   }

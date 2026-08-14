@@ -21,22 +21,22 @@ import play.api.libs.json.{Json, Writes}
 case class Self(href: String, method: String)
 case class ManageContactPreference(href: String, method: String)
 case class MakePayment(href: String, method: String)
-case class StartDirectDebit(href: String, method: String)
+case class SetUpDirectDebit(href: String, method: String)
 
 implicit val selfFormats: Writes[Self]                                       = Json.writes[Self]
 implicit val manageContactPreferenceFormats: Writes[ManageContactPreference] = Json.writes[ManageContactPreference]
 implicit val completeReturnFormats: Writes[CompleteReturn]                   = Json.writes[CompleteReturn]
 implicit val viewReturnsFormats: Writes[ViewReturns]                         = Json.writes[ViewReturns]
 implicit val makePaymentFormats: Writes[MakePayment]                         = Json.writes[MakePayment]
-implicit val startDirectDebitFormats: Writes[StartDirectDebit]               = Json.writes[StartDirectDebit]
+implicit val setUpDirectDebitFormats: Writes[SetUpDirectDebit]               = Json.writes[SetUpDirectDebit]
 
 case class Links(
-  self: Self,
-  manageContactPreference: ManageContactPreference,
-  completeReturn: Option[CompleteReturn] = None,
-  viewReturns: Option[ViewReturns] = None,
-  makePayment: Option[MakePayment] = None,
-  startDirectDebit: Option[StartDirectDebit] = None
+                  self: Self,
+                  manageContactPreference: ManageContactPreference,
+                  completeReturn: Option[CompleteReturn] = None,
+                  viewReturns: Option[ViewReturns] = None,
+                  makePayment: Option[MakePayment] = None,
+                  setUpDirectDebit: Option[SetUpDirectDebit] = None
 )
 
 implicit val linksFormats: Writes[Links] = Json.writes[Links]
