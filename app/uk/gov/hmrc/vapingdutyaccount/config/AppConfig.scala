@@ -123,6 +123,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
   lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
   lazy val makePaymentUrl: String             = config.get[String]("service.links.makePayment")
+  lazy val startDirectDebitUrl: String        = config.get[String]("service.links.startDirectDebit")
 
   lazy val xCorrelationId: String = "X-Correlation-Id"
 }

@@ -166,12 +166,15 @@ class VPDSummaryService @Inject()(
         None
     }
 
+    val startDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+
     Links(
       self                    = self,
       manageContactPreference = manageContactPreference,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
-      makePayment             = makePayment
+      makePayment             = makePayment,
+      setUpDirectDebit        = startDirectDebit
     )
   }
 }
