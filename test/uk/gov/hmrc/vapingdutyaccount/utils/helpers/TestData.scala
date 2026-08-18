@@ -76,6 +76,10 @@ trait TestData extends ModelGenerators {
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("N"))
   val contactPreferencesInsolvent: SubscriptionContactPreferences       =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("Y"))
+  val contactPreferencesRevokedInsolvent: SubscriptionContactPreferences =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("Y"))
+  val contactPreferencesDeregisteredInsolvent: SubscriptionContactPreferences =
+    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("Y"))
 
   val userAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,

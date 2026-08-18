@@ -55,24 +55,28 @@ class AccessApprovalStatusSpec extends AnyFreeSpec with Matchers {
       ) shouldBe AccessApprovalStatus.Insolvent
     }
 
-    "must return Deregistered regardless of insolvency status" in {
-      AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.DeRegistered, Some("Y"))
-      ) shouldBe AccessApprovalStatus.Deregistered
-
+    "must return Deregistered when the subscription is deregistered and not insolvent" in {
       AccessApprovalStatus.fromSubscription(
         contactPreferences(SubscriptionApprovalStatus.DeRegistered, Some("N"))
       ) shouldBe AccessApprovalStatus.Deregistered
     }
 
-    "must return Revoked regardless of insolvency status" in {
+    "must return Insolvent when the subscription is deregistered and insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Revoked, Some("Y"))
-      ) shouldBe AccessApprovalStatus.Revoked
+        contactPreferences(SubscriptionApprovalStatus.DeRegistered, Some("Y"))
+      ) shouldBe AccessApprovalStatus.Insolvent
+    }
 
+    "must return Revoked when the subscription is revoked and not insolvent" in {
       AccessApprovalStatus.fromSubscription(
         contactPreferences(SubscriptionApprovalStatus.Revoked, Some("N"))
       ) shouldBe AccessApprovalStatus.Revoked
+    }
+
+    "must return Insolvent when the subscription is revoked and insolvent" in {
+      AccessApprovalStatus.fromSubscription(
+        contactPreferences(SubscriptionApprovalStatus.Revoked, Some("Y"))
+      ) shouldBe AccessApprovalStatus.Insolvent
     }
   }
 }

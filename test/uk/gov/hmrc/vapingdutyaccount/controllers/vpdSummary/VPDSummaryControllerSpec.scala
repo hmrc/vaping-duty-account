@@ -162,6 +162,28 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |}
        |""".stripMargin)
 
+  def getExpectedMinimalAPIResponse(approvalStatus: String = "INSOLVENT"): JsValue = Json.parse(s"""
+       |{
+       |  "service" : {
+       |    "name" : "${config.serviceName}",
+       |    "id" : "${config.serviceId}"
+       |  },
+       |  "identifiers" : {
+       |    "vpdId" : "$vpdId"
+       |  },
+       |  "access" : {
+       |    "hasSubscriptionSummaryError" : false,
+       |    "approvalStatus" : "$approvalStatus"
+       |  },
+       |  "links" : {
+       |    "self" : {
+       |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
+       |      "method" : "GET"
+       |    }
+       |  }
+       |}
+       |""".stripMargin)
+
   val expectedDegradedResponse: JsValue = Json.parse(s"""
        |{
        |  "service" : {
@@ -320,7 +342,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesRevoked, "REVOKED")
     }
 
-    "return access INSOLVENT when the subscription is approved but insolvent" in {
+    "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesInsolvent))
@@ -330,7 +352,33 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
       status(result)        mustBe HttpStatus.OK
-      contentAsJson(result) mustBe getExpectedAPIResponse(contactPreferencesInsolvent, "INSOLVENT")
+      contentAsJson(result) mustBe getExpectedMinimalAPIResponse("INSOLVENT")
+    }
+
+    "return access INSOLVENT and a minimal response when the subscription is revoked but insolvent" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedMinimalAPIResponse("INSOLVENT")
+    }
+
+    "return access INSOLVENT and a minimal response when the subscription is deregistered but insolvent" in {
+      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
+      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
+      when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+        .thenReturn(Future.successful(Seq.empty))
+
+      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
+
+      status(result)        mustBe HttpStatus.OK
+      contentAsJson(result) mustBe getExpectedMinimalAPIResponse("INSOLVENT")
     }
   }
 }

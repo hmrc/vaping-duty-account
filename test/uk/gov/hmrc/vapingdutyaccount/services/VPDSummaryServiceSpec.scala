@@ -400,7 +400,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Revoked)))
       }
 
-      "return access INSOLVENT when the subscription is approved but insolvent" in {
+      "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesInsolvent))
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -409,6 +409,46 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+        result.contactPreference mustBe None
+        result.contactPreferenceStatus mustBe None
+        result.returns mustBe None
+        result.payments mustBe None
+        result.links.self mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
+        result.links.manageContactPreference mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.links.makePayment mustBe None
+        result.links.setUpDirectDebit mustBe None
+      }
+
+      "return access INSOLVENT and a minimal response when the subscription is revoked but insolvent" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+        result.returns mustBe None
+        result.payments mustBe None
+        result.links.manageContactPreference mustBe None
+        result.links.setUpDirectDebit mustBe None
+      }
+
+      "return access INSOLVENT and a minimal response when the subscription is deregistered but insolvent" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+        result.returns mustBe None
+        result.payments mustBe None
+        result.links.manageContactPreference mustBe None
+        result.links.setUpDirectDebit mustBe None
       }
 
       "return no access when the phase-2-enabled feature switch is turned off" in {
@@ -422,6 +462,29 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         result.access mustBe None
+
+        when(mockConfig.phase2Enabled).thenReturn(true)
+      }
+
+      "still suppress sections and action links for an insolvent subscriber when the phase-2-enabled feature switch is turned off" in {
+        when(mockConfig.phase2Enabled).thenReturn(false)
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesInsolvent))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq.empty))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.access mustBe None
+        result.returns mustBe None
+        result.payments mustBe None
+        result.links.self mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
+        result.links.manageContactPreference mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.links.makePayment mustBe None
+        result.links.setUpDirectDebit mustBe None
 
         when(mockConfig.phase2Enabled).thenReturn(true)
       }

@@ -36,10 +36,11 @@ object AccessApprovalStatus {
   }
 
   def fromSubscription(contactPreferences: SubscriptionContactPreferences): AccessApprovalStatus =
-    contactPreferences.approvalStatus match {
-      case SubscriptionApprovalStatus.DeRegistered                               => Deregistered
-      case SubscriptionApprovalStatus.Revoked                                    => Revoked
-      case SubscriptionApprovalStatus.Approved if contactPreferences.isInsolvent => Insolvent
-      case SubscriptionApprovalStatus.Approved                                   => Approved
-    }
+    if (contactPreferences.isInsolvent) Insolvent
+    else
+      contactPreferences.approvalStatus match {
+        case SubscriptionApprovalStatus.DeRegistered => Deregistered
+        case SubscriptionApprovalStatus.Revoked      => Revoked
+        case SubscriptionApprovalStatus.Approved     => Approved
+      }
 }
