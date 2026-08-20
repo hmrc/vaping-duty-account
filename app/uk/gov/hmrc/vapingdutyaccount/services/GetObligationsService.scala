@@ -35,7 +35,7 @@ class GetObligationsService @Inject()(
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
     if (config.phase2Enabled)    
       obligationsConnector.getObligations(vpdId)
-        .map(_.obligation.map(_.obligationDetails))
+        .map(_.obligation.flatMap(_.obligationDetails))
     else
       Future(Seq.empty)
   }

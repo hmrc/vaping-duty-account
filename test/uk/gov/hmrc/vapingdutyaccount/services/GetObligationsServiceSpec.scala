@@ -51,7 +51,7 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, Seq(obligationDetails))))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
       }
@@ -60,9 +60,27 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(false)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, Seq(obligationDetails))))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
+      }
+
+      "must flatten multiple obligation details from multiple items" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = LocalDate.now().plusDays(20))
+        val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = LocalDate.now().plusDays(30))
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(None, Seq(obligationDetails, obligationDetails2)),
+            ObligationItem(None, Seq(obligationDetails3))
+          ))))
+
+        val result = service.getObligationDetails(vpdId).futureValue
+        
+        result.size mustBe 3
+        result mustBe Seq(obligationDetails, obligationDetails2, obligationDetails3)
       }
     }
   }

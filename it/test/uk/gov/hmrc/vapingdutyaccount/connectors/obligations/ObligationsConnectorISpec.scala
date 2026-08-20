@@ -39,13 +39,15 @@ class ObligationsConnectorISpec extends ISpecBase with IntegrationPatience {
           Seq(
             ObligationItem(
               identification = Some(Identification("VPD", "GBWK1234567WK", Some("VPD"))),
-              obligationDetails = ObligationDetails(
-                openOrFulfilledStatus = "O",
-                iCFromDate = LocalDate.of(2026, 1, 1),
-                iCToDate = LocalDate.of(2026, 1, 31),
-                iCDateReceived = None,
-                iCDueDate = LocalDate.of(2026, 2, 27),
-                periodKey = "26AA"
+              obligationDetails = Seq(
+                ObligationDetails(
+                  openOrFulfilledStatus = "O",
+                  iCFromDate = LocalDate.of(2026, 1, 1),
+                  iCToDate = LocalDate.of(2026, 1, 31),
+                  iCDateReceived = None,
+                  iCDueDate = LocalDate.of(2026, 2, 27),
+                  periodKey = "26AA"
+                )
               )
             )
           )
@@ -60,6 +62,53 @@ class ObligationsConnectorISpec extends ISpecBase with IntegrationPatience {
         val result = connector.getObligations(vpdId).futureValue
 
         result mustBe obligationsResponse
+      }
+
+      "must handle multiple obligation details per item" in {
+        val obligationsResponse = ObligationsResponse(
+          Seq(
+            ObligationItem(
+              identification = Some(Identification("ZVPD", "GBWK224257WK", None)),
+              obligationDetails = Seq(
+                ObligationDetails(
+                  openOrFulfilledStatus = "O",
+                  iCFromDate = LocalDate.of(2026, 10, 1),
+                  iCToDate = LocalDate.of(2026, 10, 31),
+                  iCDateReceived = None,
+                  iCDueDate = LocalDate.of(2026, 11, 7),
+                  periodKey = "26KJ"
+                ),
+                ObligationDetails(
+                  openOrFulfilledStatus = "O",
+                  iCFromDate = LocalDate.of(2026, 11, 1),
+                  iCToDate = LocalDate.of(2026, 11, 30),
+                  iCDateReceived = None,
+                  iCDueDate = LocalDate.of(2026, 12, 7),
+                  periodKey = "26KK"
+                ),
+                ObligationDetails(
+                  openOrFulfilledStatus = "O",
+                  iCFromDate = LocalDate.of(2026, 12, 1),
+                  iCToDate = LocalDate.of(2026, 12, 31),
+                  iCDateReceived = None,
+                  iCDueDate = LocalDate.of(2027, 1, 7),
+                  periodKey = "26KL"
+                )
+              )
+            )
+          )
+        )
+
+        stubGet(
+          s"/vaping-duty/obligations/$vpdId",
+          OK,
+          Json.toJson(obligationsResponse).toString
+        )
+
+        val result = connector.getObligations(vpdId).futureValue
+
+        result mustBe obligationsResponse
+        result.obligation.head.obligationDetails.size mustBe 3
       }
 
       "must fail with InternalServerException when the API returns 404 NOT_FOUND" in {
