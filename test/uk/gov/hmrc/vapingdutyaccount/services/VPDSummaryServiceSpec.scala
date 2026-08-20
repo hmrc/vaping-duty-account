@@ -263,7 +263,13 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.access mustBe Some(Access(hasSubscriptionSummaryError = true, approvalStatus = None))
         result.contactPreference mustBe None
         result.contactPreferenceStatus mustBe None
-        result.payments mustBe defined
+        result.returns mustBe None
+        result.payments mustBe None
+        result.links.manageContactPreference mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
       "return an empty Seq when the obligations connector returns none" in {

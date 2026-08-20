@@ -67,11 +67,12 @@ class VPDSummaryService @Inject()(
                                 obligationDetails: Seq[ObligationDetails],
                                 payments: Option[Payments]
   ): VPDSummary = {
-    val resolvedStatus = contactPreferences.map(AccessApprovalStatus.fromSubscription)
-    val isNoAccess     = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
+    val hasSubscriptionSummaryError = contactPreferences.isEmpty
+    val resolvedStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
+    val isNoAccess                  = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
 
   val returns = obligationService.processObligations(obligationDetails)
-    val links   = buildLinks(vpdId, isNoAccess, returns, obligationDetails, payments)
+    val links   = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, obligationDetails, payments)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
@@ -86,12 +87,10 @@ class VPDSummaryService @Inject()(
 
     val access =
       if (config.phase2Enabled)
-        Some(contactPreferences match {
-          case Some(_) =>
-            Access(hasSubscriptionSummaryError = false, approvalStatus = resolvedStatus)
-          case None    =>
-            Access(hasSubscriptionSummaryError = true)
-        })
+        Some(
+          if (hasSubscriptionSummaryError) Access(hasSubscriptionSummaryError = true)
+          else Access(hasSubscriptionSummaryError = false, approvalStatus = resolvedStatus)
+        )
       else
         None
 
@@ -101,8 +100,8 @@ class VPDSummaryService @Inject()(
       access                  = access,
       contactPreference       = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = if (isNoAccess) None else returns,
-      payments                = if (isNoAccess) None else payments,
+      returns                 = if (isNoAccess || hasSubscriptionSummaryError) None else returns,
+      payments                = if (isNoAccess || hasSubscriptionSummaryError) None else payments,
       links                   = links
     )
   }
@@ -121,6 +120,7 @@ class VPDSummaryService @Inject()(
   private def buildLinks(
                           vpdId: VpdId,
                           isNoAccess: Boolean,
+                          hasSubscriptionSummaryError: Boolean,
                           returns: Option[Returns],
                           obligationDetails: Seq[ObligationDetails],
                           payments: Option[Payments]
@@ -129,6 +129,12 @@ class VPDSummaryService @Inject()(
 
     if (isNoAccess) {
       Links(self = self)
+    } else if (hasSubscriptionSummaryError) {
+      Links(
+        self             = self,
+        makePayment      = Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)),
+        setUpDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+      )
     } else {
       val manageContactPreference = Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
 

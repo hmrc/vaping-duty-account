@@ -196,20 +196,13 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |  "access" : {
        |    "hasSubscriptionSummaryError" : true
        |  },
-       |  "payments" : {
-       |    "hasPaymentsError" : false,
-       |    "balance" : {
-       |      "amount" : 0,
-       |      "isMultiplePaymentDue" : false
-       |    }
-       |  },
        |  "links" : {
        |    "self" : {
        |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
        |      "method" : "GET"
        |    },
-       |    "manageContactPreference" : {
-       |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
+       |    "makePayment" : {
+       |      "href" : "/vaping-duty-finance/pay",
        |      "method" : "GET"
        |    },
        |    "setUpDirectDebit" : {
