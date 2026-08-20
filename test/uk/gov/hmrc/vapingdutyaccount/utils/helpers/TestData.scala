@@ -50,6 +50,8 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
+      addressLine4 = None,
+      addressLine5 = None,
       postCode = Some("AB1 2CD"),
       approvalStatus = SubscriptionApprovalStatus.Approved,
       insolvencyStatus = None
@@ -63,6 +65,8 @@ trait TestData extends ModelGenerators {
       addressLine1 = Some("Flat 123"),
       addressLine2 = Some("1 Example Road"),
       addressLine3 = None,
+      addressLine4 = None,
+      addressLine5 = None,
       postCode = Some("AB1 2CD"),
       approvalStatus = SubscriptionApprovalStatus.Approved,
       insolvencyStatus = None

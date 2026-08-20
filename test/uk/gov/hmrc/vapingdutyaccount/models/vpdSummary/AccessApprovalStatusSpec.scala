@@ -31,6 +31,8 @@ class AccessApprovalStatusSpec extends AnyFreeSpec with Matchers {
       addressLine1 = None,
       addressLine2 = None,
       addressLine3 = None,
+      addressLine4 = None,
+      addressLine5 = None,
       postCode = None,
       approvalStatus = approvalStatus,
       insolvencyStatus = insolvencyStatus
