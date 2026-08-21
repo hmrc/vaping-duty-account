@@ -20,7 +20,6 @@ import org.mockito.Mockito.verify
 import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
-import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger}
 
 class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
