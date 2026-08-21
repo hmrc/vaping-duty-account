@@ -88,6 +88,8 @@ object UserAnswers {
       contactPreferences.addressLine1,
       contactPreferences.addressLine2,
       contactPreferences.addressLine3,
+      contactPreferences.addressLine4,
+      contactPreferences.addressLine5,
       contactPreferences.postCode
     ).flatten.mkString("\n")
 
