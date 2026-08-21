@@ -136,63 +136,75 @@ class VPDSummaryService @Inject()(
         setUpDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
       )
     } else {
-      val manageContactPreference = Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
+      buildFullAccessLinks(self, returns, obligationDetails, payments)
+    }
+  }
 
-      val (completeReturn, viewReturns) = returns match {
-        case Some(r) =>
-          val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
+  private def buildFullAccessLinks(
+                                    self: Self,
+                                    returns: Option[Returns],
+                                    obligationDetails: Seq[ObligationDetails],
+                                    payments: Option[Payments]
+  ): Links = {
+    val (completeReturn, viewReturns) = buildReturnLinks(returns, obligationDetails)
 
-          val completeReturnLink =
-            if (r.dueReturnsCount == 1 && r.overdueReturnsCount == 0) {
-              r.currentReturn.map(current =>
+    Links(
+      self                    = self,
+      manageContactPreference = Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)),
+      completeReturn          = completeReturn,
+      viewReturns             = viewReturns,
+      makePayment             = buildMakePaymentLink(payments),
+      setUpDirectDebit        = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+    )
+  }
+
+  private def buildReturnLinks(
+                                returns: Option[Returns],
+                                obligationDetails: Seq[ObligationDetails]
+  ): (Option[CompleteReturn], Option[ViewReturns]) =
+    returns match {
+      case Some(r) =>
+        val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
+
+        val completeReturnLink =
+          if (r.dueReturnsCount == 1 && r.overdueReturnsCount == 0) {
+            r.currentReturn.map(current =>
+              CompleteReturn(
+                s"${config.completeReturnUrlPrefix}?period=${current.periodKey}",
+                HttpVerbs.GET
+              )
+            )
+          } else if (r.overdueReturnsCount == 1 && r.dueReturnsCount == 0) {
+            obligationDetails
+              .find(obligationService.isOverdue(_, LocalDate.now(clock)))
+              .map(obligation =>
                 CompleteReturn(
-                  s"${config.completeReturnUrlPrefix}?period=${current.periodKey}",
+                  s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
                   HttpVerbs.GET
                 )
               )
-            } else if (r.overdueReturnsCount == 1 && r.dueReturnsCount == 0) {
-              obligationDetails
-                .find(obligationService.isOverdue(_, LocalDate.now(clock)))
-                .map(obligation =>
-                  CompleteReturn(
-                    s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
-                    HttpVerbs.GET
-                  )
-                )
-            } else {
-              None
-            }
+          } else {
+            None
+          }
 
-          val viewReturnsLink =
-            if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
-              Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
-            } else {
-              None
-            }
+        val viewReturnsLink =
+          if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
+            Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
+          } else {
+            None
+          }
 
-          (completeReturnLink, viewReturnsLink)
+        (completeReturnLink, viewReturnsLink)
 
-        case None =>
-          (None, None)
-      }
-
-      val makePayment = payments match {
-        case Some(p) if p.hasPaymentsError || p.balance.exists(_.amount > 0) =>
-          Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
-        case _ =>
-          None
-      }
-
-      val startDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-
-      Links(
-        self                    = self,
-        manageContactPreference = manageContactPreference,
-        completeReturn          = completeReturn,
-        viewReturns             = viewReturns,
-        makePayment             = makePayment,
-        setUpDirectDebit        = startDirectDebit
-      )
+      case None =>
+        (None, None)
     }
-  }
+
+  private def buildMakePaymentLink(payments: Option[Payments]): Option[MakePayment] =
+    payments match {
+      case Some(p) if p.hasPaymentsError || p.balance.exists(_.amount > 0) =>
+        Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
+      case _ =>
+        None
+    }
 }
