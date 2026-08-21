@@ -22,6 +22,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
@@ -243,5 +244,10 @@ trait TestData extends ModelGenerators {
 
   val emptyObligationsResponse: ObligationsResponse = ObligationsResponse(
     obligation = Seq.empty
+  )
+
+  val paymentsWithOutstandingBalance: Payments = Payments(
+    hasPaymentsError = false,
+    balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
   )
 }
