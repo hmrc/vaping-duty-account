@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -43,7 +43,13 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
     iCDueDate             = LocalDate.now().plusDays(10),
     periodKey             = "26AA"
   )
+  
+  private val identificationDetails = Identification(
+    referenceType = "ZVPD", referenceNumber = vpdId.id, incomeSourceType = None
+  )
 
+  when(mockAppConfig.idType).thenReturn("ZVPD")
+  
   "ObligationsService" - {
     "getObligationDetails must" - {
 
@@ -51,7 +57,31 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, Seq(obligationDetails))))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
+
+        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+      }
+
+      "must filter out obligation items without matching referenceNumber" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
+            ObligationItem(Some(identificationDetails.copy(referenceNumber = "NonMatchingId")), Seq(obligationDetailsCompleted))
+          ))))
+
+        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+      }
+
+      "must filter out obligation items without matching referenceType" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
+            ObligationItem(Some(identificationDetails.copy(referenceType = "OTHER_REGIME")), Seq(obligationDetailsCompleted))
+          ))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
       }
@@ -60,7 +90,7 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(false)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, Seq(obligationDetails))))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
       }
@@ -73,8 +103,8 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(
-            ObligationItem(None, Seq(obligationDetails, obligationDetails2)),
-            ObligationItem(None, Seq(obligationDetails3))
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails, obligationDetails2)),
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails3))
           ))))
 
         val result = service.getObligationDetails(vpdId).futureValue
