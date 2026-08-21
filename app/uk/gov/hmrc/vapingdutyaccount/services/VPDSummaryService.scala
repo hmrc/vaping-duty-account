@@ -164,41 +164,42 @@ class VPDSummaryService @Inject()(
   ): (Option[CompleteReturn], Option[ViewReturns]) =
     returns match {
       case Some(r) =>
-        val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
-
-        val completeReturnLink =
-          if (r.dueReturnsCount == 1 && r.overdueReturnsCount == 0) {
-            r.currentReturn.map(current =>
-              CompleteReturn(
-                s"${config.completeReturnUrlPrefix}?period=${current.periodKey}",
-                HttpVerbs.GET
-              )
-            )
-          } else if (r.overdueReturnsCount == 1 && r.dueReturnsCount == 0) {
-            obligationDetails
-              .find(obligationService.isOverdue(_, LocalDate.now(clock)))
-              .map(obligation =>
-                CompleteReturn(
-                  s"${config.completeReturnUrlPrefix}?period=${obligation.periodKey}",
-                  HttpVerbs.GET
-                )
-              )
-          } else {
-            None
-          }
-
-        val viewReturnsLink =
-          if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
-            Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
-          } else {
-            None
-          }
-
-        (completeReturnLink, viewReturnsLink)
-
+        (completeReturnLink(obligationDetails, r), viewReturnsLink(r))
       case None =>
         (None, None)
     }
+
+  private def completeReturnLink(obligationDetails: Seq[ObligationDetails], returns: Returns): Option[CompleteReturn] =
+    if (returns.dueReturnsCount == 1 && returns.overdueReturnsCount == 0) {
+      completeSingleDueReturnLink(returns)
+    } else if (returns.dueReturnsCount == 0 && returns.overdueReturnsCount == 1) {
+      completeSingleOverdueReturnLink(obligationDetails)
+    } else {
+      None
+    }
+
+  private def completeSingleDueReturnLink(returns: Returns): Option[CompleteReturn] =
+    returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
+
+  private def completeSingleOverdueReturnLink(obligationDetails: Seq[ObligationDetails]): Option[CompleteReturn] =
+    obligationDetails
+      .find(obligationService.isOverdue(_, LocalDate.now(clock)))
+      .map(obligation => completeReturnForPeriod(obligation.periodKey))
+
+  private def completeReturnForPeriod(periodKey: String): CompleteReturn =
+    CompleteReturn(
+      s"${config.completeReturnUrlPrefix}?period=$periodKey",
+      HttpVerbs.GET
+    )
+
+  private def viewReturnsLink(r: Returns): Option[ViewReturns] = {
+    val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
+    if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
+      Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
+    } else {
+      None
+    }
+  }
 
   private def buildMakePaymentLink(payments: Option[Payments]): Option[MakePayment] =
     payments match {
