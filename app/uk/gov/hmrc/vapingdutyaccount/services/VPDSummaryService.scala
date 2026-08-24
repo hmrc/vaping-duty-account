@@ -71,7 +71,7 @@ class VPDSummaryService @Inject()(
     val resolvedStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
     val isNoAccess                  = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
 
-  val returns = obligationService.processObligations(obligationDetails)
+    val returns = obligationService.processObligations(obligationDetails)
     val links   = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, obligationDetails, payments)
 
     val (contactMethod, contactPreferenceStatus) =
