@@ -32,7 +32,7 @@ implicit val setUpDirectDebitFormats: Writes[SetUpDirectDebit]               = J
 
 case class Links(
                   self: Self,
-                  manageContactPreference: ManageContactPreference,
+                  manageContactPreference: Option[ManageContactPreference] = None,
                   completeReturn: Option[CompleteReturn] = None,
                   viewReturns: Option[ViewReturns] = None,
                   makePayment: Option[MakePayment] = None,
