@@ -35,14 +35,16 @@ class ObligationsResponseSpec extends AnyFreeSpec with Matchers {
                 "referenceNumber": "GBWK1234567WK",
                 "incomeSourceType": "VPD"
               },
-              "obligationDetails": {
-                "openOrFulfilledStatus": "O",
-                "iCFromDate": "2026-01-01",
-                "iCToDate": "2026-01-31",
-                "iCDateReceived": null,
-                "iCDueDate": "2026-02-27",
-                "periodKey": "26AA"
-              }
+              "obligationDetails": [
+                {
+                  "openOrFulfilledStatus": "O",
+                  "iCFromDate": "2026-01-01",
+                  "iCToDate": "2026-01-31",
+                  "iCDateReceived": null,
+                  "iCDueDate": "2026-02-27",
+                  "periodKey": "26AA"
+                }
+              ]
             }
           ]
         }
@@ -51,9 +53,10 @@ class ObligationsResponseSpec extends AnyFreeSpec with Matchers {
       val result = json.as[ObligationsResponse]
 
       result.obligation should have size 1
-      result.obligation.head.obligationDetails.periodKey shouldBe "26AA"
-      result.obligation.head.obligationDetails.openOrFulfilledStatus shouldBe "O"
-      result.obligation.head.obligationDetails.iCDueDate shouldBe LocalDate.of(2026, 2, 27)
+      result.obligation.head.obligationDetails should have size 1
+      result.obligation.head.obligationDetails.head.periodKey shouldBe "26AA"
+      result.obligation.head.obligationDetails.head.openOrFulfilledStatus shouldBe "O"
+      result.obligation.head.obligationDetails.head.iCDueDate shouldBe LocalDate.of(2026, 2, 27)
     }
 
     "must deserialize from JSON with multiple obligations" in {
@@ -62,25 +65,29 @@ class ObligationsResponseSpec extends AnyFreeSpec with Matchers {
           "obligation": [
             {
               "identification": null,
-              "obligationDetails": {
-                "openOrFulfilledStatus": "O",
-                "iCFromDate": "2026-01-01",
-                "iCToDate": "2026-01-31",
-                "iCDateReceived": null,
-                "iCDueDate": "2026-02-27",
-                "periodKey": "26AA"
-              }
+              "obligationDetails": [
+                {
+                  "openOrFulfilledStatus": "O",
+                  "iCFromDate": "2026-01-01",
+                  "iCToDate": "2026-01-31",
+                  "iCDateReceived": null,
+                  "iCDueDate": "2026-02-27",
+                  "periodKey": "26AA"
+                }
+              ]
             },
             {
               "identification": null,
-              "obligationDetails": {
-                "openOrFulfilledStatus": "F",
-                "iCFromDate": "2025-12-01",
-                "iCToDate": "2025-12-31",
-                "iCDateReceived": "2026-01-15",
-                "iCDueDate": "2026-01-27",
-                "periodKey": "25AL"
-              }
+              "obligationDetails": [
+                {
+                  "openOrFulfilledStatus": "F",
+                  "iCFromDate": "2025-12-01",
+                  "iCToDate": "2025-12-31",
+                  "iCDateReceived": "2026-01-15",
+                  "iCDueDate": "2026-01-27",
+                  "periodKey": "25AL"
+                }
+              ]
             }
           ]
         }
@@ -89,9 +96,57 @@ class ObligationsResponseSpec extends AnyFreeSpec with Matchers {
       val result = json.as[ObligationsResponse]
 
       result.obligation should have size 2
-      result.obligation.head.obligationDetails.openOrFulfilledStatus shouldBe "O"
-      result.obligation(1).obligationDetails.openOrFulfilledStatus shouldBe "F"
-      result.obligation(1).obligationDetails.iCDateReceived shouldBe Some(LocalDate.of(2026, 1, 15))
+      result.obligation.head.obligationDetails should have size 1
+      result.obligation.head.obligationDetails.head.openOrFulfilledStatus shouldBe "O"
+      result.obligation(1).obligationDetails should have size 1
+      result.obligation(1).obligationDetails.head.openOrFulfilledStatus shouldBe "F"
+      result.obligation(1).obligationDetails.head.iCDateReceived shouldBe Some(LocalDate.of(2026, 1, 15))
+    }
+
+    "must deserialize from JSON with multiple obligation details per item" in {
+      val json = Json.parse("""
+        {
+          "obligation": [
+            {
+              "identification": {
+                "referenceType": "ZVPD",
+                "referenceNumber": "GBWK224257WK"
+              },
+              "obligationDetails": [
+                {
+                  "openOrFulfilledStatus": "O",
+                  "iCFromDate": "2026-10-01",
+                  "iCToDate": "2026-10-31",
+                  "iCDueDate": "2026-11-07",
+                  "periodKey": "26KJ"
+                },
+                {
+                  "openOrFulfilledStatus": "O",
+                  "iCFromDate": "2026-11-01",
+                  "iCToDate": "2026-11-30",
+                  "iCDueDate": "2026-12-07",
+                  "periodKey": "26KK"
+                },
+                {
+                  "openOrFulfilledStatus": "O",
+                  "iCFromDate": "2026-12-01",
+                  "iCToDate": "2026-12-31",
+                  "iCDueDate": "2027-01-07",
+                  "periodKey": "26KL"
+                }
+              ]
+            }
+          ]
+        }
+      """)
+
+      val result = json.as[ObligationsResponse]
+
+      result.obligation should have size 1
+      result.obligation.head.obligationDetails should have size 3
+      result.obligation.head.obligationDetails(0).periodKey shouldBe "26KJ"
+      result.obligation.head.obligationDetails(1).periodKey shouldBe "26KK"
+      result.obligation.head.obligationDetails(2).periodKey shouldBe "26KL"
     }
 
     "must deserialize from JSON with empty obligations" in {

@@ -21,7 +21,6 @@ import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
-import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubmitPreferencesConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.SubmitPreferencesConnectorLogger
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {

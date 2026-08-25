@@ -21,7 +21,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,8 +35,17 @@ class GetObligationsService @Inject()(
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
     if (config.phase2Enabled)    
       obligationsConnector.getObligations(vpdId)
-        .map(_.obligation.map(_.obligationDetails))
+        .map(_.obligation
+          .filter(matchesVpdId(vpdId))
+          .flatMap(_.obligationDetails)
+        )
     else
-      Future(Seq.empty)
+      Future.successful(Seq.empty)
   }
+
+  private def matchesVpdId(vpdId: VpdId)(obligation: ObligationItem): Boolean =
+    obligation.identification.exists { id =>
+      id.referenceType == config.idType &&
+        id.referenceNumber == vpdId.id
+    }
 }

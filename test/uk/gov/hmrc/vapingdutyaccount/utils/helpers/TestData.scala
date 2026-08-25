@@ -239,7 +239,7 @@ trait TestData extends ModelGenerators {
       referenceNumber = vpdId.toString,
       incomeSourceType = Some("ZVPD")
     )),
-    obligationDetails = obligationDetails
+    obligationDetails = Seq(obligationDetails)
   )
 
   val obligationsResponse: ObligationsResponse = ObligationsResponse(

@@ -23,7 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -43,7 +43,13 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
     iCDueDate             = LocalDate.now().plusDays(10),
     periodKey             = "26AA"
   )
+  
+  private val identificationDetails = Identification(
+    referenceType = "ZVPD", referenceNumber = vpdId.id, incomeSourceType = None
+  )
 
+  when(mockAppConfig.idType).thenReturn("ZVPD")
+  
   "ObligationsService" - {
     "getObligationDetails must" - {
 
@@ -51,7 +57,31 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
+
+        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+      }
+
+      "must filter out obligation items without matching referenceNumber" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
+            ObligationItem(Some(identificationDetails.copy(referenceNumber = "NonMatchingId")), Seq(obligationDetailsCompleted))
+          ))))
+
+        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+      }
+
+      "must filter out obligation items without matching referenceType" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
+            ObligationItem(Some(identificationDetails.copy(referenceType = "OTHER_REGIME")), Seq(obligationDetailsCompleted))
+          ))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
       }
@@ -60,9 +90,27 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
         when(mockAppConfig.phase2Enabled).thenReturn(false)
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(None, obligationDetails)))))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
+      }
+
+      "must flatten multiple obligation details from multiple items" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = LocalDate.now().plusDays(20))
+        val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = LocalDate.now().plusDays(30))
+
+        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ObligationsResponse(Seq(
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails, obligationDetails2)),
+            ObligationItem(Some(identificationDetails), Seq(obligationDetails3))
+          ))))
+
+        val result = service.getObligationDetails(vpdId).futureValue
+        
+        result.size mustBe 3
+        result mustBe Seq(obligationDetails, obligationDetails2, obligationDetails3)
       }
     }
   }
