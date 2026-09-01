@@ -70,15 +70,18 @@ class ObligationServiceSpec extends SpecBase {
         result.currentReturn mustBe None
       }
 
-      "return Some(Returns) with overdueCount=1 and no currentReturn when single overdue obligation" in {
+      "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
+        val dueDate = LocalDate.now().minusDays(5)
         val result = service.processObligations(
-          Seq(createObligation("O", LocalDate.now().minusDays(5), "25AL"))
+          Seq(createObligation("O", dueDate, "25AL"))
         ).value
 
         result.dueReturnsCount mustBe Some(0)
         result.overdueReturnsCount mustBe Some(1)
         result.completedReturnsCount mustBe Some(0)
-        result.currentReturn mustBe None
+        result.currentReturn mustBe defined
+        result.currentReturn.get.periodKey mustBe "25AL"
+        result.currentReturn.get.dueDate mustBe dueDate 
       }
 
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
