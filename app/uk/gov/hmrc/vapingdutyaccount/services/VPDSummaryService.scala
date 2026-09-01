@@ -186,15 +186,6 @@ class VPDSummaryService @Inject()(
     }
 
   private def completeReturnLink(obligationDetails: Seq[ObligationDetails], returns: Returns): Option[CompleteReturn] =
-    if (returns.dueReturnsCount.contains(1) && returns.overdueReturnsCount.contains(0)) {
-      completeSingleReturnLink(returns)
-    } else if (returns.dueReturnsCount.contains(0) && returns.overdueReturnsCount.contains(1)) {
-      completeSingleReturnLink(returns)
-    } else {
-      None
-    }
-
-  private def completeSingleReturnLink(returns: Returns): Option[CompleteReturn] =
     returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
 
   private def completeReturnForPeriod(periodKey: String): CompleteReturn =
