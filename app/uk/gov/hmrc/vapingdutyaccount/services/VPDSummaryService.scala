@@ -46,11 +46,9 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
           None
       }
-    val obligationDetailsFuture: Future[Seq[ObligationDetails]] =
-      getObligationsService.getObligationDetails(vpdId)
 
     val returnsFuture: Future[Option[Returns]] =
-      obligationDetailsFuture
+      getObligationsService.getObligationDetails(vpdId)
         .map(obligationService.processObligations)
         .recover {
           case ex =>
