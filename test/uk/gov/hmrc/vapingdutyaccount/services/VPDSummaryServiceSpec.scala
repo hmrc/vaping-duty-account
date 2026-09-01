@@ -274,6 +274,25 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
       }
 
+      "return Some(Returns) with hasReturnsError true and no counts/completeReturn/viewReturns links when the obligations call fails" in {
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.failed(new InternalServerException("Failed to retrieve obligations")))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.returns mustBe Some(Returns(
+          hasReturnsError       = true,
+          currentReturn         = None,
+          dueReturnsCount       = None,
+          overdueReturnsCount   = None,
+          completedReturnsCount = None
+        ))
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+      }
+
       "return an empty Seq when the obligations connector returns none" in {
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesPostNoEmail))

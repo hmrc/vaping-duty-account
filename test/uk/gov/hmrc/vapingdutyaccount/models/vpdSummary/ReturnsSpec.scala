@@ -28,14 +28,16 @@ class ReturnsSpec extends AnyFreeSpec with Matchers {
     "must serialize to JSON correctly with currentReturn" in {
       val currentReturn = CurrentReturn("26AA", LocalDate.of(2026, 2, 27))
       val returns = Returns(
+        hasReturnsError = false,
         currentReturn = Some(currentReturn),
-        dueReturnsCount = 1,
-        overdueReturnsCount = 0,
-        completedReturnsCount = 0
+        dueReturnsCount = Some(1),
+        overdueReturnsCount = Some(0),
+        completedReturnsCount = Some(0)
       )
 
       val json = Json.toJson(returns)
 
+      (json \ "hasReturnsError").as[Boolean] shouldBe false
       (json \ "currentReturn" \ "periodKey").as[String] shouldBe "26AA"
       (json \ "currentReturn" \ "dueDate").as[String] shouldBe "2026-02-27"
       (json \ "dueReturnsCount").as[Int] shouldBe 1
@@ -45,14 +47,16 @@ class ReturnsSpec extends AnyFreeSpec with Matchers {
 
     "must serialize to JSON correctly without currentReturn" in {
       val returns = Returns(
+        hasReturnsError = false,
         currentReturn = None,
-        dueReturnsCount = 0,
-        overdueReturnsCount = 2,
-        completedReturnsCount = 1
+        dueReturnsCount = Some(0),
+        overdueReturnsCount = Some(2),
+        completedReturnsCount = Some(1)
       )
 
       val json = Json.toJson(returns)
 
+      (json \ "hasReturnsError").as[Boolean] shouldBe false
       (json \ "currentReturn").asOpt[CurrentReturn] shouldBe None
       (json \ "dueReturnsCount").as[Int] shouldBe 0
       (json \ "overdueReturnsCount").as[Int] shouldBe 2
@@ -61,10 +65,11 @@ class ReturnsSpec extends AnyFreeSpec with Matchers {
 
     "must serialize to JSON with all counts as zero" in {
       val returns = Returns(
+        hasReturnsError = false,
         currentReturn = None,
-        dueReturnsCount = 0,
-        overdueReturnsCount = 0,
-        completedReturnsCount = 0
+        dueReturnsCount = Some(0),
+        overdueReturnsCount = Some(0),
+        completedReturnsCount = Some(0)
       )
 
       val json = Json.toJson(returns)
@@ -72,6 +77,24 @@ class ReturnsSpec extends AnyFreeSpec with Matchers {
       (json \ "dueReturnsCount").as[Int] shouldBe 0
       (json \ "overdueReturnsCount").as[Int] shouldBe 0
       (json \ "completedReturnsCount").as[Int] shouldBe 0
+    }
+
+    "must serialize to JSON with only hasReturnsError when hasReturnsError is true" in {
+      val returns = Returns(
+        hasReturnsError = true,
+        currentReturn = None,
+        dueReturnsCount = None,
+        overdueReturnsCount = None,
+        completedReturnsCount = None
+      )
+
+      val json = Json.toJson(returns)
+
+      (json \ "hasReturnsError").as[Boolean] shouldBe true
+      (json \ "currentReturn").toOption shouldBe None
+      (json \ "dueReturnsCount").toOption shouldBe None
+      (json \ "overdueReturnsCount").toOption shouldBe None
+      (json \ "completedReturnsCount").toOption shouldBe None
     }
   }
 }

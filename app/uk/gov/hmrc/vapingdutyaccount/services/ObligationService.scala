@@ -47,7 +47,13 @@ class ObligationService {
       } else {
         None
       }
-      Some(Returns(currentReturn, dueCount, overdueCount, completedCount))
+      Some(Returns(
+        hasReturnsError = false,
+        currentReturn = currentReturn,
+        dueReturnsCount = Some(dueCount),
+        overdueReturnsCount = Some(overdueCount),
+        completedReturnsCount = Some(completedCount)
+      ))
     }
   }
 
