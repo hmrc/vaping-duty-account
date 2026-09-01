@@ -34,13 +34,17 @@ class GetObligationsService @Inject()(
 
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
     if (config.phase2Enabled)    
-      obligationsConnector.getObligations(vpdId)
-        .map(_.obligation
-          .filter(matchesVpdId(vpdId))
-          .flatMap(_.obligationDetails)
-        )
+      getFilteredObligations(vpdId)
     else
       Future.successful(Seq.empty)
+  }
+
+  private def getFilteredObligations(vpdId: VpdId)(using HeaderCarrier) = {
+    obligationsConnector.getObligations(vpdId)
+      .map(_.obligation
+        .filter(matchesVpdId(vpdId))
+        .flatMap(_.obligationDetails)
+      )
   }
 
   private def matchesVpdId(vpdId: VpdId)(obligation: ObligationItem): Boolean =
