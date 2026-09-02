@@ -144,7 +144,7 @@ class VPDSummaryService @Inject()(
       Links(
         self             = self,
         makePayment      = Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)),
-        setUpDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+        setUpDirectDebit = setupDirectDebitLink
       )
     } else {
       buildFullAccessLinks(self, returns, payments)
@@ -164,9 +164,15 @@ class VPDSummaryService @Inject()(
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
       makePayment             = buildMakePaymentLink(payments),
-      setUpDirectDebit        = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+      setUpDirectDebit        = setupDirectDebitLink
     )
   }
+
+  private def setupDirectDebitLink =
+    if (config.phase2Enabled)
+      Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+    else
+      None
 
   private def buildReturnLinks(returns: Option[Returns]) =
     returns match {
