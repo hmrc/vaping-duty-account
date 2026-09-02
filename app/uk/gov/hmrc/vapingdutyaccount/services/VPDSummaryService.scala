@@ -46,24 +46,41 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
           None
       }
-    val obligationDetailsFuture  = getObligationsService.getObligationDetails(vpdId)
-      .recover {
-        case ex =>
-          logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
-          Seq.empty
-      }
+    val obligationDetailsFuture: Future[Seq[ObligationDetails]] =
+      getObligationsService.getObligationDetails(vpdId)
+
+    val returnsFuture: Future[Option[Returns]] =
+      obligationDetailsFuture
+        .map(obligationService.processObligations)
+        .recover {
+          case ex =>
+            logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
+            Some(Returns(
+              hasReturnsError = true,
+              currentReturn = None,
+              dueReturnsCount = None,
+              overdueReturnsCount = None,
+              completedReturnsCount = None
+            ))
+        }
+
+    val safeObligationDetailsFuture: Future[Seq[ObligationDetails]] =
+      obligationDetailsFuture.recover { case _ => Seq.empty }
+
     val paymentsFuture = getPaymentsService.getPayments()
 
     for {
       contactPreferences <- contactPreferencesFuture
-      obligationDetails  <- obligationDetailsFuture
+      returns            <- returnsFuture
+      obligationDetails  <- safeObligationDetailsFuture
       payments           <- paymentsFuture
-    } yield createVPDSummary(vpdId, contactPreferences, obligationDetails, payments)
+    } yield createVPDSummary(vpdId, contactPreferences, returns, obligationDetails, payments)
   }
 
   private def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: Option[SubscriptionContactPreferences],
+                                returns: Option[Returns],
                                 obligationDetails: Seq[ObligationDetails],
                                 payments: Option[Payments]
   ): VPDSummary = {
@@ -71,8 +88,7 @@ class VPDSummaryService @Inject()(
     val resolvedStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
     val isNoAccess                  = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
 
-    val returns = obligationService.processObligations(obligationDetails)
-    val links   = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, obligationDetails, payments)
+    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, obligationDetails, payments)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
@@ -170,9 +186,9 @@ class VPDSummaryService @Inject()(
     }
 
   private def completeReturnLink(obligationDetails: Seq[ObligationDetails], returns: Returns): Option[CompleteReturn] =
-    if (returns.dueReturnsCount == 1 && returns.overdueReturnsCount == 0) {
+    if (returns.dueReturnsCount.contains(1) && returns.overdueReturnsCount.contains(0)) {
       completeSingleDueReturnLink(returns)
-    } else if (returns.dueReturnsCount == 0 && returns.overdueReturnsCount == 1) {
+    } else if (returns.dueReturnsCount.contains(0) && returns.overdueReturnsCount.contains(1)) {
       completeSingleOverdueReturnLink(obligationDetails)
     } else {
       None
@@ -193,8 +209,11 @@ class VPDSummaryService @Inject()(
     )
 
   private def viewReturnsLink(r: Returns): Option[ViewReturns] = {
-    val totalReturns = r.dueReturnsCount + r.overdueReturnsCount + r.completedReturnsCount
-    if (totalReturns > 1 || r.completedReturnsCount > 0 || (r.dueReturnsCount > 0 && r.overdueReturnsCount > 0)) {
+    val due           = r.dueReturnsCount.getOrElse(0)
+    val overdue       = r.overdueReturnsCount.getOrElse(0)
+    val completed     = r.completedReturnsCount.getOrElse(0)
+    val totalReturns  = due + overdue + completed
+    if (totalReturns > 1 || completed > 0 || (due > 0 && overdue > 0)) {
       Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
     } else {
       None

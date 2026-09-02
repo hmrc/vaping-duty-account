@@ -19,10 +19,11 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 import play.api.libs.json.{Json, Writes}
 
 final case class Returns(
+  hasReturnsError: Boolean,
   currentReturn: Option[CurrentReturn],
-  dueReturnsCount: Int,
-  overdueReturnsCount: Int,
-  completedReturnsCount: Int
+  dueReturnsCount: Option[Int],
+  overdueReturnsCount: Option[Int],
+  completedReturnsCount: Option[Int]
 )
 
 object Returns {

@@ -51,9 +51,10 @@ class ObligationServiceSpec extends SpecBase {
         val dueDate = LocalDate.now().plusDays(10)
         val result  = service.processObligations(Seq(createObligation("O", dueDate, "26AA"))).value
 
-        result.dueReturnsCount mustBe 1
-        result.overdueReturnsCount mustBe 0
-        result.completedReturnsCount mustBe 0
+        result.hasReturnsError mustBe false
+        result.dueReturnsCount mustBe Some(1)
+        result.overdueReturnsCount mustBe Some(0)
+        result.completedReturnsCount mustBe Some(0)
         result.currentReturn mustBe defined
         result.currentReturn.get.periodKey mustBe "26AA"
         result.currentReturn.get.dueDate mustBe dueDate
@@ -65,7 +66,7 @@ class ObligationServiceSpec extends SpecBase {
           createObligation("O", LocalDate.now().plusDays(10), "26AB")
         )).value
 
-        result.dueReturnsCount mustBe 2
+        result.dueReturnsCount mustBe Some(2)
         result.currentReturn mustBe None
       }
 
@@ -74,9 +75,9 @@ class ObligationServiceSpec extends SpecBase {
           Seq(createObligation("O", LocalDate.now().minusDays(5), "25AL"))
         ).value
 
-        result.dueReturnsCount mustBe 0
-        result.overdueReturnsCount mustBe 1
-        result.completedReturnsCount mustBe 0
+        result.dueReturnsCount mustBe Some(0)
+        result.overdueReturnsCount mustBe Some(1)
+        result.completedReturnsCount mustBe Some(0)
         result.currentReturn mustBe None
       }
 
@@ -85,9 +86,9 @@ class ObligationServiceSpec extends SpecBase {
           Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
         ).value
 
-        result.dueReturnsCount mustBe 0
-        result.overdueReturnsCount mustBe 0
-        result.completedReturnsCount mustBe 1
+        result.dueReturnsCount mustBe Some(0)
+        result.overdueReturnsCount mustBe Some(0)
+        result.completedReturnsCount mustBe Some(1)
         result.currentReturn mustBe None
       }
 
@@ -98,9 +99,9 @@ class ObligationServiceSpec extends SpecBase {
           createObligation("F", LocalDate.now().minusDays(30), "25AK")
         )).value
 
-        result.dueReturnsCount mustBe 1
-        result.overdueReturnsCount mustBe 1
-        result.completedReturnsCount mustBe 1
+        result.dueReturnsCount mustBe Some(1)
+        result.overdueReturnsCount mustBe Some(1)
+        result.completedReturnsCount mustBe Some(1)
       }
     }
 
