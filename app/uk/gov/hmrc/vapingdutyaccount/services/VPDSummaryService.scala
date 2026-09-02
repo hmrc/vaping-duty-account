@@ -122,9 +122,12 @@ class VPDSummaryService @Inject()(
                                               contactMethod: ContactMethod,
                                               contactPreferences: SubscriptionContactPreferences
   ): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email)
+    if (!config.phase2Enabled)
+      None
+    else if (contactMethod == ContactMethod.Email)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
-    else None
+    else
+      None
 
   private def buildLinks(
                           vpdId: VpdId,
