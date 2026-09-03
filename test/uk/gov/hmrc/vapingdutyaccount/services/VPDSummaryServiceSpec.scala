@@ -492,12 +492,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesApproved))
-        // This is needed despite the phase 2 FS being off as the FS is used inside the real service that is mocked!
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Seq.empty))
-        // This is needed despite the phase 2 FS being off as the FS is used inside the real service that is mocked!
+          .thenReturn(Future.successful(Seq(obligationDetails)))
         when(mockGetPaymentsService.getPayments()(using any()))
-          .thenReturn(Future.successful(None))
+          .thenReturn(Future.successful(Some(paymentsWithOutstandingBalance)))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 

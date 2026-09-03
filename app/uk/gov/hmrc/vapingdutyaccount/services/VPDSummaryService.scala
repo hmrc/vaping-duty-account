@@ -119,13 +119,10 @@ class VPDSummaryService @Inject()(
         }
 
     val access =
-      if (config.phase2Enabled)
-        Some(
-          if (hasSubscriptionSummaryError) Access(hasSubscriptionSummaryError = true)
-          else Access(hasSubscriptionSummaryError = false, approvalStatus = resolvedStatus)
-        )
-      else
-        None
+      Some(
+        if (hasSubscriptionSummaryError) Access(hasSubscriptionSummaryError = true)
+        else Access(hasSubscriptionSummaryError = false, approvalStatus = resolvedStatus)
+      )
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
@@ -146,9 +143,7 @@ class VPDSummaryService @Inject()(
                                               contactMethod: ContactMethod,
                                               contactPreferences: SubscriptionContactPreferences
   ): Option[ContactPreferenceStatus] =
-    if (!config.phase2Enabled)
-      None
-    else if (contactMethod == ContactMethod.Email)
+    if (contactMethod == ContactMethod.Email)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
     else
       None
@@ -193,10 +188,7 @@ class VPDSummaryService @Inject()(
   }
 
   private def setupDirectDebitLink =
-    if (config.phase2Enabled)
-      Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-    else
-      None
+    Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
 
   private def buildReturnLinks(returns: Option[Returns]) =
     returns match {
