@@ -28,7 +28,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.{Clock, LocalDate}
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
@@ -51,7 +51,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService, Clock.systemDefaultZone())
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
 
   "VPDSummaryService" - {
     "getVPDSummary must" - {

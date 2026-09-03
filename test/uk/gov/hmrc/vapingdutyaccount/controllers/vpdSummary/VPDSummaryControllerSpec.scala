@@ -35,16 +35,15 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContac
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, GetObligationsService, GetPaymentsService, VPDSummaryService}
 
-import java.time.Clock
 import scala.concurrent.Future
 
 class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
-  val mockGetObligationsService: GetObligationsService       = mock[GetObligationsService]
-  val mockGetPaymentsService: GetPaymentsService        = mock[GetPaymentsService]
+  val mockGetObligationsService: GetObligationsService = mock[GetObligationsService]
+  val mockGetPaymentsService: GetPaymentsService       = mock[GetPaymentsService]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService, Clock.systemDefaultZone())
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 

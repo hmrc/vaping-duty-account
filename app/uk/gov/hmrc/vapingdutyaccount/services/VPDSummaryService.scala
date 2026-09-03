@@ -27,16 +27,14 @@ import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.{Clock, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
 class VPDSummaryService @Inject()(
-                                   config: AppConfig,
-                                   subscriptionConnector: SubscriptionConnector,
-                                   getObligationsService: GetObligationsService,
-                                   obligationService: ObligationService,
-                                   getPaymentsService: GetPaymentsService,
-                                   clock: Clock
+                                   config                : AppConfig,
+                                   subscriptionConnector : SubscriptionConnector,
+                                   getObligationsService : GetObligationsService,
+                                   obligationService     : ObligationService,
+                                   getPaymentsService    : GetPaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
