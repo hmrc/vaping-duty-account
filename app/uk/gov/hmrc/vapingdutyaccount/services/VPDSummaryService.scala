@@ -54,18 +54,16 @@ class VPDSummaryService @Inject()(
               if (contactPreferences.isInsolvent)
                 (None, None)
               else
-                (Some(resolveContactMethod(contactPreferences)), Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)))
+                (Some(resolveContactMethod(contactPreferences)), manageContactPreferencesLink)
             case None =>
               (None, None)
           }
-
-        val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
 
         VPDSummary(
           service           = ServiceInfo(config.serviceName, config.serviceId),
           identifiers       = Identifier(vpdId.toString),
           contactPreference = contactMethod,
-          links             = Links(self = self, manageContactPreference = manageContactPreferenceLink)
+          links             = Links(self = selfLink(vpdId), manageContactPreference = manageContactPreferenceLink)
         )
       })
     else {
@@ -155,7 +153,7 @@ class VPDSummaryService @Inject()(
                           returns: Option[Returns],
                           payments: Option[Payments]
   ): Links = {
-    val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
+    val self = selfLink(vpdId)
 
     if (isNoAccess) {
       Links(self = self)
@@ -179,13 +177,19 @@ class VPDSummaryService @Inject()(
 
     Links(
       self                    = self,
-      manageContactPreference = Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)),
+      manageContactPreference = manageContactPreferencesLink,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
       makePayment             = buildMakePaymentLink(payments),
       setUpDirectDebit        = setupDirectDebitLink
     )
   }
+
+  private def selfLink(vpdId: VpdId) =
+    Self(config.selfHref(vpdId), HttpVerbs.GET)
+
+  private def manageContactPreferencesLink =
+    Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
 
   private def setupDirectDebitLink =
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
