@@ -27,16 +27,14 @@ import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.{Clock, LocalDate}
 import scala.concurrent.{ExecutionContext, Future}
 
 class VPDSummaryService @Inject()(
-                                   config: AppConfig,
-                                   subscriptionConnector: SubscriptionConnector,
-                                   getObligationsService: GetObligationsService,
-                                   obligationService: ObligationService,
-                                   getPaymentsService: GetPaymentsService,
-                                   clock: Clock
+                                   config                : AppConfig,
+                                   subscriptionConnector : SubscriptionConnector,
+                                   getObligationsService : GetObligationsService,
+                                   obligationService     : ObligationService,
+                                   getPaymentsService    : GetPaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
@@ -46,11 +44,9 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
           None
       }
-    val obligationDetailsFuture: Future[Seq[ObligationDetails]] =
-      getObligationsService.getObligationDetails(vpdId)
 
     val returnsFuture: Future[Option[Returns]] =
-      obligationDetailsFuture
+      getObligationsService.getObligationDetails(vpdId)
         .map(obligationService.processObligations)
         .recover {
           case ex =>
@@ -64,31 +60,26 @@ class VPDSummaryService @Inject()(
             ))
         }
 
-    val safeObligationDetailsFuture: Future[Seq[ObligationDetails]] =
-      obligationDetailsFuture.recover { case _ => Seq.empty }
-
     val paymentsFuture = getPaymentsService.getPayments()
 
     for {
       contactPreferences <- contactPreferencesFuture
       returns            <- returnsFuture
-      obligationDetails  <- safeObligationDetailsFuture
       payments           <- paymentsFuture
-    } yield createVPDSummary(vpdId, contactPreferences, returns, obligationDetails, payments)
+    } yield createVPDSummary(vpdId, contactPreferences, returns, payments)
   }
 
   private def createVPDSummary(
                                 vpdId: VpdId,
                                 contactPreferences: Option[SubscriptionContactPreferences],
                                 returns: Option[Returns],
-                                obligationDetails: Seq[ObligationDetails],
                                 payments: Option[Payments]
   ): VPDSummary = {
     val hasSubscriptionSummaryError = contactPreferences.isEmpty
     val resolvedStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
     val isNoAccess                  = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
 
-    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, obligationDetails, payments)
+    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
@@ -129,16 +120,18 @@ class VPDSummaryService @Inject()(
                                               contactMethod: ContactMethod,
                                               contactPreferences: SubscriptionContactPreferences
   ): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email)
+    if (!config.phase2Enabled)
+      None
+    else if (contactMethod == ContactMethod.Email)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
-    else None
+    else
+      None
 
   private def buildLinks(
                           vpdId: VpdId,
                           isNoAccess: Boolean,
                           hasSubscriptionSummaryError: Boolean,
                           returns: Option[Returns],
-                          obligationDetails: Seq[ObligationDetails],
                           payments: Option[Payments]
   ): Links = {
     val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
@@ -149,20 +142,19 @@ class VPDSummaryService @Inject()(
       Links(
         self             = self,
         makePayment      = Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)),
-        setUpDirectDebit = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+        setUpDirectDebit = setupDirectDebitLink
       )
     } else {
-      buildFullAccessLinks(self, returns, obligationDetails, payments)
+      buildFullAccessLinks(self, returns, payments)
     }
   }
 
   private def buildFullAccessLinks(
                                     self: Self,
                                     returns: Option[Returns],
-                                    obligationDetails: Seq[ObligationDetails],
                                     payments: Option[Payments]
   ): Links = {
-    val (completeReturn, viewReturns) = buildReturnLinks(returns, obligationDetails)
+    val (completeReturn, viewReturns) = buildReturnLinks(returns)
 
     Links(
       self                    = self,
@@ -170,37 +162,26 @@ class VPDSummaryService @Inject()(
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
       makePayment             = buildMakePaymentLink(payments),
-      setUpDirectDebit        = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+      setUpDirectDebit        = setupDirectDebitLink
     )
   }
 
-  private def buildReturnLinks(
-                                returns: Option[Returns],
-                                obligationDetails: Seq[ObligationDetails]
-  ): (Option[CompleteReturn], Option[ViewReturns]) =
+  private def setupDirectDebitLink =
+    if (config.phase2Enabled)
+      Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+    else
+      None
+
+  private def buildReturnLinks(returns: Option[Returns]) =
     returns match {
       case Some(r) =>
-        (completeReturnLink(obligationDetails, r), viewReturnsLink(r))
+        (completeReturnLink(r), viewReturnsLink(r))
       case None =>
         (None, None)
     }
 
-  private def completeReturnLink(obligationDetails: Seq[ObligationDetails], returns: Returns): Option[CompleteReturn] =
-    if (returns.dueReturnsCount.contains(1) && returns.overdueReturnsCount.contains(0)) {
-      completeSingleDueReturnLink(returns)
-    } else if (returns.dueReturnsCount.contains(0) && returns.overdueReturnsCount.contains(1)) {
-      completeSingleOverdueReturnLink(obligationDetails)
-    } else {
-      None
-    }
-
-  private def completeSingleDueReturnLink(returns: Returns): Option[CompleteReturn] =
+  private def completeReturnLink(returns: Returns) =
     returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
-
-  private def completeSingleOverdueReturnLink(obligationDetails: Seq[ObligationDetails]): Option[CompleteReturn] =
-    obligationDetails
-      .find(obligationService.isOverdue(_, LocalDate.now(clock)))
-      .map(obligation => completeReturnForPeriod(obligation.periodKey))
 
   private def completeReturnForPeriod(periodKey: String): CompleteReturn =
     CompleteReturn(

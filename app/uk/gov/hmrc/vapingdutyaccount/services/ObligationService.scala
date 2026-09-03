@@ -35,6 +35,8 @@ class ObligationService {
     val overdueObligations   = obligations.filter(isOverdue(_, today))
     val completedObligations = obligations.filter(isCompleted)
 
+    val outstandingObligations = dueObligations ++ overdueObligations
+
     val dueCount       = dueObligations.size
     val overdueCount   = overdueObligations.size
     val completedCount = completedObligations.size
@@ -42,8 +44,8 @@ class ObligationService {
     if (dueCount == 0 && overdueCount == 0 && completedCount == 0) {
       None
     } else {
-      val currentReturn = if (dueCount == 1) {
-        dueObligations.headOption.map(o => CurrentReturn(periodKey = o.periodKey, dueDate = o.iCDueDate))
+      val currentReturn = if (outstandingObligations.length == 1) {
+        outstandingObligations.headOption.map(o => CurrentReturn(periodKey = o.periodKey, dueDate = o.iCDueDate))
       } else {
         None
       }

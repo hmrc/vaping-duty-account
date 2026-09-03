@@ -28,7 +28,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionCo
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.{Clock, LocalDate}
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
@@ -51,7 +51,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService, Clock.systemDefaultZone())
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
 
   "VPDSummaryService" - {
     "getVPDSummary must" - {
@@ -484,17 +484,40 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.setUpDirectDebit mustBe None
       }
 
-      "return no access when the phase-2-enabled feature switch is turned off" in {
+      "return only phase 1 elements when the phase-2-enabled feature switch is turned off" in {
+        when(mockConfig.serviceName).thenReturn("Vaping Products Duty")
+        when(mockConfig.serviceId  ).thenReturn("VPD")
+
         when(mockConfig.phase2Enabled).thenReturn(false)
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesApproved))
+        // This is needed despite the phase 2 FS being off as the FS is used inside the real service that is mocked!
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq.empty))
+        // This is needed despite the phase 2 FS being off as the FS is used inside the real service that is mocked!
+        when(mockGetPaymentsService.getPayments()(using any()))
+          .thenReturn(Future.successful(None))
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        result.access mustBe None
+        // Phase 1 elements (as per v1.0.1 of the OAS) must be preserved when phase 2 FS is off
+        result.service                       mustBe ServiceInfo("Vaping Products Duty", "VPD")
+        result.identifiers                   mustBe Identifier(vpdId.id)
+        result.contactPreference             mustBe Some(ContactMethod.Email)
+        result.links.manageContactPreference mustBe Some(ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", "GET"))
+
+        // Phase 2 sections should not be present when the phase 2 FS is off
+        result.access                  mustBe None
+        result.contactPreferenceStatus mustBe None
+        result.returns                 mustBe None
+        result.payments                mustBe None
+        
+        // Phase 2 links should be omitted when the phase 2 FS is off
+        result.links.completeReturn   mustBe None
+        result.links.viewReturns      mustBe None
+        result.links.makePayment      mustBe None
+        result.links.setUpDirectDebit mustBe None
 
         when(mockConfig.phase2Enabled).thenReturn(true)
       }
