@@ -20,7 +20,6 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
-import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -187,7 +186,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
       }
     }
 
-    "phase 2" - {
+    "phase 2.1" - {
       "getVPDSummary must" - {
         "return VPDSummary with single due return and completeReturn link" in {
           val dueObligation = ObligationDetails(
