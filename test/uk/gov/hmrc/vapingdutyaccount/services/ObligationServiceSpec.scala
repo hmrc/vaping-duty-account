@@ -62,7 +62,7 @@ class ObligationServiceSpec extends SpecBase {
 
       "return Some(Returns) with no currentReturn when multiple due obligations" in {
         val result = service.processObligations(Seq(
-          createObligation("O", LocalDate.now().plusDays(5), "26AA"),
+          createObligation("O", LocalDate.now().plusDays( 5), "26AA"),
           createObligation("O", LocalDate.now().plusDays(10), "26AB")
         )).value
 
@@ -81,7 +81,36 @@ class ObligationServiceSpec extends SpecBase {
         result.completedReturnsCount mustBe Some(0)
         result.currentReturn mustBe defined
         result.currentReturn.get.periodKey mustBe "25AL"
-        result.currentReturn.get.dueDate mustBe dueDate 
+        result.currentReturn.get.dueDate mustBe dueDate
+      }
+
+      "return Some(Returns) with no currentReturn when multiple overdue obligations" in {
+        val dueDate = LocalDate.now().minusDays(5)
+        val result = service.processObligations(
+          Seq(
+            createObligation("O", dueDate.minusDays(30), "25AK"),
+            createObligation("O", dueDate, "25AL")
+          )
+        ).value
+
+        result.dueReturnsCount mustBe Some(0)
+        result.overdueReturnsCount mustBe Some(2)
+        result.completedReturnsCount mustBe Some(0)
+        result.currentReturn mustBe None
+      }
+
+      "return Some(Returns) with completedCount=2 when 2 completed obligations" in {
+        val result = service.processObligations(
+          Seq(
+            createObligation("F", LocalDate.now().minusDays(35), "25AK"),
+            createObligation("F", LocalDate.now().minusDays( 5), "25AL")
+          )
+        ).value
+
+        result.dueReturnsCount mustBe Some(0)
+        result.overdueReturnsCount mustBe Some(0)
+        result.completedReturnsCount mustBe Some(2)
+        result.currentReturn mustBe None
       }
 
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
@@ -98,13 +127,18 @@ class ObligationServiceSpec extends SpecBase {
       "return correct counts for mixed due, overdue, and completed obligations" in {
         val result = service.processObligations(Seq(
           createObligation("O", LocalDate.now().plusDays(10), "26AA"),
-          createObligation("O", LocalDate.now().minusDays(5), "25AL"),
-          createObligation("F", LocalDate.now().minusDays(30), "25AK")
+
+          createObligation("O", LocalDate.now().minusDays( 5), "25AL"),
+          createObligation("O", LocalDate.now().minusDays(35), "25AK"),
+
+          createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
+          createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
+          createObligation("F", LocalDate.now().minusDays(120), "25AH")
         )).value
 
         result.dueReturnsCount mustBe Some(1)
-        result.overdueReturnsCount mustBe Some(1)
-        result.completedReturnsCount mustBe Some(1)
+        result.overdueReturnsCount mustBe Some(2)
+        result.completedReturnsCount mustBe Some(3)
       }
     }
 
