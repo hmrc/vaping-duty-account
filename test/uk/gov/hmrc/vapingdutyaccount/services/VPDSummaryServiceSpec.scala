@@ -45,13 +45,16 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
   when(mockConfig.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
   when(mockConfig.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
-  when(mockConfig.phase2Enabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
     .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))
 
   val vpdSummaryService: VPDSummaryService =
     new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
+
+  override def beforeEach(): Unit = {
+    when(mockConfig.phase2Enabled).thenReturn(true)
+  }
 
   "VPDSummaryService" - {
     "phase 1 " - {
@@ -88,8 +91,6 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.viewReturns mustBe None
         result.links.makePayment mustBe None
         result.links.setUpDirectDebit mustBe None
-
-        when(mockConfig.phase2Enabled).thenReturn(true)
       }
 
       "still suppress sections and action links for an insolvent subscriber when the phase-2-enabled feature switch is turned off" in {
@@ -116,8 +117,6 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.viewReturns mustBe None
         result.links.makePayment mustBe None
         result.links.setUpDirectDebit mustBe None
-
-        when(mockConfig.phase2Enabled).thenReturn(true)
       }
 
     }
