@@ -33,17 +33,17 @@ import scala.concurrent.Future
 
 class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
-  val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
-  val mockGetObligationsService: GetObligationsService       = mock[GetObligationsService]
-  val mockGetPaymentsService: GetPaymentsService       = mock[GetPaymentsService]
-  val mockConfig: AppConfig                            = mock[AppConfig]
+  private val mockSubscriptionConnector : SubscriptionConnector = mock[SubscriptionConnector]
+  private val mockGetObligationsService : GetObligationsService = mock[GetObligationsService]
+  private val mockGetPaymentsService    : GetPaymentsService    = mock[GetPaymentsService]
+  private val mockConfig                : AppConfig             = mock[AppConfig]
 
-  when(mockConfig.selfHref(any())).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
+  when(mockConfig.selfHref(any())           ).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
   when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
-  when(mockConfig.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
-  when(mockConfig.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
-  when(mockConfig.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
-  when(mockConfig.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
+  when(mockConfig.completeReturnUrlPrefix   ).thenReturn("/vaping-duty/complete-return/before-you-start")
+  when(mockConfig.viewReturnsUrl            ).thenReturn("/vaping-duty/view-your-returns")
+  when(mockConfig.makePaymentUrl            ).thenReturn("/vaping-duty-finance/pay")
+  when(mockConfig.startDirectDebitUrl       ).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
 
   val vpdSummaryService: VPDSummaryService =
     new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
