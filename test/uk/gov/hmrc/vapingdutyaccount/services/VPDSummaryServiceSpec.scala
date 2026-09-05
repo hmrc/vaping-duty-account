@@ -44,6 +44,8 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.viewReturnsUrl            ).thenReturn("/vaping-duty/view-your-returns")
   when(mockConfig.makePaymentUrl            ).thenReturn("/vaping-duty-finance/pay")
   when(mockConfig.startDirectDebitUrl       ).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
+  when(mockConfig.serviceName               ).thenReturn("Vaping Products Duty")
+  when(mockConfig.serviceId                 ).thenReturn("VPD")
 
   val vpdSummaryService: VPDSummaryService =
     new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
@@ -56,9 +58,6 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     "phase 1 " - {
 
       "return only phase 1 elements when the phase-2-enabled feature switch is turned off" in {
-        when(mockConfig.serviceName).thenReturn("Vaping Products Duty")
-        when(mockConfig.serviceId).thenReturn("VPD")
-
         when(mockConfig.phase2Enabled).thenReturn(false)
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
