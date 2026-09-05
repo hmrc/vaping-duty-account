@@ -142,55 +142,57 @@ class ObligationServiceSpec extends SpecBase {
       }
     }
 
+    val today = LocalDate.now()
+    val yesterday = today.minusDays(1)
+    val tomorrow = today.plusDays(1)
+
     "isDue must" - {
 
-      val today = LocalDate.now()
-
-      "return true when status is O and due date is today" in {
-        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today), today) mustBe true
+      "return true when status is Open and due date is today" in {
+        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today    ), today) mustBe true
       }
 
-      "return true when status is O and due date is in the future" in {
-        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today.plusDays(1)), today) mustBe true
+      "return true when status is Open and due date is in the future" in {
+        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = tomorrow ), today) mustBe true
       }
 
-      "return false when status is O and due date is in the past" in {
-        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today.minusDays(1)), today) mustBe false
+      "return false when status is Open and due date is in the past" in {
+        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = yesterday), today) mustBe false
       }
 
-      "return false when status is F regardless of due date" in {
-        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = today.plusDays(1)), today) mustBe false
+      "return false when status is Fulfilled regardless of due date" in {
+        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = tomorrow ), today) mustBe false
+        service.isDue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = yesterday), today) mustBe false
       }
     }
 
     "isOverdue must" - {
 
-      val today = LocalDate.now()
-
-      "return true when status is O and due date is in the past" in {
-        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today.minusDays(1)), today) mustBe true
+      "return true when status is Open and due date is in the past" in {
+        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = yesterday), today) mustBe true
       }
 
-      "return false when status is O and due date is today" in {
-        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today), today) mustBe false
+      "return false when status is Open and due date is today" in {
+        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today    ), today) mustBe false
       }
 
-      "return false when status is O and due date is in the future" in {
-        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today.plusDays(1)), today) mustBe false
+      "return false when status is Open and due date is in the future" in {
+        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = tomorrow ), today) mustBe false
       }
 
-      "return false when status is F regardless of due date" in {
-        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = today.minusDays(1)), today) mustBe false
+      "return false when status is Fulfilled regardless of due date" in {
+        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = yesterday), today) mustBe false
+        service.isOverdue(obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = tomorrow ), today) mustBe false
       }
     }
 
     "isCompleted must" - {
 
-      "return true when status is F" in {
+      "return true when status is Fulfilled" in {
         service.isCompleted(obligationDetailsCompleted) mustBe true
       }
 
-      "return false when status is O" in {
+      "return false when status is Open" in {
         service.isCompleted(obligationDetails) mustBe false
       }
     }
