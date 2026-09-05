@@ -100,8 +100,8 @@ class VPDSummaryService @Inject()(
                                 payments: Option[Payments]
   ): VPDSummary = {
     val hasSubscriptionSummaryError = contactPreferences.isEmpty
-    val resolvedStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
-    val isNoAccess                  = resolvedStatus.contains(AccessApprovalStatus.Insolvent)
+    val approvalStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
+    val isNoAccess                  = approvalStatus.contains(AccessApprovalStatus.Insolvent)
 
     val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments)
 
@@ -118,8 +118,10 @@ class VPDSummaryService @Inject()(
 
     val access =
       Some(
-        if (hasSubscriptionSummaryError) Access(hasSubscriptionSummaryError = true)
-        else Access(hasSubscriptionSummaryError = false, approvalStatus = resolvedStatus)
+        if (hasSubscriptionSummaryError)
+          Access(hasSubscriptionSummaryError = true)
+        else
+          Access(hasSubscriptionSummaryError = false, approvalStatus = approvalStatus)
       )
 
     VPDSummary(
