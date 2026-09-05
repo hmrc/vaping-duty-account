@@ -84,6 +84,8 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.successful(contactPreferencesApproved))
+
+        // Ensure obligations and payments data is present to show it is really being hidden when in phase 1
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq(obligationDetails)))
         when(mockGetPaymentsService.getPayments()(using any()))
@@ -92,21 +94,23 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
         // Phase 1 elements (as per v1.0.3 of the OAS) must be preserved when phase 2 FS is off
-        result.service mustBe ServiceInfo("Vaping Products Duty", "VPD")
-        result.identifiers mustBe Identifier(vpdId.id)
+        result.service           mustBe ServiceInfo("Vaping Products Duty", "VPD")
+        result.identifiers       mustBe Identifier(vpdId.id)
         result.contactPreference mustBe Some(ContactMethod.Email)
+
+        result.links.self                    mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
         result.links.manageContactPreference mustBe Some(ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", "GET"))
 
         // Phase 2 sections should not be present when the phase 2 FS is off
-        result.access mustBe None
+        result.access                  mustBe None
         result.contactPreferenceStatus mustBe None
-        result.returns mustBe None
-        result.payments mustBe None
+        result.returns                 mustBe None
+        result.payments                mustBe None
 
         // Phase 2 links should be omitted when the phase 2 FS is off
-        result.links.completeReturn mustBe None
-        result.links.viewReturns mustBe None
-        result.links.makePayment mustBe None
+        result.links.completeReturn   mustBe None
+        result.links.viewReturns      mustBe None
+        result.links.makePayment      mustBe None
         result.links.setUpDirectDebit mustBe None
       }
 
@@ -115,6 +119,8 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
+
+        // Ensure obligations and payments data present to show it is really being hidden when in phase 1.
         when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(Seq(obligationDetails)))
         when(mockGetPaymentsService.getPayments()(using any()))
