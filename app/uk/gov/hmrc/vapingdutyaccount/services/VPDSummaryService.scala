@@ -215,12 +215,13 @@ class VPDSummaryService @Inject()(
     val due           = r.dueReturnsCount.getOrElse(0)
     val overdue       = r.overdueReturnsCount.getOrElse(0)
     val completed     = r.completedReturnsCount.getOrElse(0)
+
     val openReturns  = due + overdue
-    if (openReturns > 1 || completed > 0) {
+
+    if (openReturns > 1 || completed > 0)
       Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
-    } else {
+    else
       None
-    }
   }
 
   private def buildMakePaymentLink(payments: Option[Payments]): Option[MakePayment] =
