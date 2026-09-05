@@ -89,6 +89,40 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.setUpDirectDebit mustBe None
       }
 
+      "return a degraded VPDSummary without contact preference elements" in {
+        when(mockConfig.phase2Enabled).thenReturn(false)
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
+        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(Seq(obligationDetails)))
+        when(mockGetPaymentsService.getPayments()(using any()))
+          .thenReturn(Future.successful(Some(paymentsWithOutstandingBalance)))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        // Phase 1 elements
+        result.service     mustBe ServiceInfo("Vaping Products Duty", "VPD")
+        result.identifiers mustBe Identifier(vpdId.id)
+        result.links.self  mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
+
+        // Phase 1 contact prefs are missing when API fails
+        result.contactPreference             mustBe None
+        result.links.manageContactPreference mustBe None
+
+        // Phase 2 sections
+        result.access                  mustBe None
+        result.contactPreferenceStatus mustBe None
+        result.returns                 mustBe None
+        result.payments                mustBe None
+
+        // Phase 2 links 
+        result.links.completeReturn   mustBe None
+        result.links.viewReturns      mustBe None
+        result.links.makePayment      mustBe None
+        result.links.setUpDirectDebit mustBe None
+      }
+
       "still suppress sections and action links for an insolvent subscriber when the phase-2-enabled feature switch is turned off" in {
         when(mockConfig.phase2Enabled).thenReturn(false)
 
