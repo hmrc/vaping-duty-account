@@ -215,8 +215,8 @@ class VPDSummaryService @Inject()(
     val due           = r.dueReturnsCount.getOrElse(0)
     val overdue       = r.overdueReturnsCount.getOrElse(0)
     val completed     = r.completedReturnsCount.getOrElse(0)
-    val totalReturns  = due + overdue + completed
-    if (totalReturns > 1 || completed > 0 || (due > 0 && overdue > 0)) {
+    val openReturns  = due + overdue
+    if (openReturns > 1 || completed > 0) {
       Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
     } else {
       None
