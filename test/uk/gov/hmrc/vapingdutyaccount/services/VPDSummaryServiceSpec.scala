@@ -57,6 +57,28 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   "VPDSummaryService" - {
     "phase 1 " - {
 
+      "return contactPreference Email when PaperlessPreference is true" in {
+        when(mockConfig.phase2Enabled).thenReturn(false)
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.contactPreference mustBe Some(ContactMethod.Email)
+      }
+
+      "return contactPreference Post when PaperlessPreference is false" in {
+        when(mockConfig.phase2Enabled).thenReturn(false)
+
+        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+        result.contactPreference mustBe Some(ContactMethod.Post)
+      }
+
       "return only phase 1 elements when the phase-2-enabled feature switch is turned off" in {
         when(mockConfig.phase2Enabled).thenReturn(false)
 
