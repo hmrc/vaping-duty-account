@@ -34,7 +34,7 @@ class PaymentsService {
       amount               = amount,
       isMultiplePaymentDue = isMultiplePaymentDue,
       chargeReference      =
-        if (amount > 0 && !isMultiplePaymentDue) distinctChargeRefs.headOption else None
+        if (amount > 0 && distinctChargeRefs.size == 1) distinctChargeRefs.headOption else None
     )
 
     Payments(hasPaymentsError = false, balance = Some(balance))
