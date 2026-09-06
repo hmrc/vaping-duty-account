@@ -501,7 +501,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
         val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-        // Phase 1 elements (as per v1.0.1 of the OAS) must be preserved when phase 2 FS is off
+        // Phase 1 elements (as per v1.0.3 of the OAS) must be preserved when phase 2 FS is off
         result.service                       mustBe ServiceInfo("Vaping Products Duty", "VPD")
         result.identifiers                   mustBe Identifier(vpdId.id)
         result.contactPreference             mustBe Some(ContactMethod.Email)
@@ -537,6 +537,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.access mustBe None
         result.returns mustBe None
         result.payments mustBe None
+        result.contactPreference mustBe None
+        result.contactPreferenceStatus mustBe None
+
         result.links.self mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
         result.links.manageContactPreference mustBe None
         result.links.completeReturn mustBe None
