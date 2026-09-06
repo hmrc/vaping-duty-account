@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import uk.gov.hmrc.vapingdutyaccount.models.payments.{PaymentsResponse as UpstreamPaymentsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 
 import javax.inject.Singleton
@@ -34,7 +34,7 @@ class PaymentsService {
       amount               = amount,
       isMultiplePaymentDue = isMultiplePaymentDue,
       chargeReference      =
-        if (amount > 0 && !isMultiplePaymentDue) distinctChargeRefs.headOption else None
+        if (amount > 0 && distinctChargeRefs.size == 1) distinctChargeRefs.headOption else None
     )
 
     Payments(hasPaymentsError = false, balance = Some(balance))

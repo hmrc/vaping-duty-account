@@ -33,15 +33,12 @@ class GetPaymentsService @Inject()(
                                   )(implicit ec: ExecutionContext) extends Logging {
 
   def getPayments()(using HeaderCarrier): Future[Option[Payments]] =
-    if (config.phase2Enabled)
-      paymentsConnector.getPayments()
-        .map(paymentsService.toPayments)
-        .map(Some(_))
-        .recover {
-          case ex =>
-            logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-            Some(Payments(hasPaymentsError = true, balance = None))
-        }
-    else
-      Future.successful(None)
+    paymentsConnector.getPayments()
+      .map(paymentsService.toPayments)
+      .map(Some(_))
+      .recover {
+        case ex =>
+          logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
+          Some(Payments(hasPaymentsError = true, balance = None))
+      }
 }

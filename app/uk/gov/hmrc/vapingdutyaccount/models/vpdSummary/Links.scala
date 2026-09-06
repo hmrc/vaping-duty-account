@@ -31,12 +31,12 @@ implicit val makePaymentFormats: Writes[MakePayment]                         = J
 implicit val setUpDirectDebitFormats: Writes[SetUpDirectDebit]               = Json.writes[SetUpDirectDebit]
 
 case class Links(
-                  self: Self,
-                  manageContactPreference: Option[ManageContactPreference] = None,
-                  completeReturn: Option[CompleteReturn] = None,
-                  viewReturns: Option[ViewReturns] = None,
-                  makePayment: Option[MakePayment] = None,
-                  setUpDirectDebit: Option[SetUpDirectDebit] = None
+                  self                    : Self,
+                  manageContactPreference : Option[ManageContactPreference] = None,
+                  completeReturn          : Option[CompleteReturn]          = None,
+                  viewReturns             : Option[ViewReturns]             = None,
+                  makePayment             : Option[MakePayment]             = None,
+                  setUpDirectDebit        : Option[SetUpDirectDebit]        = None
 )
 
 implicit val linksFormats: Writes[Links] = Json.writes[Links]
