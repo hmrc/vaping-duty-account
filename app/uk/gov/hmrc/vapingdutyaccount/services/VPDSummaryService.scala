@@ -38,6 +38,7 @@ class VPDSummaryService @Inject()(
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
+
     val contactPreferencesFuture: Future[Option[SubscriptionContactPreferences]] =
       subscriptionConnector.getSubscriptionContactPreferences(vpdId).map(Some(_)).recover {
         case ex =>
@@ -45,28 +46,53 @@ class VPDSummaryService @Inject()(
           None
       }
 
-    val returnsFuture: Future[Option[Returns]] =
-      getObligationsService.getObligationDetails(vpdId)
-        .map(obligationService.processObligations)
-        .recover {
-          case ex =>
-            logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
-            Some(Returns(
-              hasReturnsError = true,
-              currentReturn = None,
-              dueReturnsCount = None,
-              overdueReturnsCount = None,
-              completedReturnsCount = None
-            ))
-        }
+    if (!config.phase2Enabled)
+      contactPreferencesFuture.map(contactPreferences => {
+        val (contactMethod, manageContactPreferenceLink) =
+          contactPreferences match {
+            case Some(contactPreferences) =>
+              if (contactPreferences.isInsolvent)
+                (None, None)
+              else
+                (Some(resolveContactMethod(contactPreferences)), Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET)))
+            case None =>
+              (None, None)
+          }
 
-    val paymentsFuture = getPaymentsService.getPayments()
+        val self = Self(config.selfHref(vpdId), HttpVerbs.GET)
 
-    for {
-      contactPreferences <- contactPreferencesFuture
-      returns            <- returnsFuture
-      payments           <- paymentsFuture
-    } yield createVPDSummary(vpdId, contactPreferences, returns, payments)
+        VPDSummary(
+          service           = ServiceInfo(config.serviceName, config.serviceId),
+          identifiers       = Identifier(vpdId.toString),
+          contactPreference = contactMethod,
+          links             = Links(self = self, manageContactPreference = manageContactPreferenceLink)
+        )
+      })
+    else {
+
+      val returnsFuture: Future[Option[Returns]] =
+        getObligationsService.getObligationDetails(vpdId)
+          .map(obligationService.processObligations)
+          .recover {
+            case ex =>
+              logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
+              Some(Returns(
+                hasReturnsError = true,
+                currentReturn = None,
+                dueReturnsCount = None,
+                overdueReturnsCount = None,
+                completedReturnsCount = None
+              ))
+          }
+
+      val paymentsFuture = getPaymentsService.getPayments()
+
+      for {
+        contactPreferences <- contactPreferencesFuture
+        returns            <- returnsFuture
+        payments           <- paymentsFuture
+      } yield createVPDSummary(vpdId, contactPreferences, returns, payments)
+    }
   }
 
   private def createVPDSummary(
