@@ -36,7 +36,11 @@ class PaymentsServiceSpec extends SpecBase {
 
         service.toPayments(response) mustBe Payments(
           hasPaymentsError = false,
-          balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
+          balance = Some(PaymentBalance(
+            amount               = BigDecimal(4574.84),
+            isMultiplePaymentDue = false,
+            chargeReference      = Some("XVP123456789")
+          ))
         )
       }
 
@@ -49,7 +53,12 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(8250))
         )
 
-        service.toPayments(response).balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
+        service.toPayments(response).balance mustBe Some(
+          PaymentBalance(
+            amount               = BigDecimal(8250),
+            isMultiplePaymentDue = true,
+            chargeReference      = None
+          ))
       }
 
       "return a negative balance and no charge reference when the account is in credit" in {
