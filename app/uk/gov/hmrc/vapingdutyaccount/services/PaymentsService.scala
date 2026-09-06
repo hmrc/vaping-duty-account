@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import uk.gov.hmrc.vapingdutyaccount.models.payments.{PaymentsResponse as UpstreamPaymentsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 
 import javax.inject.Singleton
