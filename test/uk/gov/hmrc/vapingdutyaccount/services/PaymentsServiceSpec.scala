@@ -61,6 +61,22 @@ class PaymentsServiceSpec extends SpecBase {
           ))
       }
 
+      "return isMultiplePaymentDue=false and no charge reference when no charges are outstanding" in {
+        val response = UpstreamPaymentsResponse(
+          outstanding         = Seq.empty,
+          totalAccountBalance = Some(BigDecimal(0))
+        )
+
+        service.toPayments(response) mustBe Payments(
+          hasPaymentsError = false,
+          balance = Some(PaymentBalance(
+            amount               = BigDecimal(0),
+            isMultiplePaymentDue = false,
+            chargeReference      = None
+          ))
+        )
+      }
+
       "return a negative balance and no charge reference when the account is in credit" in {
         val response = UpstreamPaymentsResponse(outstanding = Seq.empty, totalAccountBalance = Some(BigDecimal(-325.50)))
 
