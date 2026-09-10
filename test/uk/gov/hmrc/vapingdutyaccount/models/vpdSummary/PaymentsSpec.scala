@@ -26,8 +26,7 @@ class PaymentsSpec extends AnyFreeSpec with Matchers {
     "must serialize to JSON correctly with a balance" in {
       val payments = Payments(
         hasPaymentsError = false,
-        balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789"))),
-        hasFinancialData = true
+        balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
       )
 
       val json = Json.toJson(payments)
@@ -36,44 +35,38 @@ class PaymentsSpec extends AnyFreeSpec with Matchers {
       (json \ "balance" \ "amount").as[BigDecimal] shouldBe BigDecimal(4574.84)
       (json \ "balance" \ "isMultiplePaymentDue").as[Boolean] shouldBe false
       (json \ "balance" \ "chargeReference").as[String] shouldBe "XVP123456789"
-      (json \ "hasFinancialData").as[Boolean] shouldBe true
     }
 
     "must serialize to JSON correctly without a balance when hasPaymentsError is true" in {
-      val payments = Payments(hasPaymentsError = true, balance = None, hasFinancialData = false)
+      val payments = Payments(hasPaymentsError = true, balance = None)
 
       val json = Json.toJson(payments)
 
       (json \ "hasPaymentsError").as[Boolean] shouldBe true
       (json \ "balance").toOption shouldBe None
-      (json \ "hasFinancialData").as[Boolean] shouldBe false
     }
 
     "must serialize a multiple-payments-due balance without a chargeReference" in {
       val payments = Payments(
         hasPaymentsError = false,
-        balance = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None)),
-        hasFinancialData = true
+        balance = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
       )
 
       val json = Json.toJson(payments)
 
       (json \ "balance" \ "isMultiplePaymentDue").as[Boolean] shouldBe true
       (json \ "balance" \ "chargeReference").asOpt[String] shouldBe None
-      (json \ "hasFinancialData").as[Boolean] shouldBe true
     }
 
     "must serialize a negative (credit) balance" in {
       val payments = Payments(
         hasPaymentsError = false,
-        balance = Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None)),
-        hasFinancialData = true
+        balance = Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
       )
 
       val json = Json.toJson(payments)
 
       (json \ "balance" \ "amount").as[BigDecimal] shouldBe BigDecimal(-325.50)
-      (json \ "hasFinancialData").as[Boolean] shouldBe true
     }
   }
 }

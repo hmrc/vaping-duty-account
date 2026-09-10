@@ -253,8 +253,7 @@ trait TestData extends ModelGenerators {
 
   val paymentsWithOutstandingBalance: Payments = Payments(
     hasPaymentsError = false,
-    balance = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123"))),
-    hasFinancialData = true
+    balance = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
   )
 
   val clearedPayment: ClearedPayment = ClearedPayment(

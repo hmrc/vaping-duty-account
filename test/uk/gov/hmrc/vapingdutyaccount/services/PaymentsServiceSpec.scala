@@ -36,15 +36,17 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(4574.84))
         )
 
-        service.toPayments(response) mustBe Payments(
+        val (payments, hasFinancialData) = service.toPayments(response)
+        
+        payments mustBe Payments(
           hasPaymentsError = false,
           balance = Some(PaymentBalance(
             amount               = BigDecimal(4574.84),
             isMultiplePaymentDue = false,
             chargeReference      = Some("XVP123456789")
-          )),
-          hasFinancialData = true
+          ))
         )
+        hasFinancialData mustBe true
       }
 
       "return isMultiplePaymentDue=true and no charge reference when multiple charges are outstanding" in {
@@ -58,7 +60,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(8250))
         )
 
-        service.toPayments(response).balance mustBe Some(
+        val (payments, _) = service.toPayments(response)
+        
+        payments.balance mustBe Some(
           PaymentBalance(
             amount               = BigDecimal(8250),
             isMultiplePaymentDue = true,
@@ -74,15 +78,17 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(0))
         )
 
-        service.toPayments(response) mustBe Payments(
+        val (payments, hasFinancialData) = service.toPayments(response)
+        
+        payments mustBe Payments(
           hasPaymentsError = false,
           balance = Some(PaymentBalance(
             amount               = BigDecimal(0),
             isMultiplePaymentDue = false,
             chargeReference      = None
-          )),
-          hasFinancialData = true
+          ))
         )
+        hasFinancialData mustBe true
       }
 
       "return a negative balance and no charge reference when the account is in credit" in {
@@ -93,7 +99,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(-325.50))
         )
 
-        service.toPayments(response).balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
+        val (payments, _) = service.toPayments(response)
+        
+        payments.balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
       }
 
       "return a zero balance when nothing is owed" in {
@@ -104,7 +112,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(0))
         )
 
-        service.toPayments(response).balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
+        val (payments, _) = service.toPayments(response)
+        
+        payments.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
       }
 
       "default to a zero balance when totalAccountBalance is absent" in {
@@ -115,7 +125,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        service.toPayments(response).balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
+        val (payments, _) = service.toPayments(response)
+        
+        payments.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
       }
 
       "ignore non-positive outstanding entries when counting distinct charge references" in {
@@ -129,11 +141,14 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(5000))
         )
 
-        service.toPayments(response).balance mustBe Some(PaymentBalance(BigDecimal(5000), isMultiplePaymentDue = false, Some("XVP111111111")))
+        val (payments, _) = service.toPayments(response)
+        
+        payments.balance mustBe Some(PaymentBalance(BigDecimal(5000), isMultiplePaymentDue = false, Some("XVP111111111")))
       }
 
       "always report hasPaymentsError=false" in {
-        service.toPayments(UpstreamPaymentsResponse(Seq.empty, Seq.empty, Seq.empty, None)).hasPaymentsError mustBe false
+        val (payments, _) = service.toPayments(UpstreamPaymentsResponse(Seq.empty, Seq.empty, Seq.empty, None))
+        payments.hasPaymentsError mustBe false
       }
     }
 
@@ -147,10 +162,10 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val result = service.toPayments(response)
+        val (payments, hasFinancialData) = service.toPayments(response)
 
-        result.hasFinancialData mustBe true
-        result.balance.get.amount mustBe BigDecimal(0)
+        hasFinancialData mustBe true
+        payments.balance.get.amount mustBe BigDecimal(0)
       }
 
       "be true when only paymentOnAccount exists" in {
@@ -161,10 +176,10 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val result = service.toPayments(response)
+        val (payments, hasFinancialData) = service.toPayments(response)
 
-        result.hasFinancialData mustBe true
-        result.balance.get.amount mustBe BigDecimal(0)
+        hasFinancialData mustBe true
+        payments.balance.get.amount mustBe BigDecimal(0)
       }
 
       "be true when only totalAccountBalance is defined" in {
@@ -175,10 +190,10 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(100))
         )
 
-        val result = service.toPayments(response)
+        val (payments, hasFinancialData) = service.toPayments(response)
 
-        result.hasFinancialData mustBe true
-        result.balance.get.amount mustBe BigDecimal(100)
+        hasFinancialData mustBe true
+        payments.balance.get.amount mustBe BigDecimal(100)
       }
 
       "be true when only outstanding payments exist" in {
@@ -189,9 +204,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val result = service.toPayments(response)
+        val (_, hasFinancialData) = service.toPayments(response)
 
-        result.hasFinancialData mustBe true
+        hasFinancialData mustBe true
       }
 
       "be false when all payment fields are empty" in {
@@ -202,10 +217,10 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val result = service.toPayments(response)
+        val (payments, hasFinancialData) = service.toPayments(response)
 
-        result.hasFinancialData mustBe false
-        result.balance.get.amount mustBe BigDecimal(0)
+        hasFinancialData mustBe false
+        payments.balance.get.amount mustBe BigDecimal(0)
       }
     }
   }

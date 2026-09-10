@@ -39,7 +39,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   "GetPaymentsService" - {
     "getPayments must" - {
 
-      "return Some(Payments) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+      "return Some((Payments, Boolean)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
@@ -50,17 +50,23 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
             totalAccountBalance = Some(BigDecimal(4574.84))
           )))
 
-        service.getPayments()(using hc).futureValue mustBe
-          Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789"))), hasFinancialData = true))
+        val result = service.getPayments()(using hc).futureValue
+        
+        result mustBe Some((
+          Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))),
+          true
+        ))
       }
 
-      "return Some(Payments) with hasPaymentsError true when the connector fails" in {
+      "return Some((Payments, Boolean)) with hasPaymentsError true when the connector fails" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
 
-        service.getPayments()(using hc).futureValue mustBe Some(Payments(hasPaymentsError = true, balance = None, hasFinancialData = false))
+        val result = service.getPayments()(using hc).futureValue
+        
+        result mustBe Some((Payments(hasPaymentsError = true, balance = None), false))
       }
     }
   }

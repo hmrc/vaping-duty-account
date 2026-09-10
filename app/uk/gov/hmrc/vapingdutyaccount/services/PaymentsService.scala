@@ -24,7 +24,7 @@ import javax.inject.Singleton
 @Singleton
 class PaymentsService {
 
-  def toPayments(response: UpstreamPaymentsResponse): Payments = {
+  def toPayments(response: UpstreamPaymentsResponse): (Payments, Boolean) = {
     val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
     val distinctChargeRefs   = positiveOutstanding.flatMap(_.chargeReference).distinct
     val amount               = response.totalAccountBalance.getOrElse(BigDecimal(0))
@@ -43,6 +43,8 @@ class PaymentsService {
       response.paymentOnAccount.nonEmpty ||
       response.cleared.nonEmpty
 
-    Payments(hasPaymentsError = false, balance = Some(balance), hasFinancialData = hasFinancialData)
+    val payments = Payments(hasPaymentsError = false, balance = Some(balance))
+    
+    (payments, hasFinancialData)
   }
 }

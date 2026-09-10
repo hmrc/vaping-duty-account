@@ -60,13 +60,13 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.phase2Enabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
-    .thenReturn(Future.successful(Some(
+    .thenReturn(Future.successful(Some((
       Payments(
         hasPaymentsError = false,
-        balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None)),
-        hasFinancialData = true
-      )
-    )))
+        balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
+      ),
+      true
+    ))))
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
@@ -149,8 +149,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    "balance" : {
        |      "amount" : 0,
        |      "isMultiplePaymentDue" : false
-       |    },
-       |    "hasFinancialData" : true
+       |    }
        |  },
        |  "links" : {
        |    "self" : {

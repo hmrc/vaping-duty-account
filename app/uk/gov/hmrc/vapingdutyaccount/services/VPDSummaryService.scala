@@ -88,8 +88,14 @@ class VPDSummaryService @Inject()(
       for {
         contactPreferences <- contactPreferencesFuture
         returns            <- returnsFuture
-        payments           <- paymentsFuture
-      } yield createVPDSummary(vpdId, contactPreferences, returns, payments)
+        paymentsWithFlag   <- paymentsFuture
+      } yield {
+        val (payments, hasFinancialData) = paymentsWithFlag match {
+          case Some((p, flag)) => (Some(p), flag)
+          case None            => (None, false)
+        }
+        createVPDSummary(vpdId, contactPreferences, returns, payments, hasFinancialData)
+      }
     }
   }
 
@@ -97,13 +103,14 @@ class VPDSummaryService @Inject()(
                                 vpdId: VpdId,
                                 contactPreferences: Option[SubscriptionContactPreferences],
                                 returns: Option[Returns],
-                                payments: Option[Payments]
+                                payments: Option[Payments],
+                                hasFinancialData: Boolean
   ): VPDSummary = {
     val hasSubscriptionSummaryError = contactPreferences.isEmpty
     val approvalStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
     val isNoAccess                  = approvalStatus.contains(AccessApprovalStatus.Insolvent)
 
-    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments)
+    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments, hasFinancialData)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
@@ -153,7 +160,8 @@ class VPDSummaryService @Inject()(
                           isNoAccess: Boolean,
                           hasSubscriptionSummaryError: Boolean,
                           returns: Option[Returns],
-                          payments: Option[Payments]
+                          payments: Option[Payments],
+                          hasFinancialData: Boolean
   ): Links = {
     val self = selfLink(vpdId)
 
@@ -166,14 +174,15 @@ class VPDSummaryService @Inject()(
         setUpDirectDebit = setupDirectDebitLink
       )
     } else {
-      buildFullAccessLinks(self, returns, payments)
+      buildFullAccessLinks(self, returns, payments, hasFinancialData)
     }
   }
 
   private def buildFullAccessLinks(
                                     self: Self,
                                     returns: Option[Returns],
-                                    payments: Option[Payments]
+                                    payments: Option[Payments],
+                                    hasFinancialData: Boolean
   ): Links = {
     val (completeReturn, viewReturns) = buildReturnLinks(returns)
     val (makePayment, claimRepayment) = buildPaymentLinks(payments)
@@ -242,11 +251,9 @@ class VPDSummaryService @Inject()(
         (None, None)
     }
 
-  private def buildViewPaymentsLink(payments: Option[Payments]): Option[ViewPayments] =
-    payments match {
-      case Some(p) if p.hasFinancialData =>
-        Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
-      case _ =>
-        None
-    }
+  private def buildViewPaymentsLink(hasFinancialData: Boolean): Option[ViewPayments] =
+    if (hasFinancialData)
+      Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
+    else
+      None
 }
