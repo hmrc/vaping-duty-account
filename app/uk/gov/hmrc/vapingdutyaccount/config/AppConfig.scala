@@ -122,6 +122,7 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val manageContactPreferenceUrl: String = config.get[String]("service.links.manageContactPreference")
   lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
   lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
+  lazy val viewPaymentsUrl: String            = config.get[String]("service.links.viewPayments")
   lazy val makePaymentUrl: String             = config.get[String]("service.links.makePayment")
   lazy val claimRepaymentUrl: String          = config.get[String]("service.links.claimRepayment")
   lazy val startDirectDebitUrl: String        = config.get[String]("service.links.startDirectDebit")
