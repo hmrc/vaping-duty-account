@@ -30,7 +30,8 @@ object PaymentBalance {
 
 final case class Payments(
   hasPaymentsError: Boolean,
-  balance: Option[PaymentBalance]
+  balance: Option[PaymentBalance],
+  hasFinancialData: Boolean
 )
 
 object Payments {
