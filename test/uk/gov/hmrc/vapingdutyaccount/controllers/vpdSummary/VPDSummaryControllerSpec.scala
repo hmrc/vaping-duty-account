@@ -55,11 +55,18 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(config.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
   when(config.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
+  when(config.viewPaymentsUrl).thenReturn("/vaping-duty-finance/view-payments")
   when(config.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
   when(config.phase2Enabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
-    .thenReturn(Future.successful(Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))))))
+    .thenReturn(Future.successful(Some(
+      Payments(
+        hasPaymentsError = false,
+        balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None)),
+        hasFinancialData = true
+      )
+    )))
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",
@@ -142,7 +149,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    "balance" : {
        |      "amount" : 0,
        |      "isMultiplePaymentDue" : false
-       |    }
+       |    },
+       |    "hasFinancialData" : true
        |  },
        |  "links" : {
        |    "self" : {
@@ -151,6 +159,10 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    },
        |    "manageContactPreference" : {
        |      "href" : "/vaping-duty/contact-preferences/how-should-we-contact-you",
+       |      "method" : "GET"
+       |    },
+       |    "viewPayments" : {
+       |      "href" : "/vaping-duty-finance/view-payments",
        |      "method" : "GET"
        |    },
        |    "setUpDirectDebit" : {

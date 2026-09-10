@@ -37,6 +37,12 @@ class PaymentsService {
         if (amount > 0 && distinctChargeRefs.size == 1) distinctChargeRefs.headOption else None
     )
 
-    Payments(hasPaymentsError = false, balance = Some(balance))
+    val hasFinancialData = 
+      response.outstanding.nonEmpty || 
+      response.totalAccountBalance.isDefined ||
+      response.paymentOnAccount.nonEmpty ||
+      response.cleared.nonEmpty
+
+    Payments(hasPaymentsError = false, balance = Some(balance), hasFinancialData = hasFinancialData)
   }
 }

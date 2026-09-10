@@ -22,6 +22,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentOnAccount}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
@@ -252,6 +253,18 @@ trait TestData extends ModelGenerators {
 
   val paymentsWithOutstandingBalance: Payments = Payments(
     hasPaymentsError = false,
-    balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
+    balance = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123"))),
+    hasFinancialData = true
+  )
+
+  val clearedPayment: ClearedPayment = ClearedPayment(
+    chargeReference = Some("XVP123456789"),
+    amountPaid = BigDecimal(100.00),
+    clearedDate = Some(LocalDate.now(clock))
+  )
+
+  val paymentOnAccount: PaymentOnAccount = PaymentOnAccount(
+    amount = BigDecimal(50.00),
+    paymentDate = Some(LocalDate.now(clock))
   )
 }

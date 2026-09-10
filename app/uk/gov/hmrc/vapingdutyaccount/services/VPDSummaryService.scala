@@ -183,6 +183,8 @@ class VPDSummaryService @Inject()(
       manageContactPreference = manageContactPreferencesLink,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
+      makePayment             = buildMakePaymentLink(payments),
+      viewPayments            = buildViewPaymentsLink(payments),
       makePayment             = makePayment,
       claimRepayment          = claimRepayment,
       setUpDirectDebit        = setupDirectDebitLink
@@ -238,5 +240,13 @@ class VPDSummaryService @Inject()(
         (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
       case _ =>
         (None, None)
+    }
+
+  private def buildViewPaymentsLink(payments: Option[Payments]): Option[ViewPayments] =
+    payments match {
+      case Some(p) if p.hasFinancialData =>
+        Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
+      case _ =>
+        None
     }
 }

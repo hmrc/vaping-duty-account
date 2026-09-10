@@ -39,6 +39,6 @@ class GetPaymentsService @Inject()(
       .recover {
         case ex =>
           logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-          Some(Payments(hasPaymentsError = true, balance = None))
+          Some(Payments(hasPaymentsError = true, balance = None, hasFinancialData = false))
       }
 }

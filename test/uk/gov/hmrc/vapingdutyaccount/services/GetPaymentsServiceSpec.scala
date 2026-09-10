@@ -45,11 +45,13 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
+            paymentOnAccount    = Seq.empty,
+            cleared             = Seq.empty,
             totalAccountBalance = Some(BigDecimal(4574.84))
           )))
 
         service.getPayments()(using hc).futureValue mustBe
-          Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))))
+          Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789"))), hasFinancialData = true))
       }
 
       "return Some(Payments) with hasPaymentsError true when the connector fails" in {
@@ -58,7 +60,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
 
-        service.getPayments()(using hc).futureValue mustBe Some(Payments(hasPaymentsError = true, balance = None))
+        service.getPayments()(using hc).futureValue mustBe Some(Payments(hasPaymentsError = true, balance = None, hasFinancialData = false))
       }
     }
   }
