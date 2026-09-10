@@ -33,10 +33,7 @@ class GetObligationsService @Inject()(
                                      )(implicit ec: ExecutionContext) extends Logging {
 
   def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
-    if (config.phase2Enabled)    
-      getFilteredObligations(vpdId)
-    else
-      Future.successful(Seq.empty)
+    getFilteredObligations(vpdId)
   }
 
   private def getFilteredObligations(vpdId: VpdId)(using HeaderCarrier) = {

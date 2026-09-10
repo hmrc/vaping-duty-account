@@ -60,15 +60,6 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
 
         service.getPayments()(using hc).futureValue mustBe Some(Payments(hasPaymentsError = true, balance = None))
       }
-
-      "return None and never call the connector when the phase-2-enabled feature switch is turned off" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(false)
-
-        when(mockPaymentsConnector.getPayments()(using any()))
-          .thenReturn(Future.successful(UpstreamPaymentsResponse(Seq.empty, Some(BigDecimal(0)))))
-
-        service.getPayments()(using hc).futureValue mustBe None
-      }
     }
   }
 }

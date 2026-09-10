@@ -85,15 +85,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
 
         service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
       }
-      
-      "return an empty list of obligations when the phase-2-enabled feature switch is turned off" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(false)
-
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
-
-        service.getObligationDetails(vpdId).futureValue mustBe Seq.empty
-      }
 
       "must flatten multiple obligation details from multiple items" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
