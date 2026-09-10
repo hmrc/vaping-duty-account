@@ -21,6 +21,7 @@ import play.api.libs.json.{Json, Writes}
 case class Self(href: String, method: String)
 case class ManageContactPreference(href: String, method: String)
 case class MakePayment(href: String, method: String)
+case class ClaimRepayment(href: String, method: String)
 case class SetUpDirectDebit(href: String, method: String)
 
 implicit val selfFormats: Writes[Self]                                       = Json.writes[Self]
@@ -28,6 +29,7 @@ implicit val manageContactPreferenceFormats: Writes[ManageContactPreference] = J
 implicit val completeReturnFormats: Writes[CompleteReturn]                   = Json.writes[CompleteReturn]
 implicit val viewReturnsFormats: Writes[ViewReturns]                         = Json.writes[ViewReturns]
 implicit val makePaymentFormats: Writes[MakePayment]                         = Json.writes[MakePayment]
+implicit val claimRepaymentFormats: Writes[ClaimRepayment]                   = Json.writes[ClaimRepayment]
 implicit val setUpDirectDebitFormats: Writes[SetUpDirectDebit]               = Json.writes[SetUpDirectDebit]
 
 case class Links(
@@ -36,6 +38,7 @@ case class Links(
                   completeReturn          : Option[CompleteReturn]          = None,
                   viewReturns             : Option[ViewReturns]             = None,
                   makePayment             : Option[MakePayment]             = None,
+                  claimRepayment          : Option[ClaimRepayment]          = None,
                   setUpDirectDebit        : Option[SetUpDirectDebit]        = None
 )
 

@@ -42,6 +42,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.completeReturnUrlPrefix   ).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl            ).thenReturn("/vaping-duty/view-your-returns")
   when(mockConfig.makePaymentUrl            ).thenReturn("/vaping-duty-finance/pay")
+  when(mockConfig.claimRepaymentUrl         ).thenReturn("/vaping-duty/claim-repayment")
   when(mockConfig.startDirectDebitUrl       ).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
   when(mockConfig.serviceName               ).thenReturn("Vaping Products Duty")
   when(mockConfig.serviceId                 ).thenReturn("VPD")
@@ -455,6 +456,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.payments.get.hasPaymentsError mustBe false
           result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
           result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.links.claimRepayment mustBe None
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
   
@@ -473,10 +475,11 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   
           result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
           result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.links.claimRepayment mustBe None
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
   
-        "return a negative balance and no makePayment link when the account is in credit" in {
+        "return a negative balance and claimRepayment link when the account is in credit" in {
           when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -491,10 +494,11 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   
           result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
           result.links.makePayment mustBe None
+          result.links.claimRepayment mustBe Some(ClaimRepayment("/vaping-duty/claim-repayment", "GET"))
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
   
-        "return a zero balance and no makePayment link when nothing is owed" in {
+        "return a zero balance and no makePayment or claimRepayment link when nothing is owed" in {
           when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -509,6 +513,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   
           result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
           result.links.makePayment mustBe None
+          result.links.claimRepayment mustBe None
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
   
