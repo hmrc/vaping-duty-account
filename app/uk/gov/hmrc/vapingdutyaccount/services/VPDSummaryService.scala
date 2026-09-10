@@ -176,13 +176,15 @@ class VPDSummaryService @Inject()(
                                     payments: Option[Payments]
   ): Links = {
     val (completeReturn, viewReturns) = buildReturnLinks(returns)
+    val (makePayment, claimRepayment) = buildPaymentLinks(payments)
 
     Links(
       self                    = self,
       manageContactPreference = manageContactPreferencesLink,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
-      makePayment             = buildMakePaymentLink(payments),
+      makePayment             = makePayment,
+      claimRepayment          = claimRepayment,
       setUpDirectDebit        = setupDirectDebitLink
     )
   }
@@ -226,11 +228,15 @@ class VPDSummaryService @Inject()(
       None
   }
 
-  private def buildMakePaymentLink(payments: Option[Payments]): Option[MakePayment] =
+  private def buildPaymentLinks(payments: Option[Payments]): (Option[MakePayment], Option[ClaimRepayment]) =
     payments match {
-      case Some(p) if p.hasPaymentsError || p.balance.exists(_.amount > 0) =>
-        Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET))
+      case Some(p) if p.hasPaymentsError =>
+        (Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)), None)
+      case Some(p) if p.balance.exists(_.amount > 0) =>
+        (Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)), None)
+      case Some(p) if p.balance.exists(_.amount < 0) =>
+        (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
       case _ =>
-        None
+        (None, None)
     }
 }
