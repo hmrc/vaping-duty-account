@@ -192,8 +192,7 @@ class VPDSummaryService @Inject()(
       manageContactPreference = manageContactPreferencesLink,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
-      makePayment             = buildMakePaymentLink(payments),
-      viewPayments            = buildViewPaymentsLink(payments),
+      viewPayments            = buildViewPaymentsLink(hasFinancialData),
       makePayment             = makePayment,
       claimRepayment          = claimRepayment,
       setUpDirectDebit        = setupDirectDebitLink
