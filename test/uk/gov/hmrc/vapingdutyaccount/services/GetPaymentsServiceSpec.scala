@@ -34,7 +34,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   val mockPaymentsConnector: PaymentsConnector = mock[PaymentsConnector]
   val mockAppConfig: AppConfig                 = mock[AppConfig]
 
-  val service: GetPaymentsService = new GetPaymentsService(mockAppConfig, mockPaymentsConnector, new PaymentsService())
+  val service: GetPaymentsService = new GetPaymentsService(mockPaymentsConnector, new PaymentsService())
 
   "GetPaymentsService" - {
     "getPayments must" - {

@@ -27,7 +27,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class GetPaymentsService @Inject()(
-                                    config: AppConfig,
                                     paymentsConnector: PaymentsConnector,
                                     paymentsService: PaymentsService
                                   )(implicit ec: ExecutionContext) extends Logging {
