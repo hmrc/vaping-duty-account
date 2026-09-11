@@ -17,14 +17,14 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
 
 import javax.inject.Singleton
 
 @Singleton
 class PaymentsService {
 
-  def toPayments(response: UpstreamPaymentsResponse): Payments = {
+  def toPayments(response: UpstreamPaymentsResponse): (Payments, FinancialDataStatus) = {
     val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
     val distinctChargeRefs   = positiveOutstanding.flatMap(_.chargeReference).distinct
     val amount               = response.totalAccountBalance.getOrElse(BigDecimal(0))
@@ -37,6 +37,14 @@ class PaymentsService {
         if (amount > 0 && distinctChargeRefs.size == 1) distinctChargeRefs.headOption else None
     )
 
-    Payments(hasPaymentsError = false, balance = Some(balance))
+    val financialDataStatus = 
+      if (response.outstanding.nonEmpty || response.paymentOnAccount.nonEmpty || response.cleared.nonEmpty)
+        FinancialDataStatus.HasFinancialData
+      else
+        FinancialDataStatus.NoFinancialData
+
+    val payments = Payments(hasPaymentsError = false, balance = Some(balance))
+    
+    (payments, financialDataStatus)
   }
 }

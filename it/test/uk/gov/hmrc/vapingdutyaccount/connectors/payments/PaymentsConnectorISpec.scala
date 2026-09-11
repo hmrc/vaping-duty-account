@@ -52,6 +52,8 @@ class PaymentsConnectorISpec extends ISpecBase with IntegrationPatience {
 
         result mustBe PaymentsResponse(
           outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
+          paymentOnAccount    = Seq.empty,
+          cleared             = Seq.empty,
           totalAccountBalance = Some(BigDecimal(4574.84))
         )
       }

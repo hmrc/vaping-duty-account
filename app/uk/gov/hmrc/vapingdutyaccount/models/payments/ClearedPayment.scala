@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 HM Revenue & Customs
+ * Copyright 2025 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,16 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.payments
 
-import play.api.libs.json.{Json, Reads}
+import play.api.libs.json.{Json, OFormat}
 
 import java.time.LocalDate
 
-final case class OutstandingPayment(
-  chargeReference: Option[String],
-  amountDue: BigDecimal,
-  dueDate: Option[LocalDate],
-  status: String
-)
+final case class ClearedPayment(
+                                 chargeReference: Option[String],
+                                 amountPaid: BigDecimal,
+                                 clearedDate: Option[LocalDate]
+                               )
 
-object OutstandingPayment {
-  given Reads[OutstandingPayment] = Json.reads[OutstandingPayment]
-}
-
-final case class PaymentsResponse(
-  outstanding: Seq[OutstandingPayment],
-  paymentOnAccount: Seq[PaymentOnAccount],
-  cleared: Seq[ClearedPayment],
-  totalAccountBalance: Option[BigDecimal]
-)
-
-object PaymentsResponse {
-  given Reads[PaymentsResponse] = Json.reads[PaymentsResponse]
+object ClearedPayment {
+  given format: OFormat[ClearedPayment] = Json.format[ClearedPayment]
 }

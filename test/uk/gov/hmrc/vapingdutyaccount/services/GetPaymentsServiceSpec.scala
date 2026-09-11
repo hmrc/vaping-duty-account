@@ -25,7 +25,7 @@ import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse as UpstreamPaymentsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
 
 import scala.concurrent.Future
 
@@ -39,26 +39,53 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   "GetPaymentsService" - {
     "getPayments must" - {
 
-      "return Some(Payments) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+      "return Some((Payments, FinancialDataStatus.HasFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
+            paymentOnAccount    = Seq.empty,
+            cleared             = Seq.empty,
             totalAccountBalance = Some(BigDecimal(4574.84))
           )))
 
-        service.getPayments()(using hc).futureValue mustBe
-          Some(Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))))
+        val result = service.getPayments()(using hc).futureValue
+        
+        result mustBe Some((
+          Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))),
+          FinancialDataStatus.HasFinancialData
+        ))
       }
 
-      "return Some(Payments) with hasPaymentsError true when the connector fails" in {
+      "return Some((Payments, FinancialDataStatus.NoFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(
+            outstanding = Seq.empty,
+            paymentOnAccount = Seq.empty,
+            cleared = Seq.empty,
+            totalAccountBalance = Some(BigDecimal(4574.84))
+          )))
+
+        val result = service.getPayments()(using hc).futureValue
+
+        result mustBe Some((
+          Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, None))),
+          FinancialDataStatus.NoFinancialData
+        ))
+      }
+
+      "return Some((Payments, FinancialDataStatus)) with hasPaymentsError true when the connector fails" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
 
-        service.getPayments()(using hc).futureValue mustBe Some(Payments(hasPaymentsError = true, balance = None))
+        val result = service.getPayments()(using hc).futureValue
+        
+        result mustBe Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))
       }
     }
   }
