@@ -702,7 +702,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.setUpDirectDebit mustBe None
         }
 
-        "return no payments and no makePayment link when payments are not returned" in {
+        "return no payments and no makePayment link when the View Payments page is empty before the first return has been submitted" in {
           when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
