@@ -20,12 +20,10 @@ import org.scalatest.concurrent.IntegrationPatience
 import play.api.http.Status.*
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
-import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse}
 
 class PaymentsConnectorISpec extends ISpecBase with IntegrationPatience {
 
-  private val vpdId     = VpdId("GBWK1234567WK")
   private val connector = app.injector.instanceOf[PaymentsConnector]
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
