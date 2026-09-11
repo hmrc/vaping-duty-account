@@ -20,7 +20,7 @@ import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.Payments
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, Payments}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -32,13 +32,13 @@ class GetPaymentsService @Inject()(
                                     paymentsService: PaymentsService
                                   )(implicit ec: ExecutionContext) extends Logging {
 
-  def getPayments()(using HeaderCarrier): Future[Option[(Payments, Boolean)]] =
+  def getPayments()(using HeaderCarrier): Future[Option[(Payments, FinancialDataStatus)]] =
     paymentsConnector.getPayments()
       .map(paymentsService.toPayments)
       .map(Some(_))
       .recover {
         case ex =>
           logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-          Some((Payments(hasPaymentsError = true, balance = None), false))
+          Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))
       }
 }

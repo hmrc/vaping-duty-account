@@ -26,6 +26,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContac
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -90,11 +91,11 @@ class VPDSummaryService @Inject()(
         returns            <- returnsFuture
         paymentsWithFlag   <- paymentsFuture
       } yield {
-        val (payments, hasFinancialData) = paymentsWithFlag match {
-          case Some((p, flag)) => (Some(p), flag)
-          case None            => (None, false)
+        val (payments, financialDataStatus) = paymentsWithFlag match {
+          case Some((p, status)) => (Some(p), status)
+          case None              => (None, NoFinancialData)
         }
-        createVPDSummary(vpdId, contactPreferences, returns, payments, hasFinancialData)
+        createVPDSummary(vpdId, contactPreferences, returns, payments, financialDataStatus)
       }
     }
   }
@@ -104,13 +105,13 @@ class VPDSummaryService @Inject()(
                                 contactPreferences: Option[SubscriptionContactPreferences],
                                 returns: Option[Returns],
                                 payments: Option[Payments],
-                                hasFinancialData: Boolean
+                                financialDataStatus: FinancialDataStatus
   ): VPDSummary = {
     val hasSubscriptionSummaryError = contactPreferences.isEmpty
     val approvalStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
     val isNoAccess                  = approvalStatus.contains(AccessApprovalStatus.Insolvent)
 
-    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments, hasFinancialData)
+    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments, financialDataStatus)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
@@ -161,7 +162,7 @@ class VPDSummaryService @Inject()(
                           hasSubscriptionSummaryError: Boolean,
                           returns: Option[Returns],
                           payments: Option[Payments],
-                          hasFinancialData: Boolean
+                          financialDataStatus: FinancialDataStatus
   ): Links = {
     val self = selfLink(vpdId)
 
@@ -174,7 +175,7 @@ class VPDSummaryService @Inject()(
         setUpDirectDebit = setupDirectDebitLink
       )
     } else {
-      buildFullAccessLinks(self, returns, payments, hasFinancialData)
+      buildFullAccessLinks(self, returns, payments, financialDataStatus)
     }
   }
 
@@ -182,7 +183,7 @@ class VPDSummaryService @Inject()(
                                     self: Self,
                                     returns: Option[Returns],
                                     payments: Option[Payments],
-                                    hasFinancialData: Boolean
+                                    financialDataStatus: FinancialDataStatus
   ): Links = {
     val (completeReturn, viewReturns) = buildReturnLinks(returns)
     val (makePayment, claimRepayment) = buildPaymentLinks(payments)
@@ -192,7 +193,7 @@ class VPDSummaryService @Inject()(
       manageContactPreference = manageContactPreferencesLink,
       completeReturn          = completeReturn,
       viewReturns             = viewReturns,
-      viewPayments            = buildViewPaymentsLink(hasFinancialData),
+      viewPayments            = buildViewPaymentsLink(financialDataStatus),
       makePayment             = makePayment,
       claimRepayment          = claimRepayment,
       setUpDirectDebit        = setupDirectDebitLink
@@ -250,9 +251,9 @@ class VPDSummaryService @Inject()(
         (None, None)
     }
 
-  private def buildViewPaymentsLink(hasFinancialData: Boolean): Option[ViewPayments] =
-    if (hasFinancialData)
-      Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
-    else
-      None
+  private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
+    financialDataStatus match {
+      case HasFinancialData => Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
+      case NoFinancialData  => None
+    }
 }

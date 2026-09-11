@@ -65,7 +65,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
         hasPaymentsError = false,
         balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
       ),
-      true
+      FinancialDataStatus.HasFinancialData
     ))))
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(

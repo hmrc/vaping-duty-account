@@ -25,7 +25,7 @@ import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse as UpstreamPaymentsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
 
 import scala.concurrent.Future
 
@@ -39,7 +39,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   "GetPaymentsService" - {
     "getPayments must" - {
 
-      "return Some((Payments, Boolean)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+      "return Some((Payments, FinancialDataStatus)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
@@ -54,11 +54,11 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
         
         result mustBe Some((
           Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))),
-          true
+          FinancialDataStatus.HasFinancialData
         ))
       }
 
-      "return Some((Payments, Boolean)) with hasPaymentsError true when the connector fails" in {
+      "return Some((Payments, FinancialDataStatus)) with hasPaymentsError true when the connector fails" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
@@ -66,7 +66,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
 
         val result = service.getPayments()(using hc).futureValue
         
-        result mustBe Some((Payments(hasPaymentsError = true, balance = None), false))
+        result mustBe Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))
       }
     }
   }

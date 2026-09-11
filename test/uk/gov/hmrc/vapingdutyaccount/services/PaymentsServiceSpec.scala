@@ -18,7 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse as UpstreamPaymentsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
 
 class PaymentsServiceSpec extends SpecBase {
 
@@ -36,7 +36,7 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(4574.84))
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
         
         payments mustBe Payments(
           hasPaymentsError = false,
@@ -46,7 +46,7 @@ class PaymentsServiceSpec extends SpecBase {
             chargeReference      = Some("XVP123456789")
           ))
         )
-        hasFinancialData mustBe true
+        financialDataStatus mustBe FinancialDataStatus.HasFinancialData
       }
 
       "return isMultiplePaymentDue=true and no charge reference when multiple charges are outstanding" in {
@@ -78,7 +78,7 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = Some(BigDecimal(0))
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
         
         payments mustBe Payments(
           hasPaymentsError = false,
@@ -88,7 +88,7 @@ class PaymentsServiceSpec extends SpecBase {
             chargeReference      = None
           ))
         )
-        hasFinancialData mustBe true
+        financialDataStatus mustBe FinancialDataStatus.NoFinancialData
       }
 
       "return a negative balance and no charge reference when the account is in credit" in {
@@ -152,9 +152,9 @@ class PaymentsServiceSpec extends SpecBase {
       }
     }
 
-    "hasFinancialData must" - {
+    "financialDataStatus must" - {
 
-      "be true when only cleared payments exist" in {
+      "be HasFinancialData when only cleared payments exist" in {
         val response = UpstreamPaymentsResponse(
           outstanding         = Seq.empty,
           paymentOnAccount    = Seq.empty,
@@ -162,13 +162,13 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
 
-        hasFinancialData mustBe true
+        financialDataStatus mustBe FinancialDataStatus.HasFinancialData
         payments.balance.get.amount mustBe BigDecimal(0)
       }
 
-      "be true when only paymentOnAccount exists" in {
+      "be HasFinancialData when only paymentOnAccount exists" in {
         val response = UpstreamPaymentsResponse(
           outstanding         = Seq.empty,
           paymentOnAccount    = Seq(paymentOnAccount),
@@ -176,27 +176,27 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
 
-        hasFinancialData mustBe true
+        financialDataStatus mustBe FinancialDataStatus.HasFinancialData
         payments.balance.get.amount mustBe BigDecimal(0)
       }
 
-      "be true when only totalAccountBalance is defined" in {
+      "be NoFinancialData when only totalAccountBalance is defined" in {
         val response = UpstreamPaymentsResponse(
           outstanding         = Seq.empty,
           paymentOnAccount    = Seq.empty,
           cleared             = Seq.empty,
-          totalAccountBalance = Some(BigDecimal(100))
+          totalAccountBalance = Some(BigDecimal(0))
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
 
-        hasFinancialData mustBe true
-        payments.balance.get.amount mustBe BigDecimal(100)
+        financialDataStatus mustBe FinancialDataStatus.NoFinancialData
+        payments.balance.get.amount mustBe BigDecimal(0)
       }
 
-      "be true when only outstanding payments exist" in {
+      "be HasFinancialData when only outstanding payments exist" in {
         val response = UpstreamPaymentsResponse(
           outstanding         = Seq(OutstandingPayment(Some("XVP123"), BigDecimal(100), None, "Due")),
           paymentOnAccount    = Seq.empty,
@@ -204,12 +204,12 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val (_, hasFinancialData) = service.toPayments(response)
+        val (_, financialDataStatus) = service.toPayments(response)
 
-        hasFinancialData mustBe true
+        financialDataStatus mustBe FinancialDataStatus.HasFinancialData
       }
 
-      "be false when all payment fields are empty" in {
+      "be NoFinancialData when all payment fields are empty" in {
         val response = UpstreamPaymentsResponse(
           outstanding         = Seq.empty,
           paymentOnAccount    = Seq.empty,
@@ -217,9 +217,9 @@ class PaymentsServiceSpec extends SpecBase {
           totalAccountBalance = None
         )
 
-        val (payments, hasFinancialData) = service.toPayments(response)
+        val (payments, financialDataStatus) = service.toPayments(response)
 
-        hasFinancialData mustBe false
+        financialDataStatus mustBe FinancialDataStatus.NoFinancialData
         payments.balance.get.amount mustBe BigDecimal(0)
       }
     }
