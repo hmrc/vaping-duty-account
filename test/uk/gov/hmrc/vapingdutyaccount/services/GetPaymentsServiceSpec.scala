@@ -39,7 +39,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   "GetPaymentsService" - {
     "getPayments must" - {
 
-      "return Some((Payments, FinancialDataStatus)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+      "return Some((Payments, FinancialDataStatus.HasFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
         when(mockPaymentsConnector.getPayments()(using any()))
@@ -55,6 +55,25 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
         result mustBe Some((
           Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))),
           FinancialDataStatus.HasFinancialData
+        ))
+      }
+
+      "return Some((Payments, FinancialDataStatus.NoFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
+        when(mockAppConfig.phase2Enabled).thenReturn(true)
+
+        when(mockPaymentsConnector.getPayments()(using any()))
+          .thenReturn(Future.successful(UpstreamPaymentsResponse(
+            outstanding = Seq.empty,
+            paymentOnAccount = Seq.empty,
+            cleared = Seq.empty,
+            totalAccountBalance = Some(BigDecimal(4574.84))
+          )))
+
+        val result = service.getPayments()(using hc).futureValue
+
+        result mustBe Some((
+          Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, None))),
+          FinancialDataStatus.NoFinancialData
         ))
       }
 
