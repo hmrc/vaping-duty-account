@@ -163,7 +163,7 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
       }
 
       "must return makePaymentUrl with a charge reference suffix when Some is given" in {
-        appConfig.makePaymentUrl(Some("XVP123456789")) mustBe "/vaping-duty/start-bta-payment/XVP123456789"
+        appConfig.makePaymentUrl(Some("XVP123456789")) mustBe "/vaping-duty/start-bta-payment/?chargeReference=XVP123456789"
       }
     }
 
