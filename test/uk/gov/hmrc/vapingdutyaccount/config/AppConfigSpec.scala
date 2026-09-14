@@ -157,6 +157,14 @@ class AppConfigSpec extends SpecBaseWithConfigOverrides {
       "must return viewReturnsUrl" in {
         appConfig.viewReturnsUrl mustBe "/vaping-duty/view-your-returns"
       }
+
+      "must return makePaymentUrl without a charge reference suffix when None is given" in {
+        appConfig.makePaymentUrl(None) mustBe "/vaping-duty/start-bta-payment"
+      }
+
+      "must return makePaymentUrl with a charge reference suffix when Some is given" in {
+        appConfig.makePaymentUrl(Some("XVP123456789")) mustBe "/vaping-duty/start-bta-payment/XVP123456789"
+      }
     }
 
     "for encryption" - {

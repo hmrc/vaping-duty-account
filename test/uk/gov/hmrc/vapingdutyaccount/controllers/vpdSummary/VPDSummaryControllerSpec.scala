@@ -54,7 +54,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
   when(config.completeReturnUrlPrefix).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(config.viewReturnsUrl).thenReturn("/vaping-duty/view-your-returns")
-  when(config.makePaymentUrl).thenReturn("/vaping-duty-finance/pay")
+  when(config.makePaymentUrl(any())).thenReturn("/vaping-duty/start-bta-payment")
   when(config.viewPaymentsUrl).thenReturn("/vaping-duty-finance/view-payments")
   when(config.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
   when(config.phase2Enabled).thenReturn(true)
@@ -212,7 +212,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |      "method" : "GET"
        |    },
        |    "makePayment" : {
-       |      "href" : "/vaping-duty-finance/pay",
+       |      "href" : "/vaping-duty/start-bta-payment",
        |      "method" : "GET"
        |    },
        |    "setUpDirectDebit" : {

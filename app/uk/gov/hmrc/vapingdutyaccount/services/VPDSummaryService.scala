@@ -171,7 +171,7 @@ class VPDSummaryService @Inject()(
     } else if (hasSubscriptionSummaryError) {
       Links(
         self             = self,
-        makePayment      = Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)),
+        makePayment      = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
         setUpDirectDebit = setupDirectDebitLink
       )
     } else {
@@ -242,9 +242,10 @@ class VPDSummaryService @Inject()(
   private def buildPaymentLinks(payments: Option[Payments]): (Option[MakePayment], Option[ClaimRepayment]) =
     payments match {
       case Some(p) if p.hasPaymentsError =>
-        (Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)), None)
+        (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
       case Some(p) if p.balance.exists(_.amount > 0) =>
-        (Some(MakePayment(config.makePaymentUrl, HttpVerbs.GET)), None)
+        val singleChargeRef = p.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
+        (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
       case Some(p) if p.balance.exists(_.amount < 0) =>
         (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
       case _ =>

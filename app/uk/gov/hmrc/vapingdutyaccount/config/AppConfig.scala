@@ -123,7 +123,10 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
   lazy val completeReturnUrlPrefix: String    = config.get[String]("service.links.completeReturn")
   lazy val viewReturnsUrl: String             = config.get[String]("service.links.viewReturns")
   lazy val viewPaymentsUrl: String            = config.get[String]("service.links.viewPayments")
-  lazy val makePaymentUrl: String             = config.get[String]("service.links.makePayment")
+  private lazy val makePaymentBasePath: String = config.get[String]("service.links.makePayment")
+
+  def makePaymentUrl(chargeReference: Option[String]): String =
+    chargeReference.fold(makePaymentBasePath)(ref => s"$makePaymentBasePath/$ref")
   lazy val claimRepaymentUrl: String          = config.get[String]("service.links.claimRepayment")
   lazy val startDirectDebitUrl: String        = config.get[String]("service.links.startDirectDebit")
 

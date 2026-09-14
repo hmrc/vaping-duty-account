@@ -18,6 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.services
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
+import org.mockito.invocation.InvocationOnMock
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.http.InternalServerException
@@ -41,7 +42,12 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
   when(mockConfig.completeReturnUrlPrefix   ).thenReturn("/vaping-duty/complete-return/before-you-start")
   when(mockConfig.viewReturnsUrl            ).thenReturn("/vaping-duty/view-your-returns")
-  when(mockConfig.makePaymentUrl            ).thenReturn("/vaping-duty-finance/pay")
+  when(mockConfig.makePaymentUrl(any())).thenAnswer { (invocation: InvocationOnMock) =>
+    invocation.getArgument[Option[String]](0) match {
+      case Some(chargeReference) => s"/vaping-duty/start-bta-payment/$chargeReference"
+      case None                  => "/vaping-duty/start-bta-payment"
+    }
+  }
   when(mockConfig.claimRepaymentUrl         ).thenReturn("/vaping-duty/claim-repayment")
   when(mockConfig.startDirectDebitUrl       ).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
   when(mockConfig.viewPaymentsUrl           ).thenReturn("/vaping-duty/view-payments")
@@ -406,7 +412,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.manageContactPreference mustBe None
           result.links.completeReturn mustBe None
           result.links.viewReturns mustBe None
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
 
@@ -532,7 +538,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.payments mustBe defined
           result.payments.get.hasPaymentsError mustBe false
           result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment/XVP123456789", "GET"))
           result.links.claimRepayment mustBe None
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
@@ -545,13 +551,13 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetPaymentsService.getPayments()(using any()))
             .thenReturn(Future.successful(Some((Payments(
               hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
+              balance          = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, Some("XVP111111111")))
             ), FinancialDataStatus.HasFinancialData))))
-  
+
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, None))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, Some("XVP111111111")))
+          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
           result.links.claimRepayment mustBe None
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
@@ -607,7 +613,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
           result.payments mustBe Some(Payments(hasPaymentsError = true, balance = None))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty-finance/pay", "GET"))
+          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
 
