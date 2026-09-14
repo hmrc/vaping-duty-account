@@ -18,7 +18,6 @@ package uk.gov.hmrc.vapingdutyaccount.services
 
 import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, Payments}
 
