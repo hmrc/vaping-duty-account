@@ -122,40 +122,15 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         result.links.setUpDirectDebit mustBe None
       }
 
-      "return a degraded VPDSummary without contact preference elements" in {
+      "propagate a failure when the subscription connector fails" in {
         when(mockConfig.phase2Enabled).thenReturn(false)
 
         when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
 
-        // Ensure obligations and payments data present to show it is really being hidden when in phase 1.
-        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Seq(obligationDetails)))
-        when(mockGetPaymentsService.getPayments()(using any()))
-          .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
+        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).failed.futureValue
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        // Phase 1 elements
-        result.service     mustBe ServiceInfo("Vaping Products Duty", "VPD")
-        result.identifiers mustBe Identifier(vpdId.id)
-        result.links.self  mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
-
-        // Phase 1 contact prefs are missing when API fails
-        result.contactPreference             mustBe None
-        result.links.manageContactPreference mustBe None
-
-        // Phase 2 sections
-        result.access                  mustBe None
-        result.contactPreferenceStatus mustBe None
-        result.returns                 mustBe None
-        result.payments                mustBe None
-
-        // Phase 2 links 
-        result.links.completeReturn   mustBe None
-        result.links.viewReturns      mustBe None
-        result.links.makePayment      mustBe None
-        result.links.setUpDirectDebit mustBe None
+        result mustBe a[InternalServerException]
       }
 
       "suppress sections and links for an insolvent subscriber when the phase-2-enabled feature switch is turned off" in {
@@ -394,7 +369,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.contactPreferenceStatus mustBe None
         }
 
-        "return a degraded VPDSummary with hasSubscriptionSummaryError true when the subscription connector fails, hiding real obligations and payments data" in {
+        "propagate a failure when the subscription connector fails" in {
           when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
             .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -402,18 +377,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetPaymentsService.getPayments()(using any()))
             .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
 
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).failed.futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = true, approvalStatus = None))
-          result.contactPreference mustBe None
-          result.contactPreferenceStatus mustBe None
-          result.returns mustBe None
-          result.payments mustBe None
-          result.links.manageContactPreference mustBe None
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe None
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
+          result mustBe a[InternalServerException]
         }
 
         "return viewPayments link when balance is present" in {
@@ -625,7 +591,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Approved)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Approved)))
         }
 
         "return access DEREGISTERED when the subscription is deregistered" in {
@@ -636,7 +602,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Deregistered)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Deregistered)))
         }
 
         "return access REVOKED when the subscription is revoked" in {
@@ -647,7 +613,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Revoked)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Revoked)))
         }
 
         "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
@@ -660,7 +626,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
           result.contactPreference mustBe None
           result.contactPreferenceStatus mustBe None
           result.returns mustBe None
@@ -684,7 +650,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
           result.returns mustBe None
           result.payments mustBe None
           result.links.manageContactPreference mustBe None
@@ -701,7 +667,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.access mustBe Some(Access(hasSubscriptionSummaryError = false, approvalStatus = Some(AccessApprovalStatus.Insolvent)))
+          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
           result.returns mustBe None
           result.payments mustBe None
           result.links.manageContactPreference mustBe None

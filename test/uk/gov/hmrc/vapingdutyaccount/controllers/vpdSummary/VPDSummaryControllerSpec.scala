@@ -140,7 +140,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    "vpdId" : "$vpdId"
        |  },
        |  "access" : {
-       |    "hasSubscriptionSummaryError" : false,
        |    "approvalStatus" : "$approvalStatus"
        |  },
        |  ${getContactPreferenceLines(subscription)},
@@ -182,41 +181,11 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |    "vpdId" : "$vpdId"
        |  },
        |  "access" : {
-       |    "hasSubscriptionSummaryError" : false,
        |    "approvalStatus" : "$approvalStatus"
        |  },
        |  "links" : {
        |    "self" : {
        |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
-       |      "method" : "GET"
-       |    }
-       |  }
-       |}
-       |""".stripMargin)
-
-  val expectedDegradedResponse: JsValue = Json.parse(s"""
-       |{
-       |  "service" : {
-       |    "name" : "${config.serviceName}",
-       |    "id" : "${config.serviceId}"
-       |  },
-       |  "identifiers" : {
-       |    "vpdId" : "$vpdId"
-       |  },
-       |  "access" : {
-       |    "hasSubscriptionSummaryError" : true
-       |  },
-       |  "links" : {
-       |    "self" : {
-       |      "href" : "/vaping-duty-account/vpd/summary/${vpdId}",
-       |      "method" : "GET"
-       |    },
-       |    "makePayment" : {
-       |      "href" : "/vaping-duty/start-bta-payment",
-       |      "method" : "GET"
-       |    },
-       |    "setUpDirectDebit" : {
-       |      "href" : "/vaping-duty-finance/direct-debit/bta/start",
        |      "method" : "GET"
        |    }
        |  }
@@ -281,7 +250,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
     }
 
-    "must return a degraded response and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
+    "must return a 500 and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
       when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
       when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
@@ -289,8 +258,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqAndCorrelationId)
 
-      status(result)        mustBe HttpStatus.OK
-      contentAsJson(result) mustBe expectedDegradedResponse
+      status(result)        mustBe HttpStatus.INTERNAL_SERVER_ERROR
+      contentAsJson(result) mustBe Json.toJson(APIErrors.InternalServerError)
       assertHeaderIsPresentOn(result, HmrcHeaderNames.xRequestId)
       assertHeaderIsPresentOn(result, config.xCorrelationId)
     }
