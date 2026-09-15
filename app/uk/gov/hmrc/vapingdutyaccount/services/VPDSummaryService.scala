@@ -29,6 +29,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Failure
 
 class VPDSummaryService @Inject()(
                                    config                : AppConfig,
@@ -40,25 +41,19 @@ class VPDSummaryService @Inject()(
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
 
-    val contactPreferencesFuture: Future[Option[SubscriptionContactPreferences]] =
-      subscriptionConnector.getSubscriptionContactPreferences(vpdId).map(Some(_)).recover {
-        case ex =>
+    val contactPreferencesFuture: Future[SubscriptionContactPreferences] =
+      subscriptionConnector.getSubscriptionContactPreferences(vpdId).andThen {
+        case Failure(ex) =>
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
-          None
       }
 
     if (!config.phase2Enabled)
       contactPreferencesFuture.map(contactPreferences => {
         val (contactMethod, manageContactPreferenceLink) =
-          contactPreferences match {
-            case Some(contactPreferences) =>
-              if (contactPreferences.isInsolvent)
-                (None, None)
-              else
-                (Some(resolveContactMethod(contactPreferences)), manageContactPreferencesLink)
-            case None =>
-              (None, None)
-          }
+          if (contactPreferences.isInsolvent)
+            (None, None)
+          else
+            (Some(resolveContactMethod(contactPreferences)), manageContactPreferencesLink)
 
         VPDSummary(
           service           = ServiceInfo(config.serviceName, config.serviceId),
@@ -102,44 +97,31 @@ class VPDSummaryService @Inject()(
 
   private def createVPDSummary(
                                 vpdId: VpdId,
-                                contactPreferences: Option[SubscriptionContactPreferences],
+                                contactPreferences: SubscriptionContactPreferences,
                                 returns: Option[Returns],
                                 payments: Option[Payments],
                                 financialDataStatus: FinancialDataStatus
   ): VPDSummary = {
-    val hasSubscriptionSummaryError = contactPreferences.isEmpty
-    val approvalStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
-    val isNoAccess                  = approvalStatus.contains(AccessApprovalStatus.Insolvent)
+    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
+    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
 
-    val links = buildLinks(vpdId, isNoAccess, hasSubscriptionSummaryError, returns, payments, financialDataStatus)
+    val links = buildLinks(vpdId, isNoAccess, returns, payments, financialDataStatus)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
-      else
-        contactPreferences match {
-          case Some(contactPreferences) =>
-            val cm = resolveContactMethod(contactPreferences)
-            (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-          case None                     =>
-            (None, None)
-        }
-
-    val access =
-      Some(
-        if (hasSubscriptionSummaryError)
-          Access(hasSubscriptionSummaryError = true)
-        else
-          Access(hasSubscriptionSummaryError = false, approvalStatus = approvalStatus)
-      )
+      else {
+        val cm = resolveContactMethod(contactPreferences)
+        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+      }
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
       identifiers             = Identifier(vpdId.toString),
-      access                  = access,
+      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
       contactPreference       = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = if (isNoAccess || hasSubscriptionSummaryError) None else returns,
-      payments                = if (isNoAccess || hasSubscriptionSummaryError) None else payments,
+      returns                 = if (isNoAccess) None else returns,
+      payments                = if (isNoAccess) None else payments,
       links                   = links
     )
   }
@@ -159,7 +141,6 @@ class VPDSummaryService @Inject()(
   private def buildLinks(
                           vpdId: VpdId,
                           isNoAccess: Boolean,
-                          hasSubscriptionSummaryError: Boolean,
                           returns: Option[Returns],
                           payments: Option[Payments],
                           financialDataStatus: FinancialDataStatus
@@ -168,12 +149,6 @@ class VPDSummaryService @Inject()(
 
     if (isNoAccess) {
       Links(self = self)
-    } else if (hasSubscriptionSummaryError) {
-      Links(
-        self             = self,
-        makePayment      = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
-        setUpDirectDebit = setupDirectDebitLink
-      )
     } else {
       buildFullAccessLinks(self, returns, payments, financialDataStatus)
     }
