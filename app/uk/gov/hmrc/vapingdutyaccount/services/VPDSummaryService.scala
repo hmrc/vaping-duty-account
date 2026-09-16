@@ -133,37 +133,25 @@ class VPDSummaryService @Inject()(
 
   private def createVPDSummaryWithoutReturnsAndPayments(
     vpdId: VpdId,
-    contactPreferences: Option[SubscriptionContactPreferences]
+    contactPreferences: SubscriptionContactPreferences
   ): VPDSummary = {
-    val hasSubscriptionSummaryError = contactPreferences.isEmpty
-    val approvalStatus              = contactPreferences.map(AccessApprovalStatus.fromSubscription)
-    val isNoAccess                  = approvalStatus.contains(AccessApprovalStatus.Insolvent)
+    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
+    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
 
-    val links = buildLinksForReturnsAndPaymentsDisabled(vpdId, isNoAccess, hasSubscriptionSummaryError)
+
+    val links = buildLinksForReturnsAndPaymentsDisabled(vpdId, isNoAccess)
 
     val (contactMethod, contactPreferenceStatus) =
       if (isNoAccess) (None, None)
-      else
-        contactPreferences match {
-          case Some(contactPreferences) =>
-            val cm = resolveContactMethod(contactPreferences)
-            (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-          case None                     =>
-            (None, None)
-        }
-
-    val access =
-      Some(
-        if (hasSubscriptionSummaryError)
-          Access(hasSubscriptionSummaryError = true)
-        else
-          Access(hasSubscriptionSummaryError = false, approvalStatus = approvalStatus)
-      )
+      else {
+        val cm = resolveContactMethod(contactPreferences)
+        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+      }
 
     VPDSummary(
       service                 = ServiceInfo(config.serviceName, config.serviceId),
       identifiers             = Identifier(vpdId.toString),
-      access                  = access,
+      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
       contactPreference       = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
       returns                 = None,
@@ -174,18 +162,12 @@ class VPDSummaryService @Inject()(
 
   private def buildLinksForReturnsAndPaymentsDisabled(
     vpdId: VpdId,
-    isNoAccess: Boolean,
-    hasSubscriptionSummaryError: Boolean
+    isNoAccess: Boolean
   ): Links = {
     val self = selfLink(vpdId)
 
     if (isNoAccess) {
       Links(self = self)
-    } else if (hasSubscriptionSummaryError) {
-      Links(
-        self             = self,
-        setUpDirectDebit = setupDirectDebitLink
-      )
     } else {
       Links(
         self                    = self,

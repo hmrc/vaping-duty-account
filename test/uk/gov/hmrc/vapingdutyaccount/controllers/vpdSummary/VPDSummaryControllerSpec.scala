@@ -365,7 +365,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
       status(result) mustBe HttpStatus.OK
       
       val json = contentAsJson(result)
-      (json \ "access" \ "hasSubscriptionSummaryError").as[Boolean] mustBe false
       (json \ "access" \ "approvalStatus").as[String] mustBe "APPROVED"
       (json \ "returns").toOption mustBe None
       (json \ "payments").toOption mustBe None
@@ -385,15 +384,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
       val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
 
-      status(result) mustBe HttpStatus.OK
-      
-      val json = contentAsJson(result)
-      (json \ "access" \ "hasSubscriptionSummaryError").as[Boolean] mustBe true
-      (json \ "returns").toOption mustBe None
-      (json \ "payments").toOption mustBe None
-      (json \ "links" \ "setUpDirectDebit" \ "href").as[String] mustBe "/vaping-duty-finance/direct-debit/bta/start"
-      (json \ "links" \ "manageContactPreference").toOption mustBe None
-      (json \ "links" \ "makePayment").toOption mustBe None
+      status(result) mustBe HttpStatus.INTERNAL_SERVER_ERROR
     }
   }
 }
