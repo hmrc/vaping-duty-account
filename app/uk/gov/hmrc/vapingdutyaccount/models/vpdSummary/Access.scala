@@ -18,7 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import play.api.libs.json.{Json, Writes}
 
-case class Access(hasSubscriptionSummaryError: Boolean, approvalStatus: Option[AccessApprovalStatus] = None)
+case class Access(approvalStatus: Option[AccessApprovalStatus] = None)
 
 object Access {
   given Writes[Access] = Json.writes[Access]
