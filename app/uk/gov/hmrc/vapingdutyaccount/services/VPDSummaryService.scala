@@ -62,6 +62,11 @@ class VPDSummaryService @Inject()(
           links             = Links(self = selfLink(vpdId), manageContactPreference = manageContactPreferenceLink)
         )
       })
+    else if (!config.returnsAndPaymentsEnabled) {
+      contactPreferencesFuture.map { contactPreferences =>
+        createVPDSummaryWithoutReturnsAndPayments(vpdId, contactPreferences)
+      }
+    }
     else {
 
       val returnsFuture: Future[Option[Returns]] =
@@ -124,6 +129,52 @@ class VPDSummaryService @Inject()(
       payments                = if (isNoAccess) None else payments,
       links                   = links
     )
+  }
+
+  private def createVPDSummaryWithoutReturnsAndPayments(
+    vpdId: VpdId,
+    contactPreferences: SubscriptionContactPreferences
+  ): VPDSummary = {
+    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
+    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
+
+
+    val links = buildLinksForReturnsAndPaymentsDisabled(vpdId, isNoAccess)
+
+    val (contactMethod, contactPreferenceStatus) =
+      if (isNoAccess) (None, None)
+      else {
+        val cm = resolveContactMethod(contactPreferences)
+        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+      }
+
+    VPDSummary(
+      service                 = ServiceInfo(config.serviceName, config.serviceId),
+      identifiers             = Identifier(vpdId.toString),
+      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
+      contactPreference       = contactMethod,
+      contactPreferenceStatus = contactPreferenceStatus,
+      returns                 = None,
+      payments                = None,
+      links                   = links
+    )
+  }
+
+  private def buildLinksForReturnsAndPaymentsDisabled(
+    vpdId: VpdId,
+    isNoAccess: Boolean
+  ): Links = {
+    val self = selfLink(vpdId)
+
+    if (isNoAccess) {
+      Links(self = self)
+    } else {
+      Links(
+        self                    = self,
+        manageContactPreference = manageContactPreferencesLink,
+        setUpDirectDebit        = setupDirectDebitLink
+      )
+    }
   }
 
   private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
