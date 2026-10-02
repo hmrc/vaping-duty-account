@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import play.api.http.Status.{OK, UNPROCESSABLE_ENTITY}
+import play.api.http.Status.{BAD_REQUEST, INTERNAL_SERVER_ERROR, OK, SERVICE_UNAVAILABLE, UNPROCESSABLE_ENTITY}
 import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
@@ -62,6 +62,9 @@ class SubscriptionConnector @Inject() (
         }
       case UNPROCESSABLE_ENTITY =>
         logger.warn(unprocessableEntityMessage("Subscription summary API", response))
+        Future.failed(InternalServerException("Failed to get subscription contact preferences"))
+      case BAD_REQUEST | INTERNAL_SERVER_ERROR | SERVICE_UNAVAILABLE =>
+        logger.warn(s"Unexpected response from subscription summary API: status=${response.status} body: ${response.body}")
         Future.failed(InternalServerException("Failed to get subscription contact preferences"))
       case status =>
         logger.warn(s"Unexpected response from subscription summary API. Status: $status")
