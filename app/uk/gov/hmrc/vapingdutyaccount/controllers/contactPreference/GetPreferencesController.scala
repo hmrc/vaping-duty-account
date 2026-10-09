@@ -38,6 +38,5 @@ class GetPreferencesController @Inject()(
     implicit request =>
       connector.getSubscriptionContactPreferences(vpdId)
         .map(successResponse => Ok(Json.toJson(successResponse)))
-        .recover(errorResponse => InternalServerError(errorResponse.getMessage))
   }
 }
