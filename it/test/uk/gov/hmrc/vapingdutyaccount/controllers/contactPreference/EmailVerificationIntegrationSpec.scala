@@ -61,7 +61,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
     }
@@ -75,7 +75,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
     }
@@ -89,7 +89,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
     }
