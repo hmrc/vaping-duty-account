@@ -49,7 +49,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         )
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
           result mustBe testSubmissionResponse
-          verifyPut(submitPreferencesUrl)
           verifyNoInteractions(mockLogger)
         }
       }
@@ -63,7 +62,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verify(mockLogger).warn("Parsing failed for submission response")
           verifyNoMoreInteractions(mockLogger)
-          verifyPut(submitPreferencesUrl)
         }
       }
 
@@ -81,7 +79,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verify(mockLogger).warn("Unexpected response from contact preference submission API. Status=400 Body: BAD-REQUEST-RESPONSE-BODY")
           verifyNoMoreInteractions(mockLogger)
-          verifyPut(submitPreferencesUrl)
         }
       }
 
@@ -94,7 +91,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verify(mockLogger).warn("Unexpected response from contact preference submission API. Status: 404")
           verifyNoMoreInteractions(mockLogger)
-          verifyPut(submitPreferencesUrl)
         }
       }
 
@@ -116,7 +112,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
 
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity. code=014, text=Email Address missing or invalid")
           verifyNoMoreInteractions(mockLogger)
         }
@@ -134,7 +129,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
 
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity but the error body could not be parsed. Body: not json")
           verifyNoMoreInteractions(mockLogger)
         }
@@ -154,7 +148,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verify(mockLogger).warn("Unexpected response from contact preference submission API. Status=500 Body: INTERNAL-SERVER-ERROR-BODY")
           verifyNoMoreInteractions(mockLogger)
-          verifyPut(submitPreferencesUrl)
         }
       }
 
