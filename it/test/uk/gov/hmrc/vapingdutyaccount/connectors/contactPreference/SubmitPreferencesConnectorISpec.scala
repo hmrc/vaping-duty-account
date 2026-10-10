@@ -17,6 +17,8 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import play.api.inject.bind
 import play.api.libs.json.Json
@@ -30,6 +32,11 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
   protected val endpointName = "submit-preferences"
 
   private val mockLogger = mock[SubmitPreferencesConnectorLogger]
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    Mockito.reset(mockLogger)
+  }
 
   "SubmitPreferencesConnector when" - {
     "submitContactPreferences is called must" - {
@@ -153,6 +160,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         whenReady(result.failed) { exception =>
           exception mustBe a[SocketException]
           exception.getMessage mustBe "Connection reset"
+          verify(mockLogger).warn(eqTo("An exception was returned while trying to submit contact preferences"), any[SocketException])
         }
       }
     }

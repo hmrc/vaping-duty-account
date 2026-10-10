@@ -48,7 +48,7 @@ class SubmitPreferencesConnector @Inject() (
       .execute[HttpResponse]
       .flatMap(response => submitPreferencesParser(response))
       .recoverWith { case exception: Exception =>
-        logger.warn("An exception was returned while trying to submit contact preferences")
+        logger.warn("An exception was returned while trying to submit contact preferences", exception)
         Future.failed(exception)
       }
 
