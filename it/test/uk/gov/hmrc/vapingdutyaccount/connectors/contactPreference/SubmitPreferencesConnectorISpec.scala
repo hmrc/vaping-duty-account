@@ -19,7 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 import com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.InternalServerException
@@ -35,7 +35,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    Mockito.reset(mockLogger)
+    reset(mockLogger)
   }
 
   "SubmitPreferencesConnector when" - {
@@ -50,6 +50,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
           result mustBe testSubmissionResponse
           verifyPut(submitPreferencesUrl)
+          verifyNoInteractions(mockLogger)
         }
       }
 
@@ -60,6 +61,8 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verify(mockLogger).warn("Parsing failed for submission response")
+          verifyNoMoreInteractions(mockLogger)
           verifyPut(submitPreferencesUrl)
         }
       }
@@ -69,13 +72,15 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           submitPreferencesUrl,
           BAD_REQUEST,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          ""
+          "BAD-REQUEST-RESPONSE-BODY"
         )
         
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verify(mockLogger).warn("Unexpected response from contact preference submission API. Status=400 Body: BAD-REQUEST-RESPONSE-BODY")
+          verifyNoMoreInteractions(mockLogger)
           verifyPut(submitPreferencesUrl)
         }
       }
@@ -87,6 +92,8 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verify(mockLogger).warn("Unexpected response from contact preference submission API. Status: 404")
+          verifyNoMoreInteractions(mockLogger)
           verifyPut(submitPreferencesUrl)
         }
       }
@@ -111,6 +118,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity. code=014, text=Email Address missing or invalid")
+          verifyNoMoreInteractions(mockLogger)
         }
       }
 
@@ -128,6 +136,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity but the error body could not be parsed. Body: not json")
+          verifyNoMoreInteractions(mockLogger)
         }
       }
 
@@ -136,13 +145,15 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           submitPreferencesUrl,
           INTERNAL_SERVER_ERROR,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
-          ""
+          "INTERNAL-SERVER-ERROR-BODY"
         )
         
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
+          verify(mockLogger).warn("Unexpected response from contact preference submission API. Status=500 Body: INTERNAL-SERVER-ERROR-BODY")
+          verifyNoMoreInteractions(mockLogger)
           verifyPut(submitPreferencesUrl)
         }
       }
@@ -161,6 +172,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
           exception mustBe a[SocketException]
           exception.getMessage mustBe "Connection reset"
           verify(mockLogger).warn(eqTo("An exception was returned while trying to submit contact preferences"), any[SocketException])
+          verifyNoMoreInteractions(mockLogger)
         }
       }
     }
