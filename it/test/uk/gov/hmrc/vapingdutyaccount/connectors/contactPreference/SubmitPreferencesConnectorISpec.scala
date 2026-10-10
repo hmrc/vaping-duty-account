@@ -32,31 +32,31 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
     "submitContactPreferences is called must" - {
       "successfully submit contact preferences" in new SetUp {
         stubPut(
-          submitReturnUrl,
+          submitPreferencesUrl,
           OK,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           Json.toJson(testSubmissionSuccess).toString()
         )
         whenReady(connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)) { result =>
           result mustBe testSubmissionResponse
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
         }
       }
 
       "fail with InternalServerException if the call returns an invalid response json" in new SetUp {
-        stubPut(submitReturnUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), "invalid")
+        stubPut(submitPreferencesUrl, OK, Json.toJson(contactPreferenceSubmissionEmail).toString(), "invalid")
         
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
         }
       }
 
       "fail with InternalServerException if the call returns a 400 response" in new SetUp {
         stubPut(
-          submitReturnUrl,
+          submitPreferencesUrl,
           BAD_REQUEST,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           ""
@@ -66,24 +66,24 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
         }
       }
 
       "fail with InternalServerException if the call returns a 404 response" in new SetUp {
-        stubPut(submitReturnUrl, NOT_FOUND, Json.toJson(contactPreferenceSubmissionEmail).toString(), "")
+        stubPut(submitPreferencesUrl, NOT_FOUND, Json.toJson(contactPreferenceSubmissionEmail).toString(), "")
         
         val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
         }
       }
 
       "fail with InternalServerException if the call returns a 422 response" in new SetUp {
         stubPut(
-          submitReturnUrl,
+          submitPreferencesUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           """{
@@ -99,14 +99,14 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
 
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity. code=014, text=Email Address missing or invalid")
         }
       }
 
       "fail with InternalServerException if the call returns a 422 response with a body that cannot be parsed" in new SetUp {
         stubPut(
-          submitReturnUrl,
+          submitPreferencesUrl,
           UNPROCESSABLE_ENTITY,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           "not json"
@@ -116,14 +116,14 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
 
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
           verify(mockLogger).warn("Contact preference submission API returned 422 Unprocessable Entity but the error body could not be parsed. Body: not json")
         }
       }
 
       "fail with InternalServerException if the call returns a 500 response" in new SetUp {
         stubPut(
-          submitReturnUrl,
+          submitPreferencesUrl,
           INTERNAL_SERVER_ERROR,
           Json.toJson(contactPreferenceSubmissionEmail).toString(),
           ""
@@ -133,7 +133,7 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
-          verifyPut(submitReturnUrl)
+          verifyPut(submitPreferencesUrl)
         }
       }
     }
@@ -154,6 +154,6 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         .overrides(bind[SubmitPreferencesConnectorLogger].toInstance(mockLogger))
         .build()
         .injector.instanceOf[SubmitPreferencesConnector]
-    val submitReturnUrl = config.submitPreferencesUrl(vpdId)
+    val submitPreferencesUrl = config.submitPreferencesUrl(vpdId)
   }
 }
