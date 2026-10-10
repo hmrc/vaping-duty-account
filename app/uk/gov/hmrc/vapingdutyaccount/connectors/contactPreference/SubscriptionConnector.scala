@@ -42,11 +42,11 @@ class SubscriptionConnector @Inject() (
       .get(url"${config.getSubscriptionUrl(vpdId)}")
       .setHeader(headers.subscriptionHeaders(): _*)
       .execute[HttpResponse]
-      .flatMap(response => subscriptionParser(response))
       .recoverWith { case exception: Exception =>
         logger.warn("An exception was returned while trying to fetch subscription contact preferences", exception)
         Future.failed(exception)
       }
+      .flatMap(response => subscriptionParser(response))
 
   private def subscriptionParser(response: HttpResponse): Future[SubscriptionContactPreferences] =
     response.status match {
