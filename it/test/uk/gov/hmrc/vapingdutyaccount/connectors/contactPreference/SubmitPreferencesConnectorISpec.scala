@@ -16,12 +16,15 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
+import com.github.tomakehurst.wiremock.http.Fault.CONNECTION_RESET_BY_PEER
 import org.mockito.Mockito.verify
 import play.api.inject.bind
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.SubmitPreferencesConnectorLogger
+
+import java.net.SocketException
 
 class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "submit-preferences"
@@ -134,6 +137,22 @@ class SubmitPreferencesConnectorISpec extends SpecBase with ConnectorTestHelpers
         whenReady(result.failed) { exception =>
           assertExceptionMessage(exception, "Failed to submit contact preferences")
           verifyPut(submitPreferencesUrl)
+        }
+      }
+
+      "Allow network failure exception to pass through" in new SetUp {
+        stubPutFault(
+          submitPreferencesUrl,
+          INTERNAL_SERVER_ERROR,
+          requestBody = Json.toJson(contactPreferenceSubmissionEmail).toString,
+          fault = CONNECTION_RESET_BY_PEER
+        )
+        
+        val result = connector.submitContactPreferences(contactPreferenceSubmissionEmail, vpdId)
+        
+        whenReady(result.failed) { exception =>
+          exception mustBe a[SocketException]
+          exception.getMessage mustBe "Connection reset"
         }
       }
     }
