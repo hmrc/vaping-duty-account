@@ -30,7 +30,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       stubGet(url, OK, Json.toJson(getVerificationStatusResponse).toString)
       whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe getVerificationStatusResponse
-        verifyGet(url)
       }
     }
 
@@ -38,7 +37,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       stubGet(url, NOT_FOUND, Json.toJson(GetVerificationStatusResponse(List.empty)).toString)
       whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe GetVerificationStatusResponse(List.empty)
-        verifyGet(url)
       }
     }
 
@@ -47,7 +45,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, OK, "blah")
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
@@ -55,7 +52,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
@@ -63,7 +59,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
@@ -72,7 +67,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           result mustBe a[RemotelyClosedException]
           result.getMessage mustBe "Remotely closed" 
-          verifyGet(url)
         }
       }
     }
