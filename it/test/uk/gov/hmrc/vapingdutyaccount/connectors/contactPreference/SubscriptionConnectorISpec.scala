@@ -18,7 +18,7 @@ package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.{verify, verifyNoMoreInteractions}
 import play.api.inject.bind
 import play.api.libs.json.Json
 import play.shaded.ahc.org.asynchttpclient.exception.RemotelyClosedException
@@ -41,17 +41,19 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
         result mustBe contactPreferencesEmailSelected
         verifyGet(url)
+        verifyNoMoreInteractions(mockLogger)
       }
     }
 
     "fail with InternalServerException if a bad request received" in new SetUp {
-      stubGet(url, BAD_REQUEST, "")
+      stubGet(url, BAD_REQUEST, "BAD-REQUEST-BODY")
       
       val result = connector.getSubscriptionContactPreferences(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
+        verify(mockLogger).warn("Unexpected response from subscription summary API: status=400 body: BAD-REQUEST-BODY")
       }
     }
 
@@ -97,6 +99,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
+        verify(mockLogger).warn("Unexpected response from subscription summary API. Status: 404")
       }
     }
 
@@ -108,17 +111,19 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
+        verify(mockLogger).warn("Unable to parse subscription summary successful response: blah")
       }
     }
 
     "fail with InternalServerException if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned" in new SetUp {
-      stubGet(url, INTERNAL_SERVER_ERROR, "")
+      stubGet(url, INTERNAL_SERVER_ERROR, "INTERNAL-SERVER-ERROR-BODY")
       
       val result = connector.getSubscriptionContactPreferences(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
+        verify(mockLogger).warn("Unexpected response from subscription summary API: status=500 body: INTERNAL-SERVER-ERROR-BODY")
       }
     }
 
