@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
+import play.shaded.ahc.org.asynchttpclient.exception.RemotelyClosedException
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
@@ -69,7 +70,8 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       "if an exception is thrown when fetching email verification statuses" in new SetUp {
         stubGetFault(url)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Failed to get email verification data")
+          result mustBe a[RemotelyClosedException]
+          result.getMessage mustBe "Remotely closed" 
           verifyGet(url)
         }
       }
