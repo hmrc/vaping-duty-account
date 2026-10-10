@@ -16,9 +16,12 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
+import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.Mockito
 import org.mockito.Mockito.verify
 import play.api.inject.bind
 import play.api.libs.json.Json
+import play.shaded.ahc.org.asynchttpclient.exception.RemotelyClosedException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger}
 
@@ -26,6 +29,11 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   protected val endpointName = "subscription"
 
   private val mockLogger = mock[SubscriptionConnectorLogger]
+
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    Mockito.reset(mockLogger)
+  }
 
   "SubscriptionConnector must" - {
     "successfully get subscription contact preferences" in new SetUp {
@@ -120,8 +128,9 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       val result = connector.getSubscriptionContactPreferences(vpdId)
       
       whenReady(result.failed) { exception =>
-        exception mustBe an[Exception]
+        exception mustBe a[RemotelyClosedException]
         verifyGet(url)
+        verify(mockLogger).warn(eqTo("An exception was returned while trying to fetch subscription contact preferences"), any[RemotelyClosedException])
       }
     }
   }

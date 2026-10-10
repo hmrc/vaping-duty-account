@@ -43,9 +43,9 @@ class SubscriptionConnector @Inject() (
       .setHeader(headers.subscriptionHeaders(): _*)
       .execute[HttpResponse]
       .flatMap(response => subscriptionParser(response))
-      .recoverWith { case _: Exception =>
-        logger.warn("An exception was returned while trying to fetch subscription contact preferences")
-        Future.failed(InternalServerException("Failed to get subscription contact preferences"))
+      .recoverWith { case exception: Exception =>
+        logger.warn("An exception was returned while trying to fetch subscription contact preferences", exception)
+        Future.failed(exception)
       }
 
   private def subscriptionParser(response: HttpResponse): Future[SubscriptionContactPreferences] =
