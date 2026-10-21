@@ -56,8 +56,8 @@ class SubscriptionConnector @Inject() (
         } match {
           case Success(contactPreferences) =>
             Future.successful(contactPreferences)
-          case Failure(_) =>
-            logger.warn(s"Unable to parse subscription summary successful response: ${response.body}")
+          case Failure(error) =>
+            logger.warn(s"Unable to parse subscription summary successful response: ${error.getMessage}")
             Future.failed(InternalServerException("Failed to get subscription contact preferences"))
         }
       case UNPROCESSABLE_ENTITY =>

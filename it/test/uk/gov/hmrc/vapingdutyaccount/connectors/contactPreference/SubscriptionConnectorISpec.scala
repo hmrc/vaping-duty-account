@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
-import org.mockito.ArgumentMatchers.{any, eq as eqTo}
+import org.mockito.ArgumentMatchers.{any, eq as eqTo, startsWith}
 import org.mockito.Mockito
 import org.mockito.Mockito.{verify, verifyNoMoreInteractions}
 import play.api.inject.bind
@@ -115,7 +115,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
         verifyGet(url)
-        verify(mockLogger).warn("Unable to parse subscription summary successful response: blah")
+        verify(mockLogger).warn(startsWith("Unable to parse subscription summary successful response:"))
         verifyNoMoreInteractions(mockLogger)
       }
     }
