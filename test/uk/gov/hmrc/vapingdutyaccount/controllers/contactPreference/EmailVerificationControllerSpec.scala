@@ -47,7 +47,7 @@ class EmailVerificationControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(getVerificationStatusResponse)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when an error is returned from the connector" in {
+    "return the failed future for the framework to log when an error is returned from the connector" in {
       when(mockEmailVerificationConnector.getEmailVerification(eqTo(credId))(any()))
         .thenReturn(
           Future.failed(InternalServerException("Unexpected response for email verification list"))
@@ -55,7 +55,10 @@ class EmailVerificationControllerSpec extends SpecBase {
 
       val result: Future[Result] = controller.getEmailVerification(credId)(fakeRequest)
 
-      status(result) mustBe INTERNAL_SERVER_ERROR
+      whenReady(result.failed) { exception =>
+        exception mustBe an[InternalServerException]
+        exception.getMessage mustBe "Unexpected response for email verification list"
+      }
     }
   }
 }

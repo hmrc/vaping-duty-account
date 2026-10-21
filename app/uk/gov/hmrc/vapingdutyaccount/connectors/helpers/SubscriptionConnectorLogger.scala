@@ -22,6 +22,9 @@ import javax.inject.Inject
 
 class SubscriptionConnectorLogger @Inject() extends Logging {
 
-  def warn(message: String): Unit = logger.warn(message)
+  def warn(message: String): Unit = 
+    logger.warn(message)
+  def warn(message: String, exception: Exception): Unit = 
+    logger.warn(message, exception)
 
 }

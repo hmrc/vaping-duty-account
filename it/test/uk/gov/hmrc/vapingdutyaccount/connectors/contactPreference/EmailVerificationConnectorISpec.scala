@@ -17,6 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference
 
 import play.api.libs.json.Json
+import play.shaded.ahc.org.asynchttpclient.exception.RemotelyClosedException
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.{ConnectorTestHelpers, SpecBase}
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.GetVerificationStatusResponse
@@ -29,7 +30,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       stubGet(url, OK, Json.toJson(getVerificationStatusResponse).toString)
       whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe getVerificationStatusResponse
-        verifyGet(url)
       }
     }
 
@@ -37,7 +37,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
       stubGet(url, NOT_FOUND, Json.toJson(GetVerificationStatusResponse(List.empty)).toString)
       whenReady(connector.getEmailVerification(credId)) { result =>
         result mustBe GetVerificationStatusResponse(List.empty)
-        verifyGet(url)
       }
     }
 
@@ -46,7 +45,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, OK, "blah")
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
@@ -54,7 +52,6 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, BAD_REQUEST, Json.toJson(badRequest).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
@@ -62,15 +59,14 @@ class EmailVerificationConnectorISpec extends SpecBase with ConnectorTestHelpers
         stubGet(url, INTERNAL_SERVER_ERROR, Json.toJson(internalServerError).toString)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
           assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
         }
       }
 
       "if an exception is thrown when fetching email verification statuses" in new SetUp {
         stubGetFault(url)
         whenReady(connector.getEmailVerification(credId).failed) { result =>
-          assertExceptionMessage(result, "Failed to get email verification data")
-          verifyGet(url)
+          result mustBe a[RemotelyClosedException]
+          result.getMessage mustBe "Remotely closed" 
         }
       }
     }

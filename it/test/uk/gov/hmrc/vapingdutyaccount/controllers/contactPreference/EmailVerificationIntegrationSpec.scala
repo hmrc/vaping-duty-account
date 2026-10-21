@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.controllers.contactPreference
 
+import com.github.tomakehurst.wiremock.http.Fault
 import play.api.libs.json.Json
 import play.api.test.FakeRequest
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
@@ -61,7 +62,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
     }
@@ -75,7 +76,7 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
     }
@@ -89,9 +90,21 @@ class EmailVerificationIntegrationSpec extends ISpecBase {
       )
 
       status(response)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(response) mustBe "Failed to get email verification data"
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Failed to get email verification data"}"""
 
       verifyGet(url)
+    }
+
+    "respond with INTERNAL_SERVER_ERROR if there is a connection failure from the get email verification api call" in new SetUp {
+      stubAuthorised(vpdId.toString)
+      stubGetFault(url, Fault.CONNECTION_RESET_BY_PEER)
+
+      val response = callRoute(
+        FakeRequest("GET", routes.EmailVerificationController.getEmailVerification(credId).url)
+      )
+
+      status(response)          mustBe INTERNAL_SERVER_ERROR
+      contentAsString(response) mustBe """{"statusCode":500,"message":"Connection reset"}"""
     }
   }
 

@@ -43,7 +43,6 @@ class SubmitPreferencesController @Inject()(
         submitPreferencesConnector
           .submitContactPreferences(contactPreferenceSubmission, vpdId)
           .map(successResponse => Ok(Json.toJson(successResponse)))
-          .recover(errorResponse => InternalServerError(errorResponse.getMessage))
       }
     }
 }

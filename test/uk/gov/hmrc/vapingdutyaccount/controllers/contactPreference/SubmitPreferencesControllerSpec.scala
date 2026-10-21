@@ -50,15 +50,16 @@ class SubmitPreferencesControllerSpec extends SpecBase {
       contentAsJson(result) mustBe Json.toJson(testSubmissionResponse)
     }
 
-    "return 500 INTERNAL_SERVER_ERROR when the connector fails" in {
-      val errorMessage = "Failed to submit contact preferences"
+    "return the failed future for the framework to log when an error is returned from the connector" in {
       when(mockConnector.submitContactPreferences(eqTo(contactPreferenceSubmissionEmail), eqTo(vpdId))(any()))
-        .thenReturn(Future.failed(InternalServerException(errorMessage)))
+        .thenReturn(Future.failed(InternalServerException("Failed to submit contact preferences")))
 
       val result = controller.submitContactPreferences(vpdId)(fakeRequestWithJsonBody(Json.toJson(contactPreferenceSubmissionEmail)))
 
-      status(result)          mustBe INTERNAL_SERVER_ERROR
-      contentAsString(result) mustBe errorMessage
+      whenReady(result.failed) { exception =>
+        exception mustBe an[InternalServerException]
+        exception.getMessage mustBe "Failed to submit contact preferences"
+      }
     }
   }
 }

@@ -42,11 +42,11 @@ class SubscriptionConnector @Inject() (
       .get(url"${config.getSubscriptionUrl(vpdId)}")
       .setHeader(headers.subscriptionHeaders(): _*)
       .execute[HttpResponse]
-      .flatMap(response => subscriptionParser(response))
-      .recoverWith { case _: Exception =>
-        logger.warn("An exception was returned while trying to fetch subscription contact preferences")
-        Future.failed(InternalServerException("Failed to get subscription contact preferences"))
+      .recoverWith { case exception: Exception =>
+        logger.warn("An exception was returned while trying to fetch subscription contact preferences", exception)
+        Future.failed(exception)
       }
+      .flatMap(response => subscriptionParser(response))
 
   private def subscriptionParser(response: HttpResponse): Future[SubscriptionContactPreferences] =
     response.status match {
@@ -56,8 +56,8 @@ class SubscriptionConnector @Inject() (
         } match {
           case Success(contactPreferences) =>
             Future.successful(contactPreferences)
-          case Failure(_) =>
-            logger.warn("Unable to parse subscription summary successful response")
+          case Failure(error) =>
+            logger.warn(s"Unable to parse subscription summary successful response: ${error.getMessage}")
             Future.failed(InternalServerException("Failed to get subscription contact preferences"))
         }
       case UNPROCESSABLE_ENTITY =>

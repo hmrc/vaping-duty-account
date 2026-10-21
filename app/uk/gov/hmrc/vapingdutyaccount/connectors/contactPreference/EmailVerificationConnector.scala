@@ -40,11 +40,11 @@ class EmailVerificationConnector @Inject()(
     httpClient
       .get(url"${config.getVerifiedEmailsUrl(credId)}")
       .execute[Either[UpstreamErrorResponse, HttpResponse]]
-      .flatMap(response => emailVerificationParser(credId, response))
-      .recoverWith { case _: Exception =>
-        logger.warn("An exception was returned while trying to fetch the email verification data")
-        Future.failed(InternalServerException("Failed to get email verification data"))
+      .recoverWith { case exception: Exception =>
+        logger.warn("An exception was returned while trying to fetch the email verification data", exception)
+        Future.failed(exception)
       }
+      .flatMap(response => emailVerificationParser(credId, response))
   }
 
   private def emailVerificationParser(credId: CredentialId, response: Either[UpstreamErrorResponse, HttpResponse]) = {

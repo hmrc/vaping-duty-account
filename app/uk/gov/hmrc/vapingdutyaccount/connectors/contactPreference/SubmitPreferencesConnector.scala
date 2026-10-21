@@ -46,11 +46,11 @@ class SubmitPreferencesConnector @Inject() (
       .setHeader(headers.submissionHeaders(): _*)
       .withBody(Json.toJson(contactPreferenceSubmission))
       .execute[HttpResponse]
-      .flatMap(response => submitPreferencesParser(response))
-      .recoverWith { case _: Exception =>
-        logger.warn("An exception was returned while trying to submit contact preferences")
-        Future.failed(InternalServerException("Failed to submit contact preferences"))
+      .recoverWith { case exception: Exception =>
+        logger.warn("An exception was returned while trying to submit contact preferences", exception)
+        Future.failed(exception)
       }
+      .flatMap(response => submitPreferencesParser(response))
 
   private def submitPreferencesParser(response: HttpResponse): Future[PaperlessPreferenceSubmittedResponse] =
     response.status match {

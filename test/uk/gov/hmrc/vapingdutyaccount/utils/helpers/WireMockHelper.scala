@@ -102,6 +102,14 @@ trait WireMockHelper extends WireMockSupport {
         .willReturn(aResponse().withStatus(status).withBody(returnBody))
     )
 
+  def stubPutFault(url: String, status: Int, requestBody: String, fault: Fault = Fault.EMPTY_RESPONSE): Unit =
+    wireMockServer.stubFor(
+      WireMock
+        .put(urlEqualTo(stripToPath(url)))
+        .withRequestBody(new EqualToJsonPattern(requestBody, true, false))
+        .willReturn(aResponse().withFault(fault))
+    )
+
   def verifyGet(url: String): Unit =
     wireMockServer.verify(getRequestedFor(urlEqualTo(stripToPath(url))))
 
