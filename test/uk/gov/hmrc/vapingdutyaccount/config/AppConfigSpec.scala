@@ -45,7 +45,11 @@ class SpecBaseWithConfigOverrides extends SpecBase {
     "features.email-verification-stub"                               -> false,
     "service.links.manageContactPreference"                          -> "/vaping-duty/contact-preferences/how-should-we-contact-you",
     "service.links.completeReturn"                                   -> "/vaping-duty/complete-return/before-you-start",
-    "service.links.viewReturns"                                      -> "/vaping-duty/view-your-returns"
+    "service.links.viewReturns"                                      -> "/vaping-duty/view-your-returns",
+    "service.links.viewPayments"                                     -> "/vaping-duty/view-payments",
+    "service.links.makePayment"                                      -> "/vaping-duty/start-bta-payment",
+    "service.links.claimRepayment"                                   -> "/vaping-duty/claim-repayment",
+    "service.links.startDirectDebit"                                 -> "/vaping-duty/start-bta-direct-debit"
   )
 }
 
