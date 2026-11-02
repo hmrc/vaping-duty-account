@@ -19,7 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.crypto
 import org.mockito.Mockito.when
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.crypto.AesCrypto
+import uk.gov.hmrc.crypto.AesGCMCrypto
 
 class CryptoProviderSpec extends SpecBase {
   val mockAppConfig: AppConfig = mock[AppConfig]
@@ -38,7 +38,7 @@ class CryptoProviderSpec extends SpecBase {
       when(mockAppConfig.cryptoEnabled) thenReturn true
 
       val result = cryptoProvider.getCrypto
-      result.isInstanceOf[AesCrypto] mustBe true
+      result.isInstanceOf[AesGCMCrypto] mustBe true
     }
   }
 }
