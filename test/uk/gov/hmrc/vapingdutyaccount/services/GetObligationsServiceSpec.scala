@@ -20,88 +20,33 @@ import org.mockito.ArgumentMatchers.{any, eq as eqTo}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
+import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
-import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
 
-import java.time.LocalDate
 import scala.concurrent.Future
 
 class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
   val mockObligationsConnector: ObligationsConnector = mock[ObligationsConnector]
-  val mockAppConfig: AppConfig = mock[AppConfig]
 
-  val service: GetObligationsService = new GetObligationsService(mockAppConfig, mockObligationsConnector)
+  val service: GetObligationsService = new GetObligationsService(mockObligationsConnector)
 
-  private val obligationDetails = ObligationDetails(
-    openOrFulfilledStatus = "O",
-    iCFromDate            = LocalDate.now().minusMonths(1),
-    iCToDate              = LocalDate.now(),
-    iCDateReceived        = None,
-    iCDueDate             = LocalDate.now().plusDays(10),
-    periodKey             = "26AA"
-  )
-  
-  private val identificationDetails = Identification(
-    referenceType = "ZVPD", referenceNumber = vpdId.id, incomeSourceType = None
-  )
-
-  when(mockAppConfig.idType).thenReturn("ZVPD")
-  
-  "ObligationsService" - {
+  "GetObligationsService" - {
     "getObligationDetails must" - {
 
-      "return the Seq[ObligationDetails] extracted from the connector response" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
+      "return the obligations from the connector" in {
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
+          .thenReturn(Future.successful(Seq(obligationDetails, obligationDetailsCompleted)))
 
-        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
+        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails, obligationDetailsCompleted)
       }
 
-      "must filter out obligation items without matching referenceNumber" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
+      "fail when the connector fails" in {
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(
-            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
-            ObligationItem(Some(identificationDetails.copy(referenceNumber = "NonMatchingId")), Seq(obligationDetailsCompleted))
-          ))))
+          .thenReturn(Future.failed(InternalServerException("Failed to retrieve obligations")))
 
-        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
-      }
-
-      "must filter out obligation items without matching referenceType" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(
-            ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
-            ObligationItem(Some(identificationDetails.copy(referenceType = "OTHER_REGIME")), Seq(obligationDetailsCompleted))
-          ))))
-
-        service.getObligationDetails(vpdId).futureValue mustBe Seq(obligationDetails)
-      }
-
-      "must flatten multiple obligation details from multiple items" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
-        val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = LocalDate.now().plusDays(20))
-        val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = LocalDate.now().plusDays(30))
-
-        when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(ObligationsResponse(Seq(
-            ObligationItem(Some(identificationDetails), Seq(obligationDetails, obligationDetails2)),
-            ObligationItem(Some(identificationDetails), Seq(obligationDetails3))
-          ))))
-
-        val result = service.getObligationDetails(vpdId).futureValue
-        
-        result.size mustBe 3
-        result mustBe Seq(obligationDetails, obligationDetails2, obligationDetails3)
+        service.getObligationDetails(vpdId).failed.futureValue mustBe an[InternalServerException]
       }
     }
   }

@@ -16,37 +16,19 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, ObligationItem}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 @Singleton
 class GetObligationsService @Inject()(
-                                       config: AppConfig,
                                        obligationsConnector: ObligationsConnector
-                                     )(implicit ec: ExecutionContext) extends Logging {
+                                     ) {
 
-  def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[ObligationDetails]] = {
-    getFilteredObligations(vpdId)
-  }
-
-  private def getFilteredObligations(vpdId: VpdId)(using HeaderCarrier) = {
+  def getObligationDetails(vpdId: VpdId)(using HeaderCarrier): Future[Seq[Obligation]] =
     obligationsConnector.getObligations(vpdId)
-      .map(_.obligation
-        .filter(matchesVpdId(vpdId))
-        .flatMap(_.obligationDetails)
-      )
-  }
-
-  private def matchesVpdId(vpdId: VpdId)(obligation: ObligationItem): Boolean =
-    obligation.identification.exists { id =>
-      id.referenceType == config.idType &&
-        id.referenceNumber == vpdId.id
-    }
 }

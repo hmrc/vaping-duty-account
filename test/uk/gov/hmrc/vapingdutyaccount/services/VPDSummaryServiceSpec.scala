@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
 import java.time.LocalDate
@@ -346,7 +346,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     "when returnsAndPaymentsEnabled = true" - {
       "getVPDSummary must" - {
         "return VPDSummary with single due return and completeReturn link" in {
-          val dueObligation = ObligationDetails(
+          val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(1),
             iCToDate              = LocalDate.now(),
@@ -368,7 +368,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with single overdue return and completeReturn link" in {
-          val overdueObligation = ObligationDetails(
+          val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(2),
             iCToDate              = LocalDate.now().minusMonths(1),
@@ -390,7 +390,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with due and overdue returns and viewReturns link" in {
-          val dueObligation = ObligationDetails(
+          val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(1),
             iCToDate              = LocalDate.now(),
@@ -398,7 +398,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             iCDueDate             = LocalDate.now().plusDays(10),
             periodKey             = "26AA"
           )
-          val overdueObligation = ObligationDetails(
+          val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(2),
             iCToDate              = LocalDate.now().minusMonths(1),
@@ -420,7 +420,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with multiple overdue returns and viewReturns link" in {
-          val overdueObligation1 = ObligationDetails(
+          val overdueObligation1 = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(3),
             iCToDate              = LocalDate.now().minusMonths(2),
@@ -428,7 +428,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             iCDueDate             = LocalDate.now().minusDays(30),
             periodKey             = "25AK"
           )
-          val overdueObligation2 = ObligationDetails(
+          val overdueObligation2 = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(2),
             iCToDate              = LocalDate.now().minusMonths(1),
@@ -449,7 +449,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with completed returns only and viewReturns link" in {
-          val fulfilledObligation = ObligationDetails(
+          val fulfilledObligation = Obligation(
             openOrFulfilledStatus = "F",
             iCFromDate            = LocalDate.now().minusMonths(2),
             iCToDate              = LocalDate.now().minusMonths(1),
@@ -470,7 +470,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with mixed returns and viewReturns link" in {
-          val dueObligation = ObligationDetails(
+          val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(1),
             iCToDate              = LocalDate.now(),
@@ -478,7 +478,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             iCDueDate             = LocalDate.now().plusDays(10),
             periodKey             = "26AA"
           )
-          val overdueObligation = ObligationDetails(
+          val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
             iCFromDate            = LocalDate.now().minusMonths(3),
             iCToDate              = LocalDate.now().minusMonths(2),
@@ -486,7 +486,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             iCDueDate             = LocalDate.now().minusDays(30),
             periodKey             = "25AK"
           )
-          val fulfilledObligation = ObligationDetails(
+          val fulfilledObligation = Obligation(
             openOrFulfilledStatus = "F",
             iCFromDate            = LocalDate.now().minusMonths(4),
             iCToDate              = LocalDate.now().minusMonths(3),
