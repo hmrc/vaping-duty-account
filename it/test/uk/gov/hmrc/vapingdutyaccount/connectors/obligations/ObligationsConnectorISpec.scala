@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.base.ISpecBase
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 
 import java.time.LocalDate
 
@@ -34,81 +34,67 @@ class ObligationsConnectorISpec extends ISpecBase with IntegrationPatience {
 
   "ObligationsConnector" - {
     "getObligations" - {
-      "must return Some(ObligationsResponse) when the API returns 200 OK with valid JSON" in {
-        val obligationsResponse = ObligationsResponse(
-          Seq(
-            ObligationItem(
-              identification = Some(Identification("VPD", "GBWK1234567WK", Some("VPD"))),
-              obligationDetails = Seq(
-                ObligationDetails(
-                  openOrFulfilledStatus = "O",
-                  iCFromDate = LocalDate.of(2026, 1, 1),
-                  iCToDate = LocalDate.of(2026, 1, 31),
-                  iCDateReceived = None,
-                  iCDueDate = LocalDate.of(2026, 2, 27),
-                  periodKey = "26AA"
-                )
-              )
-            )
+      "must return the obligations when the API returns 200 OK with valid JSON" in {
+        val obligations = Seq(
+          Obligation(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.of(2026, 1, 1),
+            iCToDate = LocalDate.of(2026, 1, 31),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.of(2026, 2, 27),
+            periodKey = "26AA"
           )
         )
 
         stubGet(
           s"/vaping-duty/obligations/$vpdId",
           OK,
-          Json.toJson(obligationsResponse).toString
+          Json.toJson(obligations).toString
         )
 
         val result = connector.getObligations(vpdId).futureValue
 
-        result mustBe obligationsResponse
+        result mustBe obligations
       }
 
-      "must handle multiple obligation details per item" in {
-        val obligationsResponse = ObligationsResponse(
-          Seq(
-            ObligationItem(
-              identification = Some(Identification("ZVPD", "GBWK224257WK", None)),
-              obligationDetails = Seq(
-                ObligationDetails(
-                  openOrFulfilledStatus = "O",
-                  iCFromDate = LocalDate.of(2026, 10, 1),
-                  iCToDate = LocalDate.of(2026, 10, 31),
-                  iCDateReceived = None,
-                  iCDueDate = LocalDate.of(2026, 11, 7),
-                  periodKey = "26KJ"
-                ),
-                ObligationDetails(
-                  openOrFulfilledStatus = "O",
-                  iCFromDate = LocalDate.of(2026, 11, 1),
-                  iCToDate = LocalDate.of(2026, 11, 30),
-                  iCDateReceived = None,
-                  iCDueDate = LocalDate.of(2026, 12, 7),
-                  periodKey = "26KK"
-                ),
-                ObligationDetails(
-                  openOrFulfilledStatus = "O",
-                  iCFromDate = LocalDate.of(2026, 12, 1),
-                  iCToDate = LocalDate.of(2026, 12, 31),
-                  iCDateReceived = None,
-                  iCDueDate = LocalDate.of(2027, 1, 7),
-                  periodKey = "26KL"
-                )
-              )
-            )
+      "must return multiple obligations" in {
+        val obligations = Seq(
+          Obligation(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.of(2026, 10, 1),
+            iCToDate = LocalDate.of(2026, 10, 31),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.of(2026, 11, 7),
+            periodKey = "26KJ"
+          ),
+          Obligation(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.of(2026, 11, 1),
+            iCToDate = LocalDate.of(2026, 11, 30),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.of(2026, 12, 7),
+            periodKey = "26KK"
+          ),
+          Obligation(
+            openOrFulfilledStatus = "O",
+            iCFromDate = LocalDate.of(2026, 12, 1),
+            iCToDate = LocalDate.of(2026, 12, 31),
+            iCDateReceived = None,
+            iCDueDate = LocalDate.of(2027, 1, 7),
+            periodKey = "26KL"
           )
         )
 
         stubGet(
           s"/vaping-duty/obligations/$vpdId",
           OK,
-          Json.toJson(obligationsResponse).toString
+          Json.toJson(obligations).toString
         )
 
         val result = connector.getObligations(vpdId).futureValue
 
-        result mustBe obligationsResponse
-        result.obligation.head.obligationDetails.size mustBe 3
+        result mustBe obligations
+        result.size mustBe 3
       }
 
       "must fail with InternalServerException when the API returns 404 NOT_FOUND" in {
@@ -139,6 +125,16 @@ class ObligationsConnectorISpec extends ISpecBase with IntegrationPatience {
           exception mustBe an[Exception]
           verifyGet(s"/vaping-duty/obligations/$vpdId")
         }
+      }
+
+      "must return an empty list when the API returns an empty list" in {
+        stubGet(
+          s"/vaping-duty/obligations/$vpdId",
+          OK,
+          "[]"
+        )
+
+        connector.getObligations(vpdId).futureValue mustBe Seq.empty
       }
 
       "must fail with InternalServerException when the API returns invalid JSON" in {

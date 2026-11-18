@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationsResponse
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,14 +35,14 @@ class ObligationsConnector @Inject() (
     extends HttpReadsInstances
     with Logging {
 
-  def getObligations(vpdId: VpdId)(using hc: HeaderCarrier): Future[ObligationsResponse] =
+  def getObligations(vpdId: VpdId)(using hc: HeaderCarrier): Future[Seq[Obligation]] =
     httpClient
       .get(url"${config.getObligationsUrl(vpdId)}")
       .execute[HttpResponse]
       .flatMap { response =>
         response.status match {
           case OK =>
-            Try(response.json.as[ObligationsResponse]) match {
+            Try(response.json.as[Seq[Obligation]]) match {
               case Success(obligations) =>
                 Future.successful(obligations)
               case Failure(error) =>
