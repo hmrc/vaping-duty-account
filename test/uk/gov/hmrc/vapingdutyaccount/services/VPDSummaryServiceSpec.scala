@@ -17,851 +17,267 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import org.mockito.ArgumentMatchers.{any, eq as eqTo}
-import org.mockito.Mockito.when
-import org.mockito.invocation.InvocationOnMock
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatestplus.mockito.MockitoSugar
+import org.mockito.Mockito.{never, reset, verify, when}
 import uk.gov.hmrc.http.InternalServerException
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionSummary
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 
-import java.time.LocalDate
 import scala.concurrent.Future
 
-class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
+class VPDSummaryServiceSpec extends SpecBase {
 
-  private val mockSubscriptionConnector : SubscriptionConnector = mock[SubscriptionConnector]
-  private val mockGetObligationsService : GetObligationsService = mock[GetObligationsService]
-  private val mockGetPaymentsService    : GetPaymentsService    = mock[GetPaymentsService]
-  private val mockConfig                : AppConfig             = mock[AppConfig]
+  private val mockConfig: AppConfig                                             = mock[AppConfig]
+  private val mockSubscriptionConnector: SubscriptionConnector                  = mock[SubscriptionConnector]
+  private val mockContactPreferenceSummaryService: ContactPreferenceSummaryService = mock[ContactPreferenceSummaryService]
+  private val mockReturnsSummaryService: ReturnsSummaryService                  = mock[ReturnsSummaryService]
+  private val mockPaymentsSummaryService: PaymentsSummaryService                = mock[PaymentsSummaryService]
 
-  when(mockConfig.selfHref(any())           ).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
-  when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")
-  when(mockConfig.completeReturnUrlPrefix   ).thenReturn("/vaping-duty/complete-return/before-you-start")
-  when(mockConfig.viewReturnsUrl            ).thenReturn("/vaping-duty/view-your-returns")
-  when(mockConfig.makePaymentUrl(any())).thenAnswer { (invocation: InvocationOnMock) =>
-    invocation.getArgument[Option[String]](0) match {
-      case Some(chargeReference) => s"/vaping-duty/start-bta-payment/$chargeReference"
-      case None                  => "/vaping-duty/start-bta-payment"
-    }
+  when(mockConfig.selfHref(any())).thenReturn(testSelfHref)
+  when(mockConfig.startDirectDebitUrl).thenReturn(testStartDirectDebitUrl)
+  when(mockConfig.serviceName).thenReturn(testServiceName)
+  when(mockConfig.serviceId).thenReturn(testServiceId)
+
+  private val vpdSummaryService = new VPDSummaryService(
+    mockConfig,
+    mockSubscriptionConnector,
+    mockContactPreferenceSummaryService,
+    mockReturnsSummaryService,
+    mockPaymentsSummaryService
+  )
+
+  private val selfLink             = Self(testSelfHref, httpGet)
+  private val setUpDirectDebitLink = SetUpDirectDebit(testStartDirectDebitUrl, httpGet)
+  private val serviceInfo          = ServiceInfo(testServiceName, testServiceId)
+
+  private val contactPreferenceSection = ContactPreferenceSection(
+    contactMethod           = ContactMethod.Email,
+    contactPreferenceStatus = Some(ContactPreferenceStatus(bouncedEmail = false)),
+    manageContactPreference = ManageContactPreference(testManageContactPreferenceUrl, httpGet)
+  )
+
+  private val returnsSection = ReturnsSection(
+    returns        = Some(Returns(
+      hasReturnsError       = false,
+      currentReturn         = Some(CurrentReturn(obligationDetails.periodKey, obligationDetails.iCDueDate)),
+      dueReturnsCount       = Some(1),
+      overdueReturnsCount   = Some(0),
+      completedReturnsCount = Some(0)
+    )),
+    completeReturn = Some(CompleteReturn(s"$testCompleteReturnUrlPrefix?period=${obligationDetails.periodKey}", httpGet)),
+    viewReturns    = Some(ViewReturns(testViewReturnsUrl, httpGet))
+  )
+
+  private val paymentsSection = PaymentsSection(
+    payments       = paymentsWithOutstandingBalance,
+    makePayment    = Some(MakePayment(makePaymentHref(Some(singleChargeReference)), httpGet)),
+    claimRepayment = Some(ClaimRepayment(testClaimRepaymentUrl, httpGet)),
+    viewPayments   = Some(ViewPayments(testViewPaymentsUrl, httpGet))
+  )
+
+  private def givenSubscriptionSummary(subscriptionSummary: SubscriptionSummary): Unit =
+    when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
+      .thenReturn(Future.successful(subscriptionSummary))
+
+  private def givenPhase1(): Unit =
+    when(mockConfig.phase2Enabled).thenReturn(false)
+
+  private def givenReturnsAndPaymentsDisabled(): Unit =
+    when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
+
+  private def verifyReturnsAndPaymentsNotRequested(): Unit = {
+    verify(mockReturnsSummaryService, never).getReturnsSection(any())(using any())
+    verify(mockPaymentsSummaryService, never).getPaymentsSection()(using any())
   }
-  when(mockConfig.claimRepaymentUrl         ).thenReturn("/vaping-duty/claim-repayment")
-  when(mockConfig.startDirectDebitUrl       ).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
-  when(mockConfig.viewPaymentsUrl           ).thenReturn("/vaping-duty/view-payments")
-  when(mockConfig.serviceName               ).thenReturn("Vaping Products Duty")
-  when(mockConfig.serviceId                 ).thenReturn("VPD")
-
-  val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
 
   override def beforeEach(): Unit = {
+    reset(mockSubscriptionConnector, mockContactPreferenceSummaryService, mockReturnsSummaryService, mockPaymentsSummaryService)
     when(mockConfig.phase2Enabled).thenReturn(true)
     when(mockConfig.returnsAndPaymentsEnabled).thenReturn(true)
+    when(mockContactPreferenceSummaryService.build(any())).thenReturn(contactPreferenceSection)
+    when(mockReturnsSummaryService.getReturnsSection(eqTo(vpdId))(using any())).thenReturn(Future.successful(returnsSection))
+    when(mockPaymentsSummaryService.getPaymentsSection()(using any())).thenReturn(Future.successful(paymentsSection))
   }
 
+  private val insolventSubscriptionSummaries = Seq(
+    "approved"     -> subscriptionSummaryInsolvent,
+    "revoked"      -> subscriptionSummaryRevokedInsolvent,
+    "deregistered" -> subscriptionSummaryDeregisteredInsolvent
+  )
+
+  private val accessStatuses = Seq(
+    subscriptionSummaryApproved     -> AccessApprovalStatus.Approved,
+    subscriptionSummaryDeregistered -> AccessApprovalStatus.Deregistered,
+    subscriptionSummaryRevoked      -> AccessApprovalStatus.Revoked
+  )
+
   "VPDSummaryService" - {
-    "phase 1 " - {
 
-      "return contactPreference Email when PaperlessPreference is true" in {
-        when(mockConfig.phase2Enabled).thenReturn(false)
+    "when the phase-2-enabled feature switch is off" - {
 
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      "return only the phase 1 elements, built from the contact preference section" in {
+        givenPhase1()
+        givenSubscriptionSummary(subscriptionSummaryApproved)
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.contactPreference mustBe Some(ContactMethod.Email)
+        vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+          service           = serviceInfo,
+          identifiers       = Identifier(vpdId.id),
+          contactPreference = Some(contactPreferenceSection.contactMethod),
+          links             = Links(self = selfLink, manageContactPreference = Some(contactPreferenceSection.manageContactPreference))
+        )
+        verify(mockContactPreferenceSummaryService).build(subscriptionSummaryApproved)
+        verifyReturnsAndPaymentsNotRequested()
       }
 
-      "return contactPreference Post when PaperlessPreference is false" in {
-        when(mockConfig.phase2Enabled).thenReturn(false)
+      "return only the self link for an insolvent subscriber" in {
+        givenPhase1()
+        givenSubscriptionSummary(subscriptionSummaryInsolvent)
 
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.contactPreference mustBe Some(ContactMethod.Post)
-      }
-
-      "return only phase 1 elements when the phase-2-enabled feature switch is turned off" in {
-        when(mockConfig.phase2Enabled).thenReturn(false)
-
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
-
-        // Ensure obligations and payments data is present to show it is really being hidden when in phase 1
-        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Seq(obligationDetails)))
-        when(mockGetPaymentsService.getPayments()(using any()))
-          .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        // Phase 1 elements (as per v1.0.3 of the OAS) must be preserved when phase 2 FS is off
-        result.service           mustBe ServiceInfo("Vaping Products Duty", "VPD")
-        result.identifiers       mustBe Identifier(vpdId.id)
-        result.contactPreference mustBe Some(ContactMethod.Email)
-
-        result.links.self                    mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
-        result.links.manageContactPreference mustBe Some(ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", "GET"))
-
-        // Phase 2 sections should not be present when the phase 2 FS is off
-        result.access                  mustBe None
-        result.contactPreferenceStatus mustBe None
-        result.returns                 mustBe None
-        result.payments                mustBe None
-
-        // Phase 2 links should be omitted when the phase 2 FS is off
-        result.links.completeReturn   mustBe None
-        result.links.viewReturns      mustBe None
-        result.links.makePayment      mustBe None
-        result.links.viewPayments     mustBe None
-        result.links.setUpDirectDebit mustBe None
+        vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+          service           = serviceInfo,
+          identifiers       = Identifier(vpdId.id),
+          contactPreference = None,
+          links             = Links(self = selfLink)
+        )
+        verifyReturnsAndPaymentsNotRequested()
       }
 
       "propagate a failure when the subscription connector fails" in {
-        when(mockConfig.phase2Enabled).thenReturn(false)
-
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+        givenPhase1()
+        when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).failed.futureValue
-
-        result mustBe a[InternalServerException]
-      }
-
-      "suppress sections and links for an insolvent subscriber when the phase-2-enabled feature switch is turned off" in {
-        when(mockConfig.phase2Enabled).thenReturn(false)
-
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesInsolvent))
-
-        // Ensure obligations and payments data present to show it is really being hidden when in phase 1.
-        when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-          .thenReturn(Future.successful(Seq(obligationDetails)))
-        when(mockGetPaymentsService.getPayments()(using any()))
-          .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        // Phase 1 elements
-        result.service     mustBe ServiceInfo("Vaping Products Duty", "VPD")
-        result.identifiers mustBe Identifier(vpdId.id)
-        result.links.self  mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
-
-        // Phase 1 contact prefs are missing when manufacturer is insolvent
-        result.contactPreference             mustBe None
-        result.links.manageContactPreference mustBe None
-
-        // Phase 2 sections
-        result.access                  mustBe None
-        result.contactPreferenceStatus mustBe None
-        result.returns                 mustBe None
-        result.payments                mustBe None
-
-        // Phase 2 links 
-        result.links.completeReturn   mustBe None
-        result.links.viewReturns      mustBe None
-        result.links.makePayment      mustBe None
-        result.links.setUpDirectDebit mustBe None
+        vpdSummaryService.getVPDSummary(vpdId).failed.futureValue mustBe a[InternalServerException]
       }
     }
 
-    "when returnsAndPaymentsEnabled = false the API" - {
-      "must not call Obligations or Payments services" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
+    "when the returnsAndPaymentsEnabled feature switch is off" - {
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+      "return access, the contact preference section and the direct debit link, with no returns or payments" in {
+        givenReturnsAndPaymentsDisabled()
+        givenSubscriptionSummary(subscriptionSummaryApproved)
 
-        result.returns mustBe None
-        result.payments mustBe None
-        
-        // Verify services were never called
-        import org.mockito.Mockito.{never, verify}
-        verify(mockGetObligationsService, never).getObligationDetails(any())(using any())
-        verify(mockGetPaymentsService, never).getPayments()(using any())
+        vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+          service                 = serviceInfo,
+          identifiers             = Identifier(vpdId.id),
+          access                  = Some(Access(approvalStatus = Some(AccessApprovalStatus.Approved))),
+          contactPreference       = Some(contactPreferenceSection.contactMethod),
+          contactPreferenceStatus = contactPreferenceSection.contactPreferenceStatus,
+          links                   = Links(
+            self                    = selfLink,
+            manageContactPreference = Some(contactPreferenceSection.manageContactPreference),
+            setUpDirectDebit        = Some(setUpDirectDebitLink)
+          )
+        )
+        verifyReturnsAndPaymentsNotRequested()
       }
 
-      "must return Access section with APPROVED status" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
+      "return INSOLVENT access and only the self link for an insolvent subscriber" in {
+        givenReturnsAndPaymentsDisabled()
+        givenSubscriptionSummary(subscriptionSummaryInsolvent)
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Approved)))
-        result.returns mustBe None
-        result.payments mustBe None
+        vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+          service           = serviceInfo,
+          identifiers       = Identifier(vpdId.id),
+          access            = Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent))),
+          contactPreference = None,
+          links             = Links(self = selfLink)
+        )
+        verifyReturnsAndPaymentsNotRequested()
       }
 
-      "must return Access section with DEREGISTERED status" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesDeregistered))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Deregistered)))
-        result.returns mustBe None
-        result.payments mustBe None
-      }
-
-      "must return Access section with REVOKED status" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesRevoked))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Revoked)))
-        result.returns mustBe None
-        result.payments mustBe None
-      }
-
-      "must return Access section with INSOLVENT status and no links" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesInsolvent))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
-        result.contactPreference mustBe None
-        result.contactPreferenceStatus mustBe None
-        result.returns mustBe None
-        result.payments mustBe None
-        result.links.self mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
-        result.links.manageContactPreference mustBe None
-        result.links.setUpDirectDebit mustBe None
-        result.links.makePayment mustBe None
-      }
-
-      "must return DD link when not insolvent" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-      }
-
-      "must return manageContactPreference link when not insolvent" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.links.manageContactPreference mustBe Some(ManageContactPreference("/vaping-duty/contact-preferences/how-should-we-contact-you", "GET"))
-      }
-
-      "must support Email contact method with bouncedEmail status" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesEmailSelected))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.contactPreference mustBe Some(ContactMethod.Email)
-        result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(false))
-        result.returns mustBe None
-        result.payments mustBe None
-      }
-
-      "must support Email contact method with bouncedEmail true" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesEmailSelected.copy(bouncedEmail = Some(true))))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.contactPreference mustBe Some(ContactMethod.Email)
-        result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(true))
-        result.returns mustBe None
-        result.payments mustBe None
-      }
-
-      "must support Post contact method" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-        result.contactPreference mustBe Some(ContactMethod.Post)
-        result.contactPreferenceStatus mustBe None
-        result.returns mustBe None
-        result.payments mustBe None
-      }
-
-      "must return INTERNAL_SERVER_ERROR when subscription fails" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      "propagate a failure when the subscription connector fails" in {
+        givenReturnsAndPaymentsDisabled()
+        when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
           .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).failed.futureValue
+        vpdSummaryService.getVPDSummary(vpdId).failed.futureValue mustBe a[InternalServerException]
+      }
+    }
 
-        result mustBe a[InternalServerException]
+    "when all feature switches are on" - {
+
+      "assemble the full summary, taking each section and its links from its own service" in {
+        givenSubscriptionSummary(subscriptionSummaryApproved)
+
+        vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+          service                 = serviceInfo,
+          identifiers             = Identifier(vpdId.id),
+          access                  = Some(Access(approvalStatus = Some(AccessApprovalStatus.Approved))),
+          contactPreference       = Some(contactPreferenceSection.contactMethod),
+          contactPreferenceStatus = contactPreferenceSection.contactPreferenceStatus,
+          returns                 = returnsSection.returns,
+          payments                = Some(paymentsSection.payments),
+          links                   = Links(
+            self                    = selfLink,
+            manageContactPreference = Some(contactPreferenceSection.manageContactPreference),
+            completeReturn          = returnsSection.completeReturn,
+            viewReturns             = returnsSection.viewReturns,
+            makePayment             = paymentsSection.makePayment,
+            viewPayments            = paymentsSection.viewPayments,
+            claimRepayment          = paymentsSection.claimRepayment,
+            setUpDirectDebit        = Some(setUpDirectDebitLink)
+          )
+        )
       }
 
-      "must not return viewReturns or completeReturn links" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
+      "include the returns error section unchanged when the obligations could not be retrieved" in {
+        givenSubscriptionSummary(subscriptionSummaryApproved)
+        when(mockReturnsSummaryService.getReturnsSection(eqTo(vpdId))(using any())).thenReturn(Future.successful(ReturnsSection.error))
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId).futureValue
 
-        result.links.viewReturns mustBe None
+        result.returns mustBe ReturnsSection.error.returns
         result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
+        result.payments mustBe Some(paymentsSection.payments)
       }
 
-      "must not return viewPayments link" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
+      "omit the returns section when there are no obligations" in {
+        givenSubscriptionSummary(subscriptionSummaryApproved)
+        when(mockReturnsSummaryService.getReturnsSection(eqTo(vpdId))(using any()))
+          .thenReturn(Future.successful(ReturnsSection(returns = None, completeReturn = None, viewReturns = None)))
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+        val result = vpdSummaryService.getVPDSummary(vpdId).futureValue
 
-        result.links.viewPayments mustBe None
+        result.returns mustBe None
+        result.links.completeReturn mustBe None
+        result.links.viewReturns mustBe None
       }
 
-      "must not return claimRepayment link" in {
-        when(mockConfig.returnsAndPaymentsEnabled).thenReturn(false)
-        when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-          .thenReturn(Future.successful(contactPreferencesApproved))
+      accessStatuses.foreach { case (subscriptionSummary, expectedStatus) =>
+        s"return access $expectedStatus with every section when the subscription is $expectedStatus and not insolvent" in {
+          givenSubscriptionSummary(subscriptionSummary)
 
-        val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+          val result = vpdSummaryService.getVPDSummary(vpdId).futureValue
 
-        result.links.claimRepayment mustBe None
+          result.access mustBe Some(Access(approvalStatus = Some(expectedStatus)))
+          result.returns mustBe returnsSection.returns
+          result.payments mustBe Some(paymentsSection.payments)
+        }
       }
-    }
 
-    "when returnsAndPaymentsEnabled = true" - {
-      "getVPDSummary must" - {
-        "return VPDSummary with single due return and completeReturn link" in {
-          val dueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
-            periodKey             = "26AA"
+      insolventSubscriptionSummaries.foreach { case (approvalStatus, subscriptionSummary) =>
+        s"return INSOLVENT access and a minimal response with no sections or action links when the subscription is $approvalStatus but insolvent" in {
+          givenSubscriptionSummary(subscriptionSummary)
+
+          vpdSummaryService.getVPDSummary(vpdId).futureValue mustBe VPDSummary(
+            service           = serviceInfo,
+            identifiers       = Identifier(vpdId.id),
+            access            = Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent))),
+            contactPreference = None,
+            links             = Links(self = selfLink)
           )
-
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(dueObligation)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe defined
-          result.links.completeReturn.get.href must include("period=26AA")
-          result.links.viewReturns mustBe None
         }
+      }
 
-        "return VPDSummary with single overdue return and completeReturn link" in {
-          val overdueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
-            periodKey             = "25AL"
-          )
+      "propagate a failure when the subscription connector fails" in {
+        when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
+          .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(overdueObligation)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe defined
-          result.links.completeReturn.get.href must include("period=25AL")
-          result.links.viewReturns mustBe None
-        }
-
-        "return VPDSummary with due and overdue returns and viewReturns link" in {
-          val dueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
-            periodKey             = "26AA"
-          )
-          val overdueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
-            periodKey             = "25AL"
-          )
-
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(dueObligation, overdueObligation)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe defined
-          result.links.viewReturns.get.href mustBe "/vaping-duty/view-your-returns"
-        }
-
-        "return VPDSummary with multiple overdue returns and viewReturns link" in {
-          val overdueObligation1 = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(3),
-            iCToDate              = LocalDate.now().minusMonths(2),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(30),
-            periodKey             = "25AK"
-          )
-          val overdueObligation2 = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
-            periodKey             = "25AL"
-          )
-
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(overdueObligation1, overdueObligation2)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe defined
-        }
-
-        "return VPDSummary with completed returns only and viewReturns link" in {
-          val fulfilledObligation = ObligationDetails(
-            openOrFulfilledStatus = "F",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
-            iCDateReceived        = Some(LocalDate.now().minusDays(10)),
-            iCDueDate             = LocalDate.now().minusDays(5),
-            periodKey             = "25AL"
-          )
-
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(fulfilledObligation)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe defined
-        }
-
-        "return VPDSummary with mixed returns and viewReturns link" in {
-          val dueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
-            periodKey             = "26AA"
-          )
-          val overdueObligation = ObligationDetails(
-            openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(3),
-            iCToDate              = LocalDate.now().minusMonths(2),
-            iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(30),
-            periodKey             = "25AK"
-          )
-          val fulfilledObligation = ObligationDetails(
-            openOrFulfilledStatus = "F",
-            iCFromDate            = LocalDate.now().minusMonths(4),
-            iCToDate              = LocalDate.now().minusMonths(3),
-            iCDateReceived        = Some(LocalDate.now().minusDays(60)),
-            iCDueDate             = LocalDate.now().minusDays(55),
-            periodKey             = "25AJ"
-          )
-
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(dueObligation, overdueObligation, fulfilledObligation)))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe defined
-        }
-
-        "return contactPreference Email and contactPreferenceStatus with bouncedEmail false when PaperlessPreference is true" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.contactPreference mustBe Some(ContactMethod.Email)
-          result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(false))
-        }
-
-        "return contactPreference Email and contactPreferenceStatus with bouncedEmail true when the email has bounced" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesEmailSelected.copy(bouncedEmail = Some(true))))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.contactPreference mustBe Some(ContactMethod.Email)
-          result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(true))
-        }
-
-        "return contactPreference Post and no contactPreferenceStatus when PaperlessPreference is false" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.contactPreference mustBe Some(ContactMethod.Post)
-          result.contactPreferenceStatus mustBe None
-        }
-
-        "propagate a failure when the subscription connector fails" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).failed.futureValue
-
-          result mustBe a[InternalServerException]
-        }
-
-        "return viewPayments link when balance is present" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
-            ), FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-        }
-
-        "return viewPayments link when financial data exists even if balance is not present" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = false, balance = None), FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-        }
-
-        "not return viewPayments link when payments has error" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.viewPayments mustBe None
-        }
-
-        "not return viewPayments link when manufacturer is insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesInsolvent))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
-            ), FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.viewPayments mustBe None
-        }
-
-        "return viewPayments link when balance is zero" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-
-        }
-
-        "return Some(Returns) with hasReturnsError true and no counts/completeReturn/viewReturns links when the obligations call fails" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.failed(new InternalServerException("Failed to retrieve obligations")))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.returns mustBe Some(Returns(
-            hasReturnsError       = true,
-            currentReturn         = None,
-            dueReturnsCount       = None,
-            overdueReturnsCount   = None,
-            completedReturnsCount = None
-          ))
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe None
-        }
-
-        "return an empty Seq when the obligations connector returns none" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe None
-        }
-
-        "return a single charge reference and makePayment link when one charge is outstanding" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
-            ), FinancialDataStatus.HasFinancialData))))
-  
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments mustBe defined
-          result.payments.get.hasPaymentsError mustBe false
-          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment/XVP123456789", "GET"))
-          result.links.claimRepayment mustBe None
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
-
-        "return isMultiplePaymentDue true and no charge reference on the makePayment link when multiple charges are outstanding" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, Some("XVP111111111")))
-            ), FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, Some("XVP111111111")))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
-          result.links.claimRepayment mustBe None
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
-  
-        "return a negative balance and claimRepayment link when the account is in credit" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
-  
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
-          result.links.makePayment mustBe None
-          result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-          result.links.claimRepayment mustBe Some(ClaimRepayment("/vaping-duty/claim-repayment", "GET"))
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
-  
-        "return a zero balance and no makePayment or claimRepayment link when nothing is owed" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
-  
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments.get.balance mustBe Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-          result.links.makePayment mustBe None
-          result.links.claimRepayment mustBe None
-          result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
-
-        "return hasPaymentsError true and a generic makePayment link when payments are unavailable" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments mustBe Some(Payments(hasPaymentsError = true, balance = None))
-          result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
-
-        "return access APPROVED when the subscription is approved and not insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesApproved))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Approved)))
-        }
-
-        "return access DEREGISTERED when the subscription is deregistered" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesDeregistered))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Deregistered)))
-        }
-
-        "return access REVOKED when the subscription is revoked" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesRevoked))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Revoked)))
-        }
-
-        "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesInsolvent))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
-          result.contactPreference mustBe None
-          result.contactPreferenceStatus mustBe None
-          result.returns mustBe None
-          result.payments mustBe None
-          result.links.self mustBe Self(s"/vaping-duty-account/vpd/summary/$vpdId", "GET")
-          result.links.manageContactPreference mustBe None
-          result.links.completeReturn mustBe None
-          result.links.viewReturns mustBe None
-          result.links.makePayment mustBe None
-          result.links.viewPayments mustBe None
-          result.links.setUpDirectDebit mustBe None
-        }
-
-        "return access INSOLVENT and a minimal response when the subscription is revoked but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
-          result.returns mustBe None
-          result.payments mustBe None
-          result.links.manageContactPreference mustBe None
-          result.links.setUpDirectDebit mustBe None
-        }
-
-        "return access INSOLVENT and a minimal response when the subscription is deregistered but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.access mustBe Some(Access(approvalStatus = Some(AccessApprovalStatus.Insolvent)))
-          result.returns mustBe None
-          result.payments mustBe None
-          result.links.manageContactPreference mustBe None
-          result.links.setUpDirectDebit mustBe None
-        }
-
-        "return no payments and no makePayment link when the View Payments page is empty before the first return has been submitted" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(None))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments mustBe None
-          result.links.makePayment mustBe None
-          result.links.viewPayments mustBe None
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
-        }
+        vpdSummaryService.getVPDSummary(vpdId).failed.futureValue mustBe a[InternalServerException]
       }
     }
   }

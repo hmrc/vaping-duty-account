@@ -39,24 +39,24 @@ class GetPreferencesControllerSpec extends SpecBase {
 
   "getContactPreferences must" - {
     "return 200 OK and the contact preferences when successful" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(subscriptionSummaryEmailSelected))
 
       val result = controller.getContactPreferences(vpdId)(fakeRequest)
 
       status(result)        mustBe OK
-      contentAsJson(result) mustBe Json.toJson(contactPreferencesEmailSelected)
+      contentAsJson(result) mustBe Json.toJson(subscriptionSummaryEmailSelected)
     }
 
     "return the failed future for the framework to log when an error is returned from the connector" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.failed(InternalServerException("Failed to get subscription contact preferences")))
+      when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
+        .thenReturn(Future.failed(InternalServerException("Failed to get subscription summary")))
 
       val result = controller.getContactPreferences(vpdId)(fakeRequest)
 
       whenReady(result.failed) { exception =>
         exception mustBe an[InternalServerException]
-        exception.getMessage mustBe "Failed to get subscription contact preferences"
+        exception.getMessage mustBe "Failed to get subscription summary"
       }
     }
   }

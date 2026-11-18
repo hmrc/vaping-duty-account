@@ -48,11 +48,11 @@ class UserAnswersController @Inject()(
       checkVpdId(vpdId).invokeBlock[JsValue](
         request,
         { implicit request =>
-          subscriptionConnector.getSubscriptionContactPreferences(vpdId)
-            .flatMap { contactPreferences =>
+          subscriptionConnector.getSubscriptionSummary(vpdId)
+            .flatMap { subscriptionSummary =>
               val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
                 userDetails = userDetails,
-                contactPreferences = contactPreferences,
+                subscriptionSummary = subscriptionSummary,
                 clock = clock
               )
               userAnswersRepository.add(userAnswers).map(ua => Created(Json.toJson(DecryptedUA.fromUA(ua))))

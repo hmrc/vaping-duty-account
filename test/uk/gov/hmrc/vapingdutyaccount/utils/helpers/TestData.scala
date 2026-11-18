@@ -22,7 +22,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.*
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
-import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentOnAccount}
+import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, OutstandingPayment, PaymentOnAccount, PaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
@@ -31,6 +31,7 @@ import java.time.*
 trait TestData extends ModelGenerators {
   val clockMillis: Long = 1718118467838L
   val clock: Clock      = Clock.fixed(Instant.ofEpochMilli(clockMillis), ZoneId.of("UTC"))
+  val today: LocalDate  = LocalDate.now(clock)
 
   val dummyUUID = "01234567-89ab-cdef-0123-456789abcdef"
 
@@ -43,8 +44,8 @@ trait TestData extends ModelGenerators {
   val emailAddress          = "john.doe@example.com"
   val correspondenceAddress = "Flat 123\n1 Example Road\nAB1 2CD"
 
-  val contactPreferencesEmailSelected: SubscriptionContactPreferences =
-    SubscriptionContactPreferences(
+  val subscriptionSummaryEmailSelected: SubscriptionSummary =
+    SubscriptionSummary(
       paperlessPreference = true,
       emailAddress = Some(emailAddress),
       verifiedEmail = Some(true),
@@ -58,8 +59,8 @@ trait TestData extends ModelGenerators {
       approvalStatus = SubscriptionApprovalStatus.Approved,
       insolvencyStatus = None
     )
-  val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
-    SubscriptionContactPreferences(
+  val subscriptionSummaryPostNoEmail: SubscriptionSummary   =
+    SubscriptionSummary(
       paperlessPreference = false,
       emailAddress = None,
       verifiedEmail = None,
@@ -74,23 +75,23 @@ trait TestData extends ModelGenerators {
       insolvencyStatus = None
     )
 
-  val contactPreferencesApproved: SubscriptionContactPreferences        =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("N"))
-  val contactPreferencesDeregistered: SubscriptionContactPreferences    =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("N"))
-  val contactPreferencesRevoked: SubscriptionContactPreferences         =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("N"))
-  val contactPreferencesInsolvent: SubscriptionContactPreferences       =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("Y"))
-  val contactPreferencesRevokedInsolvent: SubscriptionContactPreferences =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("Y"))
-  val contactPreferencesDeregisteredInsolvent: SubscriptionContactPreferences =
-    contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("Y"))
+  val subscriptionSummaryApproved: SubscriptionSummary        =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("N"))
+  val subscriptionSummaryDeregistered: SubscriptionSummary    =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("N"))
+  val subscriptionSummaryRevoked: SubscriptionSummary         =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("N"))
+  val subscriptionSummaryInsolvent: SubscriptionSummary       =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("Y"))
+  val subscriptionSummaryRevokedInsolvent: SubscriptionSummary =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("Y"))
+  val subscriptionSummaryDeregisteredInsolvent: SubscriptionSummary =
+    subscriptionSummaryEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("Y"))
 
   val userAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
     internalId = internalId.toString,
-    subscriptionSummary = SubscriptionSummaryBackend(
+    subscriptionSummary = EncryptedSubscriptionSummary(
       paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
@@ -106,12 +107,12 @@ trait TestData extends ModelGenerators {
   val decryptedUA: DecryptedUA = DecryptedUA(
     vpdId = vpdId.toString,
     internalId = internalId.toString,
-    subscriptionSummary = SubscriptionSummary(
+    subscriptionSummary = DecryptedSubscriptionSummary(
       paperlessPreference = true,
       emailAddress = Some(emailAddress),
       emailVerification = Some(true),
       bouncedEmail = Some(false),
-      correspondenceAddress = correspondenceAddress,
+      correspondenceAddress = correspondenceAddress
     ),
     emailAddress = Some(emailAddress),
     data = JsObject(Seq("contactPreferenceEmail" -> Json.toJson(true))),
@@ -122,7 +123,7 @@ trait TestData extends ModelGenerators {
   val emptyUserAnswers: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
     internalId = internalId.toString,
-    subscriptionSummary = SubscriptionSummaryBackend(
+    subscriptionSummary = EncryptedSubscriptionSummary(
       paperlessPreference = true,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
@@ -137,7 +138,7 @@ trait TestData extends ModelGenerators {
   val emptyUserAnswersNoEmail: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
     internalId = internalId.toString,
-    subscriptionSummary = SubscriptionSummaryBackend(
+    subscriptionSummary = EncryptedSubscriptionSummary(
       paperlessPreference = false,
       emailAddress = None,
       emailVerification = None,
@@ -152,7 +153,7 @@ trait TestData extends ModelGenerators {
   val emptyUserAnswersBouncedEmail: UserAnswers = UserAnswers(
     vpdId = vpdId.toString,
     internalId = internalId.toString,
-    subscriptionSummary = SubscriptionSummaryBackend(
+    subscriptionSummary = EncryptedSubscriptionSummary(
       paperlessPreference = false,
       emailAddress = Some(SensitiveString(emailAddress)),
       emailVerification = Some(true),
@@ -265,5 +266,104 @@ trait TestData extends ModelGenerators {
   val paymentOnAccount: PaymentOnAccount = PaymentOnAccount(
     amount = BigDecimal(50.00),
     paymentDate = Some(LocalDate.now(clock))
+  )
+
+  val singleChargeReference: String         = "XVP123456789"
+  val firstMultipleChargeReference: String  = "XVP111111111"
+  val secondMultipleChargeReference: String = "XVP222222222"
+  val outstandingStatusDue: String          = "Due"
+
+  val singleChargeAmount: BigDecimal          = BigDecimal(4574.84)
+  val firstMultipleChargeAmount: BigDecimal   = BigDecimal(5000)
+  val secondMultipleChargeAmount: BigDecimal  = BigDecimal(3250)
+  val multipleChargesTotalAmount: BigDecimal  = firstMultipleChargeAmount + secondMultipleChargeAmount
+  val creditBalanceAmount: BigDecimal         = BigDecimal(-325.50)
+  val zeroBalanceAmount: BigDecimal           = BigDecimal(0)
+
+  val upstreamPaymentsSingleCharge: PaymentsResponse = PaymentsResponse(
+    outstanding         = Seq(OutstandingPayment(Some(singleChargeReference), singleChargeAmount, None, outstandingStatusDue)),
+    paymentOnAccount    = Seq.empty,
+    cleared             = Seq.empty,
+    totalAccountBalance = Some(singleChargeAmount)
+  )
+
+  val upstreamPaymentsMultipleCharges: PaymentsResponse = PaymentsResponse(
+    outstanding = Seq(
+      OutstandingPayment(Some(firstMultipleChargeReference), firstMultipleChargeAmount, None, outstandingStatusDue),
+      OutstandingPayment(Some(secondMultipleChargeReference), secondMultipleChargeAmount, None, outstandingStatusDue)
+    ),
+    paymentOnAccount    = Seq.empty,
+    cleared             = Seq.empty,
+    totalAccountBalance = Some(multipleChargesTotalAmount)
+  )
+
+  val upstreamPaymentsInCredit: PaymentsResponse = PaymentsResponse(
+    outstanding         = Seq.empty,
+    paymentOnAccount    = Seq(paymentOnAccount),
+    cleared             = Seq.empty,
+    totalAccountBalance = Some(creditBalanceAmount)
+  )
+
+  val upstreamPaymentsNothingOwed: PaymentsResponse = PaymentsResponse(
+    outstanding         = Seq.empty,
+    paymentOnAccount    = Seq.empty,
+    cleared             = Seq(clearedPayment),
+    totalAccountBalance = Some(zeroBalanceAmount)
+  )
+
+  val upstreamPaymentsNoBalance: PaymentsResponse = PaymentsResponse(
+    outstanding         = Seq.empty,
+    paymentOnAccount    = Seq.empty,
+    cleared             = Seq(clearedPayment),
+    totalAccountBalance = None
+  )
+
+  val upstreamPaymentsNoFinancialData: PaymentsResponse = PaymentsResponse(
+    outstanding         = Seq.empty,
+    paymentOnAccount    = Seq.empty,
+    cleared             = Seq.empty,
+    totalAccountBalance = None
+  )
+
+  val testSelfHref: String                   = s"/vaping-duty-account/vpd/summary/$vpdId"
+  val testManageContactPreferenceUrl: String = "/vaping-duty/contact-preferences/how-should-we-contact-you"
+  val testCompleteReturnUrlPrefix: String    = "/vaping-duty/complete-return/before-you-start"
+  val testViewReturnsUrl: String             = "/vaping-duty/view-your-returns"
+  val testMakePaymentUrl: String             = "/vaping-duty/start-bta-payment"
+  val testClaimRepaymentUrl: String          = "/vaping-duty/claim-repayment"
+  val testStartDirectDebitUrl: String        = "/vaping-duty-finance/direct-debit/bta/start"
+  val testViewPaymentsUrl: String            = "/vaping-duty/view-payments"
+  val testServiceName: String                = "Vaping Products Duty"
+  val testServiceId: String                  = "VPD"
+  val httpGet: String                        = "GET"
+
+  def makePaymentHref(chargeReference: Option[String]): String =
+    chargeReference.fold(testMakePaymentUrl)(ref => s"$testMakePaymentUrl/$ref")
+
+  def obligationDueIn(days: Long, periodKey: String): ObligationDetails = ObligationDetails(
+    openOrFulfilledStatus = "O",
+    iCFromDate            = today.minusMonths(1),
+    iCToDate              = today,
+    iCDateReceived        = None,
+    iCDueDate             = today.plusDays(days),
+    periodKey             = periodKey
+  )
+
+  def obligationOverdueBy(days: Long, periodKey: String): ObligationDetails = ObligationDetails(
+    openOrFulfilledStatus = "O",
+    iCFromDate            = today.minusMonths(2),
+    iCToDate              = today.minusMonths(1),
+    iCDateReceived        = None,
+    iCDueDate             = today.minusDays(days),
+    periodKey             = periodKey
+  )
+
+  def obligationFulfilled(daysAgo: Long, periodKey: String): ObligationDetails = ObligationDetails(
+    openOrFulfilledStatus = "F",
+    iCFromDate            = today.minusMonths(2),
+    iCToDate              = today.minusMonths(1),
+    iCDateReceived        = Some(today.minusDays(daysAgo + 5)),
+    iCDueDate             = today.minusDays(daysAgo),
+    periodKey             = periodKey
   )
 }

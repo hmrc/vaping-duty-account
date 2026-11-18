@@ -22,265 +22,104 @@ import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionSummary
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
+/** Assembles the VPD Summary from its contact preference, returns and payments sections.
+  *
+  * The feature switches and the insolvency rule live here. Each section, and its links, is built by its own service.
+  */
 class VPDSummaryService @Inject()(
-                                   config                : AppConfig,
-                                   subscriptionConnector : SubscriptionConnector,
-                                   getObligationsService : GetObligationsService,
-                                   obligationService     : ObligationService,
-                                   getPaymentsService    : GetPaymentsService
+  config                          : AppConfig,
+  subscriptionConnector           : SubscriptionConnector,
+  contactPreferenceSummaryService : ContactPreferenceSummaryService,
+  returnsSummaryService           : ReturnsSummaryService,
+  paymentsSummaryService          : PaymentsSummaryService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
+    // Start every call before waiting on any of them, so they run in parallel
+    val subscriptionSummaryFuture = getSubscriptionSummary(vpdId)
+    val returnsFuture             = whenReturnsAndPaymentsEnabled(returnsSummaryService.getReturnsSection(vpdId))
+    val paymentsFuture            = whenReturnsAndPaymentsEnabled(paymentsSummaryService.getPaymentsSection())
 
-    val contactPreferencesFuture: Future[SubscriptionContactPreferences] =
-      subscriptionConnector.getSubscriptionContactPreferences(vpdId).andThen {
-        case Failure(ex) =>
-          logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
-      }
+    for {
+      subscriptionSummary <- subscriptionSummaryFuture
+      returns             <- returnsFuture
+      payments            <- paymentsFuture
+    } yield
+      if (!config.phase2Enabled) phase1Summary(vpdId, subscriptionSummary)
+      else phase2Summary(vpdId, subscriptionSummary, returns, payments)
+  }
 
-    if (!config.phase2Enabled)
-      contactPreferencesFuture.map(contactPreferences => {
-        val (contactMethod, manageContactPreferenceLink) =
-          if (contactPreferences.isInsolvent)
-            (None, None)
-          else
-            (Some(resolveContactMethod(contactPreferences)), manageContactPreferencesLink)
-
-        VPDSummary(
-          service           = ServiceInfo(config.serviceName, config.serviceId),
-          identifiers       = Identifier(vpdId.toString),
-          contactPreference = contactMethod,
-          links             = Links(self = selfLink(vpdId), manageContactPreference = manageContactPreferenceLink)
-        )
-      })
-    else if (!config.returnsAndPaymentsEnabled) {
-      contactPreferencesFuture.map { contactPreferences =>
-        createVPDSummaryWithoutReturnsAndPayments(vpdId, contactPreferences)
-      }
+  private def getSubscriptionSummary(vpdId: VpdId)(using HeaderCarrier): Future[SubscriptionSummary] =
+    subscriptionConnector.getSubscriptionSummary(vpdId).andThen { case Failure(ex) =>
+      logger.warn(s"[VPDSummaryService][getSubscriptionSummary] Failed to retrieve subscription summary. Message: ${ex.getMessage}")
     }
+
+  /** None means the section is switched off, not that it failed. Failures are reported inside each section. */
+  private def whenReturnsAndPaymentsEnabled[A](section: => Future[A]): Future[Option[A]] =
+    if (config.phase2Enabled && config.returnsAndPaymentsEnabled) section.map(Some(_))
+    else Future.successful(None)
+
+  private def phase1Summary(vpdId: VpdId, subscriptionSummary: SubscriptionSummary): VPDSummary = {
+    val contactPreference = Option.unless(subscriptionSummary.isInsolvent)(contactPreferenceSummaryService.build(subscriptionSummary))
+
+    VPDSummary(
+      service           = serviceInfo,
+      identifiers       = Identifier(vpdId.toString),
+      contactPreference = contactPreference.map(_.contactMethod),
+      links             = Links(self = selfLink(vpdId), manageContactPreference = contactPreference.map(_.manageContactPreference))
+    )
+  }
+
+  private def phase2Summary(
+    vpdId: VpdId,
+    subscriptionSummary: SubscriptionSummary,
+    returns: Option[ReturnsSection],
+    payments: Option[PaymentsSection]
+  ): VPDSummary = {
+    val approvalStatus = AccessApprovalStatus.fromSubscription(subscriptionSummary)
+    val access         = Some(Access(approvalStatus = Some(approvalStatus)))
+
+    if (approvalStatus == AccessApprovalStatus.Insolvent)
+      VPDSummary(
+        service           = serviceInfo,
+        identifiers       = Identifier(vpdId.toString),
+        access            = access,
+        contactPreference = None,
+        links             = Links(self = selfLink(vpdId))
+      )
     else {
+      val contactPreference = contactPreferenceSummaryService.build(subscriptionSummary)
 
-      val returnsFuture: Future[Option[Returns]] =
-        getObligationsService.getObligationDetails(vpdId)
-          .map(obligationService.processObligations)
-          .recover {
-            case ex =>
-              logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
-              Some(Returns(
-                hasReturnsError = true,
-                currentReturn = None,
-                dueReturnsCount = None,
-                overdueReturnsCount = None,
-                completedReturnsCount = None
-              ))
-          }
-
-      val paymentsFuture = getPaymentsService.getPayments()
-
-      for {
-        contactPreferences <- contactPreferencesFuture
-        returns            <- returnsFuture
-        paymentsWithFlag   <- paymentsFuture
-      } yield {
-        val (payments, financialDataStatus) = paymentsWithFlag match {
-          case Some((p, status)) => (Some(p), status)
-          case None              => (None, NoFinancialData)
-        }
-        createVPDSummary(vpdId, contactPreferences, returns, payments, financialDataStatus)
-      }
-    }
-  }
-
-  private def createVPDSummary(
-                                vpdId: VpdId,
-                                contactPreferences: SubscriptionContactPreferences,
-                                returns: Option[Returns],
-                                payments: Option[Payments],
-                                financialDataStatus: FinancialDataStatus
-  ): VPDSummary = {
-    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
-    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
-
-    val links = buildLinks(vpdId, isNoAccess, returns, payments, financialDataStatus)
-
-    val (contactMethod, contactPreferenceStatus) =
-      if (isNoAccess) (None, None)
-      else {
-        val cm = resolveContactMethod(contactPreferences)
-        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-      }
-
-    VPDSummary(
-      service                 = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers             = Identifier(vpdId.toString),
-      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
-      contactPreference       = contactMethod,
-      contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = if (isNoAccess) None else returns,
-      payments                = if (isNoAccess) None else payments,
-      links                   = links
-    )
-  }
-
-  private def createVPDSummaryWithoutReturnsAndPayments(
-    vpdId: VpdId,
-    contactPreferences: SubscriptionContactPreferences
-  ): VPDSummary = {
-    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
-    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
-
-
-    val links = buildLinksForReturnsAndPaymentsDisabled(vpdId, isNoAccess)
-
-    val (contactMethod, contactPreferenceStatus) =
-      if (isNoAccess) (None, None)
-      else {
-        val cm = resolveContactMethod(contactPreferences)
-        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-      }
-
-    VPDSummary(
-      service                 = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers             = Identifier(vpdId.toString),
-      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
-      contactPreference       = contactMethod,
-      contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = None,
-      payments                = None,
-      links                   = links
-    )
-  }
-
-  private def buildLinksForReturnsAndPaymentsDisabled(
-    vpdId: VpdId,
-    isNoAccess: Boolean
-  ): Links = {
-    val self = selfLink(vpdId)
-
-    if (isNoAccess) {
-      Links(self = self)
-    } else {
-      Links(
-        self                    = self,
-        manageContactPreference = manageContactPreferencesLink,
-        setUpDirectDebit        = setupDirectDebitLink
+      VPDSummary(
+        service                 = serviceInfo,
+        identifiers             = Identifier(vpdId.toString),
+        access                  = access,
+        contactPreference       = Some(contactPreference.contactMethod),
+        contactPreferenceStatus = contactPreference.contactPreferenceStatus,
+        returns                 = returns.flatMap(_.returns),
+        payments                = payments.map(_.payments),
+        links                   = Links(
+          self                    = selfLink(vpdId),
+          manageContactPreference = Some(contactPreference.manageContactPreference),
+          completeReturn          = returns.flatMap(_.completeReturn),
+          viewReturns             = returns.flatMap(_.viewReturns),
+          makePayment             = payments.flatMap(_.makePayment),
+          viewPayments            = payments.flatMap(_.viewPayments),
+          claimRepayment          = payments.flatMap(_.claimRepayment),
+          setUpDirectDebit        = Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+        )
       )
     }
   }
 
-  private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
-    if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
+  private def serviceInfo: ServiceInfo = ServiceInfo(config.serviceName, config.serviceId)
 
-  private def resolveContactPreferenceStatus(
-                                              contactMethod: ContactMethod,
-                                              contactPreferences: SubscriptionContactPreferences
-  ): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email)
-      Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
-    else
-      None
-
-  private def buildLinks(
-                          vpdId: VpdId,
-                          isNoAccess: Boolean,
-                          returns: Option[Returns],
-                          payments: Option[Payments],
-                          financialDataStatus: FinancialDataStatus
-  ): Links = {
-    val self = selfLink(vpdId)
-
-    if (isNoAccess) {
-      Links(self = self)
-    } else {
-      buildFullAccessLinks(self, returns, payments, financialDataStatus)
-    }
-  }
-
-  private def buildFullAccessLinks(
-                                    self: Self,
-                                    returns: Option[Returns],
-                                    payments: Option[Payments],
-                                    financialDataStatus: FinancialDataStatus
-  ): Links = {
-    val (completeReturn, viewReturns) = buildReturnLinks(returns)
-    val (makePayment, claimRepayment) = buildPaymentLinks(payments)
-
-    Links(
-      self                    = self,
-      manageContactPreference = manageContactPreferencesLink,
-      completeReturn          = completeReturn,
-      viewReturns             = viewReturns,
-      viewPayments            = buildViewPaymentsLink(financialDataStatus),
-      makePayment             = makePayment,
-      claimRepayment          = claimRepayment,
-      setUpDirectDebit        = setupDirectDebitLink
-    )
-  }
-
-  private def selfLink(vpdId: VpdId) =
-    Self(config.selfHref(vpdId), HttpVerbs.GET)
-
-  private def manageContactPreferencesLink =
-    Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
-
-  private def setupDirectDebitLink =
-    Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-
-  private def buildReturnLinks(returns: Option[Returns]) =
-    returns match {
-      case Some(r) =>
-        (completeReturnLink(r), viewReturnsLink(r))
-      case None =>
-        (None, None)
-    }
-
-  private def completeReturnLink(returns: Returns) =
-    returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
-
-  private def completeReturnForPeriod(periodKey: String): CompleteReturn =
-    CompleteReturn(
-      s"${config.completeReturnUrlPrefix}?period=$periodKey",
-      HttpVerbs.GET
-    )
-
-  private def viewReturnsLink(r: Returns): Option[ViewReturns] = {
-    val due           = r.dueReturnsCount.getOrElse(0)
-    val overdue       = r.overdueReturnsCount.getOrElse(0)
-    val completed     = r.completedReturnsCount.getOrElse(0)
-
-    val openReturns  = due + overdue
-
-    if (openReturns > 1 || completed > 0)
-      Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
-    else
-      None
-  }
-
-  private def buildPaymentLinks(payments: Option[Payments]): (Option[MakePayment], Option[ClaimRepayment]) =
-    payments match {
-      case Some(p) if p.hasPaymentsError =>
-        (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
-      case Some(p) if p.balance.exists(_.amount > 0) =>
-        val singleChargeRef = p.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
-        (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
-      case Some(p) if p.balance.exists(_.amount < 0) =>
-        (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
-      case _ =>
-        (None, None)
-    }
-
-  private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
-    financialDataStatus match {
-      case HasFinancialData => Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
-      case NoFinancialData  => None
-    }
+  private def selfLink(vpdId: VpdId): Self = Self(config.selfHref(vpdId), HttpVerbs.GET)
 }

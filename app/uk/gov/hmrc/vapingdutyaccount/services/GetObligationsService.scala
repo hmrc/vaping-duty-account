@@ -26,6 +26,10 @@ import uk.gov.hmrc.vapingdutyaccount.models.obligations.{ObligationDetails, Obli
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+/** Retrieves the obligation details for a manufacturer, keeping only the obligations that belong to that VPD ID.
+  *
+  * Only fetching and filtering happen here. Whether the obligations are needed at all is decided by the feature switches in [[VPDSummaryService]].
+  */
 @Singleton
 class GetObligationsService @Inject()(
                                        config: AppConfig,

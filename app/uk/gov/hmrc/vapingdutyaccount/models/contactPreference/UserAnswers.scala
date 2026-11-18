@@ -26,50 +26,9 @@ import uk.gov.hmrc.vapingdutyaccount.models.*
 
 import java.time.{Clock, Instant}
 
-case class DecryptedUA(vpdId: String,
-                       internalId: String,
-                       subscriptionSummary: SubscriptionSummary,
-                       emailAddress: Option[String],
-                       data: JsObject = Json.obj(),
-                       startedTime: Instant,
-                       lastUpdated: Instant,
-                       validUntil: Option[Instant] = None)
-
-object DecryptedUA {
-  def fromUA(userAnswers: UserAnswers): DecryptedUA =
-    DecryptedUA(
-      vpdId = userAnswers.vpdId,
-      internalId = userAnswers.internalId,
-      subscriptionSummary = SubscriptionSummary(
-        userAnswers.subscriptionSummary.paperlessPreference,
-        userAnswers.subscriptionSummary.emailAddress.map(_.decryptedValue),
-        userAnswers.subscriptionSummary.emailVerification,
-        userAnswers.subscriptionSummary.bouncedEmail,
-        userAnswers.subscriptionSummary.correspondenceAddress.decryptedValue
-      ),
-      emailAddress = userAnswers.emailAddress.map(_.decryptedValue),
-      data = userAnswers.data,
-      startedTime = userAnswers.startedTime,
-      lastUpdated = userAnswers.lastUpdated,
-      validUntil = userAnswers.validUntil
-    )
-
-  given OFormat[DecryptedUA] = (
-    (__ \ "vpdId").format[String] and
-      (__ \ "internalId").format[String] and
-      (__ \ "subscriptionSummary").format[SubscriptionSummary] and
-      (__ \ "emailAddress").formatNullable[String] and
-      (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
-      (__ \ "startedTime").format(MongoJavatimeFormats.instantFormat) and
-      (__ \ "lastUpdated").format(MongoJavatimeFormats.instantFormat) and
-      (__ \ "validUntil").formatNullable(MongoJavatimeFormats.instantFormat)
-  )(DecryptedUA.apply, o => Tuple.fromProductTyped(o))
-
-}
-
 case class UserAnswers(vpdId: String,
                        internalId: String,
-                       subscriptionSummary: SubscriptionSummaryBackend,
+                       subscriptionSummary: EncryptedSubscriptionSummary,
                        emailAddress: Option[SensitiveString],
                        data: JsObject = Json.obj(),
                        startedTime: Instant,
@@ -79,28 +38,28 @@ case class UserAnswers(vpdId: String,
 object UserAnswers {
   def createUserAnswers(
     userDetails: UserDetails,
-    contactPreferences: SubscriptionContactPreferences,
+    subscriptionSummary: SubscriptionSummary,
     clock: Clock
   ): UserAnswers = {
-    val existingEmail: Option[SensitiveString] = contactPreferences.emailAddress.map(SensitiveString.apply)
+    val existingEmail: Option[SensitiveString] = subscriptionSummary.emailAddress.map(SensitiveString.apply)
 
     val correspondenceAddress: String = Seq(
-      contactPreferences.addressLine1,
-      contactPreferences.addressLine2,
-      contactPreferences.addressLine3,
-      contactPreferences.addressLine4,
-      contactPreferences.addressLine5,
-      contactPreferences.postCode
+      subscriptionSummary.addressLine1,
+      subscriptionSummary.addressLine2,
+      subscriptionSummary.addressLine3,
+      subscriptionSummary.addressLine4,
+      subscriptionSummary.addressLine5,
+      subscriptionSummary.postCode
     ).flatten.mkString("\n")
 
     UserAnswers(
       vpdId = userDetails.vpdId,
       internalId = userDetails.internalId,
-      subscriptionSummary = SubscriptionSummaryBackend(
-        contactPreferences.paperlessPreference,
+      subscriptionSummary = EncryptedSubscriptionSummary(
+        subscriptionSummary.paperlessPreference,
         existingEmail,
-        contactPreferences.verifiedEmail,
-        contactPreferences.bouncedEmail,
+        subscriptionSummary.verifiedEmail,
+        subscriptionSummary.bouncedEmail,
         SensitiveString(correspondenceAddress)
       ),
       emailAddress = None,
@@ -113,7 +72,7 @@ object UserAnswers {
     UserAnswers(
       vpdId = decryptedUA.vpdId,
       internalId = decryptedUA.internalId,
-      subscriptionSummary = SubscriptionSummaryBackend(
+      subscriptionSummary = EncryptedSubscriptionSummary(
         decryptedUA.subscriptionSummary.paperlessPreference,
         decryptedUA.subscriptionSummary.emailAddress.map(SensitiveString.apply),
         decryptedUA.subscriptionSummary.emailVerification,
@@ -131,48 +90,13 @@ object UserAnswers {
     (
       (__ \ "vpdId").format[String] and
         (__ \ "internalId").format[String] and
-        (__ \ "subscriptionSummary").format[SubscriptionSummaryBackend] and
+        (__ \ "subscriptionSummary").format[EncryptedSubscriptionSummary] and
         (__ \ "emailAddress").formatNullable[SensitiveString] and
         (__ \ "data").formatWithDefault[JsObject](Json.obj()) and
         (__ \ "startedTime").format(MongoJavatimeFormats.instantFormat) and
         (__ \ "lastUpdated").format(MongoJavatimeFormats.instantFormat) and
         (__ \ "validUntil").formatNullable(MongoJavatimeFormats.instantFormat)
     )(UserAnswers.apply, o => Tuple.fromProductTyped(o))
-
-  implicit def sensitiveStringFormat(implicit crypto: Encrypter with Decrypter): Format[SensitiveString] =
-    JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)
-}
-
-case class SubscriptionSummary(
-  paperlessPreference: Boolean,
-  emailAddress: Option[String],
-  emailVerification: Option[Boolean],
-  bouncedEmail: Option[Boolean],
-  correspondenceAddress: String
-)
-
-object SubscriptionSummary {
-  given OFormat[SubscriptionSummary] = Json.format[SubscriptionSummary]
-}
-
-case class SubscriptionSummaryBackend(
-  paperlessPreference: Boolean,
-  emailAddress: Option[SensitiveString],
-  emailVerification: Option[Boolean],
-  bouncedEmail: Option[Boolean],
-  correspondenceAddress: SensitiveString
-)
-
-object SubscriptionSummaryBackend {
-
-  implicit def format(implicit crypto: Encrypter with Decrypter): OFormat[SubscriptionSummaryBackend] =
-    (
-      (__ \ "paperlessPreference").format[Boolean] and
-        (__ \ "emailAddress").formatNullable[SensitiveString] and
-        (__ \ "emailVerification").formatNullable[Boolean] and
-        (__ \ "bouncedEmail").formatNullable[Boolean] and
-        (__ \ "correspondenceAddress").format[SensitiveString]
-    )(SubscriptionSummaryBackend.apply, o => Tuple.fromProductTyped(o))
 
   implicit def sensitiveStringFormat(implicit crypto: Encrypter with Decrypter): Format[SensitiveString] =
     JsonEncryption.sensitiveEncrypterDecrypter(SensitiveString.apply)

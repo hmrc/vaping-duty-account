@@ -95,8 +95,8 @@ class UserAnswersControllerSpec extends SpecBase {
   "createUserAnswers must" - {
     "return 201 CREATED with the user answers that was created" in {
       when(mockUserAnswersRepository.add(any())).thenReturn(Future.successful(userAnswers))
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesEmailSelected))
+      when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
+        .thenReturn(Future.successful(subscriptionSummaryEmailSelected))
 
       val result: Future[Result] =
         controller.createUserAnswers()(
@@ -108,8 +108,8 @@ class UserAnswersControllerSpec extends SpecBase {
     }
 
     "return 500 INTERNAL_SERVER_ERROR if the subscription connector fails" in {
-      val errorMessage = "Failed to get subscription contact preferences"
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      val errorMessage = "Failed to get subscription summary"
+      when(mockSubscriptionConnector.getSubscriptionSummary(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(InternalServerException(errorMessage)))
 
       val result: Future[Result] =

@@ -23,7 +23,7 @@ import java.time.LocalDate
 
 class ObligationServiceSpec extends SpecBase {
 
-  val service: ObligationService = new ObligationService()
+  val service: ObligationService = new ObligationService(clock)
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): ObligationDetails =
     ObligationDetails(
@@ -44,11 +44,11 @@ class ObligationServiceSpec extends SpecBase {
       }
 
       "return None when all obligations have an unrecognised status" in {
-        service.processObligations(Seq(createObligation("X", LocalDate.now().plusDays(5), "26AA"))) mustBe None
+        service.processObligations(Seq(createObligation("X", today.plusDays(5), "26AA"))) mustBe None
       }
 
       "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
-        val dueDate = LocalDate.now().plusDays(10)
+        val dueDate = today.plusDays(10)
         val result  = service.processObligations(Seq(createObligation("O", dueDate, "26AA"))).value
 
         result.hasReturnsError mustBe false
@@ -62,8 +62,8 @@ class ObligationServiceSpec extends SpecBase {
 
       "return Some(Returns) with no currentReturn when multiple due obligations" in {
         val result = service.processObligations(Seq(
-          createObligation("O", LocalDate.now().plusDays( 5), "26AA"),
-          createObligation("O", LocalDate.now().plusDays(10), "26AB")
+          createObligation("O", today.plusDays( 5), "26AA"),
+          createObligation("O", today.plusDays(10), "26AB")
         )).value
 
         result.dueReturnsCount mustBe Some(2)
@@ -71,7 +71,7 @@ class ObligationServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
-        val dueDate = LocalDate.now().minusDays(5)
+        val dueDate = today.minusDays(5)
         val result = service.processObligations(
           Seq(createObligation("O", dueDate, "25AL"))
         ).value
@@ -85,7 +85,7 @@ class ObligationServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with no currentReturn when multiple overdue obligations" in {
-        val dueDate = LocalDate.now().minusDays(5)
+        val dueDate = today.minusDays(5)
         val result = service.processObligations(
           Seq(
             createObligation("O", dueDate.minusDays(30), "25AK"),
@@ -102,8 +102,8 @@ class ObligationServiceSpec extends SpecBase {
       "return Some(Returns) with completedCount=2 when 2 completed obligations" in {
         val result = service.processObligations(
           Seq(
-            createObligation("F", LocalDate.now().minusDays(35), "25AK"),
-            createObligation("F", LocalDate.now().minusDays( 5), "25AL")
+            createObligation("F", today.minusDays(35), "25AK"),
+            createObligation("F", today.minusDays( 5), "25AL")
           )
         ).value
 
@@ -115,7 +115,7 @@ class ObligationServiceSpec extends SpecBase {
 
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
         val result = service.processObligations(
-          Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
+          Seq(createObligation("F", today.minusDays(5), "25AL"))
         ).value
 
         result.dueReturnsCount mustBe Some(0)
@@ -126,14 +126,14 @@ class ObligationServiceSpec extends SpecBase {
 
       "return correct counts for mixed due, overdue, and completed obligations" in {
         val result = service.processObligations(Seq(
-          createObligation("O", LocalDate.now().plusDays(10), "26AA"),
+          createObligation("O", today.plusDays(10), "26AA"),
 
-          createObligation("O", LocalDate.now().minusDays( 5), "25AL"),
-          createObligation("O", LocalDate.now().minusDays(35), "25AK"),
+          createObligation("O", today.minusDays( 5), "25AL"),
+          createObligation("O", today.minusDays(35), "25AK"),
 
-          createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
-          createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
-          createObligation("F", LocalDate.now().minusDays(120), "25AH")
+          createObligation("F", today.minusDays( 65), "25AJ"),
+          createObligation("F", today.minusDays( 95), "25AI"),
+          createObligation("F", today.minusDays(120), "25AH")
         )).value
 
         result.dueReturnsCount mustBe Some(1)
@@ -142,7 +142,6 @@ class ObligationServiceSpec extends SpecBase {
       }
     }
 
-    val today = LocalDate.now()
     val yesterday = today.minusDays(1)
     val tomorrow = today.plusDays(1)
 

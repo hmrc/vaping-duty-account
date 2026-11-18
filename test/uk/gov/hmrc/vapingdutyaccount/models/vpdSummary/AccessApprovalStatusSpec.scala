@@ -18,12 +18,12 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionContactPreferences}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionSummary}
 
 class AccessApprovalStatusSpec extends AnyFreeSpec with Matchers {
 
-  private def contactPreferences(approvalStatus: SubscriptionApprovalStatus, insolvencyStatus: Option[String]) =
-    SubscriptionContactPreferences(
+  private def subscriptionSummary(approvalStatus: SubscriptionApprovalStatus, insolvencyStatus: Option[String]) =
+    SubscriptionSummary(
       paperlessPreference = true,
       emailAddress = None,
       verifiedEmail = None,
@@ -41,43 +41,43 @@ class AccessApprovalStatusSpec extends AnyFreeSpec with Matchers {
   "AccessApprovalStatus.fromSubscription" - {
     "must return Approved when the subscription is approved and not insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Approved, Some("N"))
+        subscriptionSummary(SubscriptionApprovalStatus.Approved, Some("N"))
       ) shouldBe AccessApprovalStatus.Approved
     }
 
     "must return Approved when the subscription is approved and insolvencyStatus is absent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Approved, None)
+        subscriptionSummary(SubscriptionApprovalStatus.Approved, None)
       ) shouldBe AccessApprovalStatus.Approved
     }
 
     "must return Insolvent when the subscription is approved and insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Approved, Some("Y"))
+        subscriptionSummary(SubscriptionApprovalStatus.Approved, Some("Y"))
       ) shouldBe AccessApprovalStatus.Insolvent
     }
 
     "must return Deregistered when the subscription is deregistered and not insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.DeRegistered, Some("N"))
+        subscriptionSummary(SubscriptionApprovalStatus.DeRegistered, Some("N"))
       ) shouldBe AccessApprovalStatus.Deregistered
     }
 
     "must return Insolvent when the subscription is deregistered and insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.DeRegistered, Some("Y"))
+        subscriptionSummary(SubscriptionApprovalStatus.DeRegistered, Some("Y"))
       ) shouldBe AccessApprovalStatus.Insolvent
     }
 
     "must return Revoked when the subscription is revoked and not insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Revoked, Some("N"))
+        subscriptionSummary(SubscriptionApprovalStatus.Revoked, Some("N"))
       ) shouldBe AccessApprovalStatus.Revoked
     }
 
     "must return Insolvent when the subscription is revoked and insolvent" in {
       AccessApprovalStatus.fromSubscription(
-        contactPreferences(SubscriptionApprovalStatus.Revoked, Some("Y"))
+        subscriptionSummary(SubscriptionApprovalStatus.Revoked, Some("Y"))
       ) shouldBe AccessApprovalStatus.Insolvent
     }
   }

@@ -25,7 +25,6 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.{Identification, ObligationDetails, ObligationItem, ObligationsResponse}
 
-import java.time.LocalDate
 import scala.concurrent.Future
 
 class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
@@ -37,10 +36,10 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
 
   private val obligationDetails = ObligationDetails(
     openOrFulfilledStatus = "O",
-    iCFromDate            = LocalDate.now().minusMonths(1),
-    iCToDate              = LocalDate.now(),
+    iCFromDate            = today.minusMonths(1),
+    iCToDate              = today,
     iCDateReceived        = None,
-    iCDueDate             = LocalDate.now().plusDays(10),
+    iCDueDate             = today.plusDays(10),
     periodKey             = "26AA"
   )
   
@@ -89,8 +88,8 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
       "must flatten multiple obligation details from multiple items" in {
         when(mockAppConfig.phase2Enabled).thenReturn(true)
 
-        val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = LocalDate.now().plusDays(20))
-        val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = LocalDate.now().plusDays(30))
+        val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = today.plusDays(20))
+        val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = today.plusDays(30))
 
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(

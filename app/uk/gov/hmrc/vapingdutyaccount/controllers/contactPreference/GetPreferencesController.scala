@@ -36,7 +36,7 @@ class GetPreferencesController @Inject()(
 
   def getContactPreferences(vpdId: VpdId): Action[AnyContent] = (authorise andThen checkVpdId(vpdId)).async {
     implicit request =>
-      connector.getSubscriptionContactPreferences(vpdId)
+      connector.getSubscriptionSummary(vpdId)
         .map(successResponse => Ok(Json.toJson(successResponse)))
   }
 }

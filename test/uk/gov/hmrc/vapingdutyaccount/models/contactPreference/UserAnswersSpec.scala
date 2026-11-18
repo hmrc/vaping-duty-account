@@ -59,7 +59,7 @@ class UserAnswersSpec extends SpecBase {
     "create a UserAnswers from components when there is an existing verified email" in {
       val createdUserAnswers = UserAnswers.createUserAnswers(
         userDetails,
-        contactPreferencesEmailSelected,
+        subscriptionSummaryEmailSelected,
         clock
       )
       createdUserAnswers mustBe emptyUserAnswers
@@ -68,7 +68,7 @@ class UserAnswersSpec extends SpecBase {
     "create a UserAnswers from components when there is no email in the system" in {
       val createdUserAnswers = UserAnswers.createUserAnswers(
         userDetails,
-        contactPreferencesPostNoEmail,
+        subscriptionSummaryPostNoEmail,
         clock
       )
       createdUserAnswers mustBe emptyUserAnswersNoEmail
@@ -77,7 +77,7 @@ class UserAnswersSpec extends SpecBase {
     "create a UserAnswers from components when the email in the system has bounced" in {
       val createdUserAnswers = UserAnswers.createUserAnswers(
         userDetails,
-        contactPreferencesEmailSelected.copy(paperlessPreference = false, bouncedEmail = Some(true)),
+        subscriptionSummaryEmailSelected.copy(paperlessPreference = false, bouncedEmail = Some(true)),
         clock
       )
       createdUserAnswers mustBe emptyUserAnswersBouncedEmail

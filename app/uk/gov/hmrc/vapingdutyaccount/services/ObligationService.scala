@@ -19,17 +19,17 @@ package uk.gov.hmrc.vapingdutyaccount.services
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CurrentReturn, Returns}
 
-import java.time.LocalDate
-import javax.inject.Singleton
+import java.time.{Clock, LocalDate}
+import javax.inject.{Inject, Singleton}
 
 @Singleton
-class ObligationService {
+class ObligationService @Inject()(clock: Clock) {
 
   private val STATUS_OPEN      = "O"
   private val STATUS_FULFILLED = "F"
 
   def processObligations(obligations: Seq[ObligationDetails]): Option[Returns] = {
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
 
     val dueObligations       = obligations.filter(isDue(_, today))
     val overdueObligations   = obligations.filter(isOverdue(_, today))
