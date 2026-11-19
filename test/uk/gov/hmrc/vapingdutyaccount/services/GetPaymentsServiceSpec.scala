@@ -39,9 +39,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
   "GetPaymentsService" - {
     "getPayments must" - {
 
-      "return Some((Payments, FinancialDataStatus.HasFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
+      "return Some((Payments, FinancialDataStatus.HasFinancialData)) mapped from the connector response" in {
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding         = Seq(OutstandingPayment(Some("XVP123456789"), BigDecimal(4574.84), None, "Due")),
@@ -58,9 +56,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
         ))
       }
 
-      "return Some((Payments, FinancialDataStatus.NoFinancialData)) mapped from the connector response when the phase-2-enabled feature switch is on" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
+      "return Some((Payments, FinancialDataStatus.NoFinancialData)) mapped from the connector response" in {
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.successful(UpstreamPaymentsResponse(
             outstanding = Seq.empty,
@@ -78,8 +74,6 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
       }
 
       "return Some((Payments, FinancialDataStatus)) with hasPaymentsError true when the connector fails" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
         when(mockPaymentsConnector.getPayments()(using any()))
           .thenReturn(Future.failed(new InternalServerException("Failed to retrieve payments")))
 
