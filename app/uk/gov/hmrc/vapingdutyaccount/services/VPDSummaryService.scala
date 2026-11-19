@@ -47,22 +47,7 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
       }
 
-    if (!config.phase2Enabled)
-      contactPreferencesFuture.map(contactPreferences => {
-        val (contactMethod, manageContactPreferenceLink) =
-          if (contactPreferences.isInsolvent)
-            (None, None)
-          else
-            (Some(resolveContactMethod(contactPreferences)), manageContactPreferencesLink)
-
-        VPDSummary(
-          service           = ServiceInfo(config.serviceName, config.serviceId),
-          identifiers       = Identifier(vpdId.toString),
-          contactPreference = contactMethod,
-          links             = Links(self = selfLink(vpdId), manageContactPreference = manageContactPreferenceLink)
-        )
-      })
-    else if (!config.returnsAndPaymentsEnabled) {
+    if (!config.returnsAndPaymentsEnabled) {
       contactPreferencesFuture.map { contactPreferences =>
         createVPDSummaryWithoutReturnsAndPayments(vpdId, contactPreferences)
       }
