@@ -54,8 +54,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
     "getObligationDetails must" - {
 
       "return the Seq[ObligationDetails] extracted from the connector response" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(ObligationItem(Some(identificationDetails), Seq(obligationDetails))))))
 
@@ -63,8 +61,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
       }
 
       "must filter out obligation items without matching referenceNumber" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(
             ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
@@ -75,8 +71,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
       }
 
       "must filter out obligation items without matching referenceType" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
         when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
           .thenReturn(Future.successful(ObligationsResponse(Seq(
             ObligationItem(Some(identificationDetails), Seq(obligationDetails)),
@@ -87,8 +81,6 @@ class GetObligationsServiceSpec extends SpecBase with MockitoSugar with ScalaFut
       }
 
       "must flatten multiple obligation details from multiple items" in {
-        when(mockAppConfig.phase2Enabled).thenReturn(true)
-
         val obligationDetails2 = obligationDetails.copy(periodKey = "26AB", iCDueDate = LocalDate.now().plusDays(20))
         val obligationDetails3 = obligationDetails.copy(periodKey = "26AC", iCDueDate = LocalDate.now().plusDays(30))
 
