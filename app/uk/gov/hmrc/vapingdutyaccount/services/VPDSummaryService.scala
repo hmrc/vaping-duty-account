@@ -47,41 +47,33 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
       }
 
-    if (!config.returnsAndPaymentsEnabled) {
-      contactPreferencesFuture.map { contactPreferences =>
-        createVPDSummaryWithoutReturnsAndPayments(vpdId, contactPreferences)
-      }
-    }
-    else {
-
-      val returnsFuture: Future[Option[Returns]] =
-        getObligationsService.getObligationDetails(vpdId)
-          .map(obligationService.processObligations)
-          .recover {
-            case ex =>
-              logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
-              Some(Returns(
-                hasReturnsError = true,
-                currentReturn = None,
-                dueReturnsCount = None,
-                overdueReturnsCount = None,
-                completedReturnsCount = None
-              ))
-          }
-
-      val paymentsFuture = getPaymentsService.getPayments()
-
-      for {
-        contactPreferences <- contactPreferencesFuture
-        returns            <- returnsFuture
-        paymentsWithFlag   <- paymentsFuture
-      } yield {
-        val (payments, financialDataStatus) = paymentsWithFlag match {
-          case Some((p, status)) => (Some(p), status)
-          case None              => (None, NoFinancialData)
+    val returnsFuture: Future[Option[Returns]] =
+      getObligationsService.getObligationDetails(vpdId)
+        .map(obligationService.processObligations)
+        .recover {
+          case ex =>
+            logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
+            Some(Returns(
+              hasReturnsError = true,
+              currentReturn = None,
+              dueReturnsCount = None,
+              overdueReturnsCount = None,
+              completedReturnsCount = None
+            ))
         }
-        createVPDSummary(vpdId, contactPreferences, returns, payments, financialDataStatus)
+
+    val paymentsFuture = getPaymentsService.getPayments()
+
+    for {
+      contactPreferences <- contactPreferencesFuture
+      returns            <- returnsFuture
+      paymentsWithFlag   <- paymentsFuture
+    } yield {
+      val (payments, financialDataStatus) = paymentsWithFlag match {
+        case Some((p, status)) => (Some(p), status)
+        case None              => (None, NoFinancialData)
       }
+      createVPDSummary(vpdId, contactPreferences, returns, payments, financialDataStatus)
     }
   }
 
@@ -114,52 +106,6 @@ class VPDSummaryService @Inject()(
       payments                = if (isNoAccess) None else payments,
       links                   = links
     )
-  }
-
-  private def createVPDSummaryWithoutReturnsAndPayments(
-    vpdId: VpdId,
-    contactPreferences: SubscriptionContactPreferences
-  ): VPDSummary = {
-    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
-    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
-
-
-    val links = buildLinksForReturnsAndPaymentsDisabled(vpdId, isNoAccess)
-
-    val (contactMethod, contactPreferenceStatus) =
-      if (isNoAccess) (None, None)
-      else {
-        val cm = resolveContactMethod(contactPreferences)
-        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-      }
-
-    VPDSummary(
-      service                 = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers             = Identifier(vpdId.toString),
-      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
-      contactPreference       = contactMethod,
-      contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = None,
-      payments                = None,
-      links                   = links
-    )
-  }
-
-  private def buildLinksForReturnsAndPaymentsDisabled(
-    vpdId: VpdId,
-    isNoAccess: Boolean
-  ): Links = {
-    val self = selfLink(vpdId)
-
-    if (isNoAccess) {
-      Links(self = self)
-    } else {
-      Links(
-        self                    = self,
-        manageContactPreference = manageContactPreferencesLink,
-        setUpDirectDebit        = setupDirectDebitLink
-      )
-    }
   }
 
   private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =

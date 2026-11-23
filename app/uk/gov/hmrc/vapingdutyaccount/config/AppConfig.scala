@@ -107,7 +107,6 @@ class AppConfig @Inject() (config: Configuration, servicesConfig: ServicesConfig
     * Types extracted from OpenAPI specification
     */
   lazy val vpdSummaryRESTAPIEnabled: Boolean = config.get[Boolean]("features.bta.tile.api")
-  lazy val returnsAndPaymentsEnabled: Boolean = config.get[Boolean]("features.returnsAndPaymentsEnabled")
 
   // Static info for API
   lazy val serviceName: String = config.get[String]("service.name")
