@@ -65,9 +65,11 @@ class VPDSummaryService @Inject()(
     val paymentsFuture = getPaymentsService.getPayments()
 
     for {
-      contactPreferences                <- contactPreferencesFuture
-      returns                           <- returnsFuture
-      (payments, financialDataStatus)   <- paymentsFuture
+      contactPreferences              <- contactPreferencesFuture
+      returns                         <- returnsFuture
+      (completeReturn, viewReturns)    = buildReturnLinks(returns)
+      (payments, financialDataStatus) <- paymentsFuture
+      (makePayment, claimRepayment)    = buildPaymentLinks(payments)
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
@@ -80,9 +82,6 @@ class VPDSummaryService @Inject()(
             Links(self = self)
           } else {
             {
-              val (completeReturn, viewReturns) = buildReturnLinks(returns)
-              val (makePayment, claimRepayment) = buildPaymentLinks(payments)
-
               Links(
                 self                    = self,
                 manageContactPreference = manageContactPreferencesLink,
