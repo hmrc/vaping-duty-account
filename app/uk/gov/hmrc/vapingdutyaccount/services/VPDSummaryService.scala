@@ -73,7 +73,29 @@ class VPDSummaryService @Inject()(
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
         val isInsolvent = approvalStatus == AccessApprovalStatus.Insolvent
 
-        val links = buildLinks(vpdId, isInsolvent, returns, payments, financialDataStatus)
+        val links = {
+          val self = selfLink(vpdId)
+
+          if (isInsolvent) {
+            Links(self = self)
+          } else {
+            {
+              val (completeReturn, viewReturns) = buildReturnLinks(returns)
+              val (makePayment, claimRepayment) = buildPaymentLinks(payments)
+
+              Links(
+                self                    = self,
+                manageContactPreference = manageContactPreferencesLink,
+                completeReturn          = completeReturn,
+                viewReturns             = viewReturns,
+                viewPayments            = buildViewPaymentsLink(financialDataStatus),
+                makePayment             = makePayment,
+                claimRepayment          = claimRepayment,
+                setUpDirectDebit        = setupDirectDebitLink
+              )
+            }
+          }
+        }
 
         val (contactMethod, contactPreferenceStatus) =
           if (isInsolvent) (None, None)
@@ -107,43 +129,6 @@ class VPDSummaryService @Inject()(
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
     else
       None
-
-  private def buildLinks(
-                          vpdId: VpdId,
-                          isNoAccess: Boolean,
-                          returns: Option[Returns],
-                          payments: Payments,
-                          financialDataStatus: FinancialDataStatus
-  ): Links = {
-    val self = selfLink(vpdId)
-
-    if (isNoAccess) {
-      Links(self = self)
-    } else {
-      buildFullAccessLinks(self, returns, payments, financialDataStatus)
-    }
-  }
-
-  private def buildFullAccessLinks(
-                                    self: Self,
-                                    returns: Option[Returns],
-                                    payments: Payments,
-                                    financialDataStatus: FinancialDataStatus
-  ): Links = {
-    val (completeReturn, viewReturns) = buildReturnLinks(returns)
-    val (makePayment, claimRepayment) = buildPaymentLinks(payments)
-
-    Links(
-      self                    = self,
-      manageContactPreference = manageContactPreferencesLink,
-      completeReturn          = completeReturn,
-      viewReturns             = viewReturns,
-      viewPayments            = buildViewPaymentsLink(financialDataStatus),
-      makePayment             = makePayment,
-      claimRepayment          = claimRepayment,
-      setUpDirectDebit        = setupDirectDebitLink
-    )
-  }
 
   private def selfLink(vpdId: VpdId) =
     Self(config.selfHref(vpdId), HttpVerbs.GET)
