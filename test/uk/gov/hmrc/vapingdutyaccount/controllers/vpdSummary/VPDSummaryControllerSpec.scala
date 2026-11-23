@@ -43,7 +43,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockGetObligationsService: GetObligationsService = mock[GetObligationsService]
   val mockGetPaymentsService: GetPaymentsService       = mock[GetPaymentsService]
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(config), mockGetPaymentsService)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 

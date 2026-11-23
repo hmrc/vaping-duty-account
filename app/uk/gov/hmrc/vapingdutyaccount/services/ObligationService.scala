@@ -16,14 +16,17 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
+import com.google.inject.Inject
+import play.api.http.HttpVerbs
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CurrentReturn, Returns}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, CurrentReturn, Returns, ViewReturns}
 
 import java.time.LocalDate
 import javax.inject.Singleton
 
 @Singleton
-class ObligationService {
+class ObligationService @Inject(config: AppConfig) {
 
   private val STATUS_OPEN      = "O"
   private val STATUS_FULFILLED = "F"
@@ -67,4 +70,36 @@ class ObligationService {
 
   def isCompleted(obligation: Obligation): Boolean =
     obligation.openOrFulfilledStatus == STATUS_FULFILLED
+
+
+  def buildReturnLinks(returns: Option[Returns]) =
+    returns match {
+      case Some(r) =>
+        (completeReturnLink(r), viewReturnsLink(r))
+      case None =>
+        (None, None)
+    }
+
+  private def completeReturnLink(returns: Returns) =
+    returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
+
+  private def completeReturnForPeriod(periodKey: String): CompleteReturn =
+    CompleteReturn(
+      s"${config.completeReturnUrlPrefix}?period=$periodKey",
+      HttpVerbs.GET
+    )
+
+  private def viewReturnsLink(r: Returns): Option[ViewReturns] = {
+    val due           = r.dueReturnsCount.getOrElse(0)
+    val overdue       = r.overdueReturnsCount.getOrElse(0)
+    val completed     = r.completedReturnsCount.getOrElse(0)
+
+    val openReturns  = due + overdue
+
+    if (openReturns > 1 || completed > 0)
+      Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
+    else
+      None
+  }
+
 }

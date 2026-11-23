@@ -67,7 +67,7 @@ class VPDSummaryService @Inject()(
     for {
       contactPreferences              <- contactPreferencesFuture
       returns                         <- returnsFuture
-      (completeReturn, viewReturns)    = buildReturnLinks(returns)
+      (completeReturn, viewReturns)    = obligationService.buildReturnLinks(returns)
       (payments, financialDataStatus) <- paymentsFuture
       (makePayment, claimRepayment)    = buildPaymentLinks(payments)
     } yield {
@@ -137,36 +137,6 @@ class VPDSummaryService @Inject()(
 
   private def setupDirectDebitLink =
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-
-  private def buildReturnLinks(returns: Option[Returns]) =
-    returns match {
-      case Some(r) =>
-        (completeReturnLink(r), viewReturnsLink(r))
-      case None =>
-        (None, None)
-    }
-
-  private def completeReturnLink(returns: Returns) =
-    returns.currentReturn.map(current => completeReturnForPeriod(current.periodKey))
-
-  private def completeReturnForPeriod(periodKey: String): CompleteReturn =
-    CompleteReturn(
-      s"${config.completeReturnUrlPrefix}?period=$periodKey",
-      HttpVerbs.GET
-    )
-
-  private def viewReturnsLink(r: Returns): Option[ViewReturns] = {
-    val due           = r.dueReturnsCount.getOrElse(0)
-    val overdue       = r.overdueReturnsCount.getOrElse(0)
-    val completed     = r.completedReturnsCount.getOrElse(0)
-
-    val openReturns  = due + overdue
-
-    if (openReturns > 1 || completed > 0)
-      Some(ViewReturns(config.viewReturnsUrl, HttpVerbs.GET))
-    else
-      None
-  }
 
   private def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
       if (payments.hasPaymentsError)

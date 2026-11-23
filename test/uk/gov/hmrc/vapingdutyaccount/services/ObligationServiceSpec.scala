@@ -17,13 +17,15 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 
 import java.time.LocalDate
 
 class ObligationServiceSpec extends SpecBase {
 
-  val service: ObligationService = new ObligationService()
+  val config: AppConfig = mock[AppConfig]
+  val service: ObligationService = new ObligationService(config)
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): Obligation =
     Obligation(
