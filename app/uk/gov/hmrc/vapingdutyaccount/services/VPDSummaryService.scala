@@ -71,12 +71,12 @@ class VPDSummaryService @Inject()(
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
-        val isNoAccess = approvalStatus == AccessApprovalStatus.Insolvent
+        val isInsolvent = approvalStatus == AccessApprovalStatus.Insolvent
 
-        val links = buildLinks(vpdId, isNoAccess, returns, payments, financialDataStatus)
+        val links = buildLinks(vpdId, isInsolvent, returns, payments, financialDataStatus)
 
         val (contactMethod, contactPreferenceStatus) =
-          if (isNoAccess) (None, None)
+          if (isInsolvent) (None, None)
           else {
             val cm = resolveContactMethod(contactPreferences)
             (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
@@ -88,8 +88,8 @@ class VPDSummaryService @Inject()(
           access                  = Some(Access(approvalStatus = Some(approvalStatus))),
           contactPreference       = contactMethod,
           contactPreferenceStatus = contactPreferenceStatus,
-          returns                 = if (isNoAccess) None else returns,
-          payments                = if (isNoAccess) None else Some(payments),
+          returns                 = if (isInsolvent) None else returns,
+          payments                = if (isInsolvent) None else Some(payments),
           links                   = links
         )
       }
