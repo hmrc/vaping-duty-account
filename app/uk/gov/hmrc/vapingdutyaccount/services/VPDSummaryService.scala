@@ -69,39 +69,31 @@ class VPDSummaryService @Inject()(
       returns                           <- returnsFuture
       (payments, financialDataStatus)   <- paymentsFuture
     } yield {
-      createVPDSummary(vpdId, contactPreferences, returns, payments, financialDataStatus)
-    }
-  }
+      {
+        val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
+        val isNoAccess = approvalStatus == AccessApprovalStatus.Insolvent
 
-  private def createVPDSummary(
-                                vpdId: VpdId,
-                                contactPreferences: SubscriptionContactPreferences,
-                                returns: Option[Returns],
-                                payments: Payments,
-                                financialDataStatus: FinancialDataStatus
-  ): VPDSummary = {
-    val approvalStatus  = AccessApprovalStatus.fromSubscription(contactPreferences)
-    val isNoAccess      = approvalStatus == AccessApprovalStatus.Insolvent
+        val links = buildLinks(vpdId, isNoAccess, returns, payments, financialDataStatus)
 
-    val links = buildLinks(vpdId, isNoAccess, returns, payments, financialDataStatus)
+        val (contactMethod, contactPreferenceStatus) =
+          if (isNoAccess) (None, None)
+          else {
+            val cm = resolveContactMethod(contactPreferences)
+            (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+          }
 
-    val (contactMethod, contactPreferenceStatus) =
-      if (isNoAccess) (None, None)
-      else {
-        val cm = resolveContactMethod(contactPreferences)
-        (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
+        VPDSummary(
+          service                 = ServiceInfo(config.serviceName, config.serviceId),
+          identifiers             = Identifier(vpdId.toString),
+          access                  = Some(Access(approvalStatus = Some(approvalStatus))),
+          contactPreference       = contactMethod,
+          contactPreferenceStatus = contactPreferenceStatus,
+          returns                 = if (isNoAccess) None else returns,
+          payments                = if (isNoAccess) None else Some(payments),
+          links                   = links
+        )
       }
-
-    VPDSummary(
-      service                 = ServiceInfo(config.serviceName, config.serviceId),
-      identifiers             = Identifier(vpdId.toString),
-      access                  = Some(Access(approvalStatus = Some(approvalStatus))),
-      contactPreference       = contactMethod,
-      contactPreferenceStatus = contactPreferenceStatus,
-      returns                 = if (isNoAccess) None else returns,
-      payments                = if (isNoAccess) None else Some(payments),
-      links                   = links
-    )
+    }
   }
 
   private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
