@@ -112,12 +112,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   )
   val badVpdId: String                    = "bad-invalid-vpdid"
 
-  private def getContactMethod(preference: Boolean): String = {
-    if (preference == true) "EMAIL" else "POST"
-  }
-
   private def getContactPreferenceLines(subscription: SubscriptionContactPreferences): String = {
-    val contactMethod = getContactMethod(subscription.paperlessPreference)
+    val contactMethod = if (subscription.paperlessPreference) "EMAIL" else "POST"
     val statusLine     =
       if (subscription.paperlessPreference) {
         val bounced = subscription.bouncedEmail.getOrElse(false)
@@ -192,7 +188,8 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
        |""".stripMargin)
 
   private def assertHeaderIsPresentOn(result: Future[Result], header: String) = {
-    assert(headers(result).get(header).get.isInstanceOf[String])
+    val headersMap = headers(result)
+    assert(headersMap(header).isInstanceOf[String])
   }
 
   "VPDSummary must " - {
