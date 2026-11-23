@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.ObligationDetails
+import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CurrentReturn, Returns}
 
 import java.time.LocalDate
@@ -28,7 +28,7 @@ class ObligationService {
   private val STATUS_OPEN      = "O"
   private val STATUS_FULFILLED = "F"
 
-  def processObligations(obligations: Seq[ObligationDetails]): Option[Returns] = {
+  def processObligations(obligations: Seq[Obligation]): Option[Returns] = {
     val today = LocalDate.now()
 
     val dueObligations       = obligations.filter(isDue(_, today))
@@ -59,12 +59,12 @@ class ObligationService {
     }
   }
 
-  def isDue(obligation: ObligationDetails, today: LocalDate): Boolean =
+  def isDue(obligation: Obligation, today: LocalDate): Boolean =
     obligation.openOrFulfilledStatus == STATUS_OPEN && !obligation.iCDueDate.isBefore(today)
 
-  def isOverdue(obligation: ObligationDetails, today: LocalDate): Boolean =
+  def isOverdue(obligation: Obligation, today: LocalDate): Boolean =
     obligation.openOrFulfilledStatus == STATUS_OPEN && obligation.iCDueDate.isBefore(today)
 
-  def isCompleted(obligation: ObligationDetails): Boolean =
+  def isCompleted(obligation: Obligation): Boolean =
     obligation.openOrFulfilledStatus == STATUS_FULFILLED
 }
