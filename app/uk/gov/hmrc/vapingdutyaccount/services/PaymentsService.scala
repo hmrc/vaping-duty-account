@@ -38,10 +38,10 @@ class PaymentsService {
     )
 
     val financialDataStatus = 
-      if (response.outstanding.nonEmpty || response.paymentOnAccount.nonEmpty || response.cleared.nonEmpty)
-        FinancialDataStatus.HasFinancialData
-      else
+      if (response.outstanding.isEmpty && response.paymentOnAccount.isEmpty && response.cleared.isEmpty)
         FinancialDataStatus.NoFinancialData
+      else
+        FinancialDataStatus.HasFinancialData
 
     val payments = Payments(hasPaymentsError = false, balance = Some(balance))
     
