@@ -59,13 +59,13 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
 
   when(mockGetPaymentsService.getPayments()(using any()))
-    .thenReturn(Future.successful(Some((
+    .thenReturn(Future.successful((
       Payments(
         hasPaymentsError = false,
         balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
       ),
       FinancialDataStatus.HasFinancialData
-    ))))
+    )))
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",

@@ -58,7 +58,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(), mockGetPaymentsService)
 
   override def beforeEach(): Unit = {
-    when(mockGetPaymentsService.getPayments()(using any())).thenReturn(Future.successful(None))
+    when(mockGetPaymentsService.getPayments()(using any())).thenReturn(Future.successful((Payments(false, Some(PaymentBalance(amount = 500, isMultiplePaymentDue = false, chargeReference = Some("XX charge Ref xx")))), FinancialDataStatus.HasFinancialData)))
   }
 
   "VPDSummaryService" - {
@@ -280,10 +280,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -296,7 +296,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = false, balance = None), FinancialDataStatus.HasFinancialData))))
+            .thenReturn(Future.successful((Payments(hasPaymentsError = false, balance = None), FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -309,7 +309,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))))
+            .thenReturn(Future.successful((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -322,10 +322,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -338,10 +338,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -386,10 +386,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
   
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -407,10 +407,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(8250), isMultiplePaymentDue = true, Some("XVP111111111")))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -426,10 +426,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(-325.50), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
   
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -446,10 +446,10 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(
+            .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
               balance          = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-            ), FinancialDataStatus.HasFinancialData))))
+            ), FinancialDataStatus.HasFinancialData)))
   
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -466,7 +466,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))))
+            .thenReturn(Future.successful((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -514,7 +514,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
+            .thenReturn(Future.successful((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -538,7 +538,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
+            .thenReturn(Future.successful((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -555,7 +555,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
           when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(Some((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData))))
+            .thenReturn(Future.successful((paymentsWithOutstandingBalance, FinancialDataStatus.HasFinancialData)))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
@@ -564,22 +564,6 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.payments mustBe None
           result.links.manageContactPreference mustBe None
           result.links.setUpDirectDebit mustBe None
-        }
-
-        "return no payments and no makePayment link when the View Payments page is empty before the first return has been submitted" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
-          when(mockGetObligationsService.getObligationDetails(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq.empty))
-          when(mockGetPaymentsService.getPayments()(using any()))
-            .thenReturn(Future.successful(None))
-
-          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
-
-          result.payments mustBe None
-          result.links.makePayment mustBe None
-          result.links.viewPayments mustBe None
-          result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
       }
     }

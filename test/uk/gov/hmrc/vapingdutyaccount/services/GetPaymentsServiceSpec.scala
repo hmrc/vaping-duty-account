@@ -50,10 +50,10 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
 
         val result = service.getPayments()(using hc).futureValue
         
-        result mustBe Some((
+        result mustBe (
           Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, Some("XVP123456789")))),
           FinancialDataStatus.HasFinancialData
-        ))
+        )
       }
 
       "return Some((Payments, FinancialDataStatus.NoFinancialData)) mapped from the connector response" in {
@@ -67,10 +67,10 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
 
         val result = service.getPayments()(using hc).futureValue
 
-        result mustBe Some((
+        result mustBe (
           Payments(hasPaymentsError = false, balance = Some(PaymentBalance(BigDecimal(4574.84), isMultiplePaymentDue = false, None))),
           FinancialDataStatus.NoFinancialData
-        ))
+        )
       }
 
       "return Some((Payments, FinancialDataStatus)) with hasPaymentsError true when the connector fails" in {
@@ -79,7 +79,7 @@ class GetPaymentsServiceSpec extends SpecBase with MockitoSugar with ScalaFuture
 
         val result = service.getPayments()(using hc).futureValue
         
-        result mustBe Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))
+        result mustBe (Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)
       }
     }
   }

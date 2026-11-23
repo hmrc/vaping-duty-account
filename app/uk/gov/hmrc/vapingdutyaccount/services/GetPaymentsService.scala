@@ -30,13 +30,12 @@ class GetPaymentsService @Inject()(
                                     paymentsService: PaymentsService
                                   )(implicit ec: ExecutionContext) extends Logging {
 
-  def getPayments()(using HeaderCarrier): Future[Option[(Payments, FinancialDataStatus)]] =
+  def getPayments()(using HeaderCarrier): Future[(Payments, FinancialDataStatus)] =
     paymentsConnector.getPayments()
       .map(paymentsService.toPayments)
-      .map(Some(_))
       .recover {
         case ex =>
           logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-          Some((Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData))
+          (Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)
       }
 }
