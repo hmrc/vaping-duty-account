@@ -27,7 +27,7 @@ import java.time.LocalDate
 import javax.inject.Singleton
 
 @Singleton
-class ObligationService @Inject(config: AppConfig) {
+class VPDSummaryReturnsService @Inject(config: AppConfig) {
 
   private val STATUS_OPEN      = "O"
   private val STATUS_FULFILLED = "F"

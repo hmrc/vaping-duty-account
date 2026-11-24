@@ -22,10 +22,10 @@ import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 
 import java.time.LocalDate
 
-class ObligationServiceSpec extends SpecBase {
+class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   val config: AppConfig = mock[AppConfig]
-  val service: ObligationService = new ObligationService(config)
+  val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config)
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): Obligation =
     Obligation(
