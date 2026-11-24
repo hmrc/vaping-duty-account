@@ -28,7 +28,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContac
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ReturnsAndLinks
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.{PaymentsAndLinks, ReturnsAndLinks}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -69,21 +69,25 @@ class VPDSummaryService @Inject()(
             )
         }
 
-    val paymentsFuture: Future[(Payments, FinancialDataStatus)] =
+    val paymentsFuture: Future[PaymentsAndLinks] =
       paymentsConnector.getPayments()
-        .map(paymentsService.toPayments)
+        .map(paymentsService.buildPaymentsAndLinks)
         .recover {
           case ex =>
             logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-            (Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)
+            PaymentsAndLinks(
+              payments = Payments(hasPaymentsError = true, balance = None),
+              financialDataStatus = FinancialDataStatus.NoFinancialData,
+              makePaymentLink = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
+              claimRepaymentLink = None,
+              viewPaymentsLink = None 
+            )
         }
 
     for {
-      contactPreferences              <- contactPreferencesFuture
-      returnsAndLinks                 <- returnsFuture
-      (payments, financialDataStatus) <- paymentsFuture
-      (makePayment, claimRepayment)    = paymentsService.buildPaymentLinks(payments)
-      viewPaymentsLink                 = paymentsService.buildViewPaymentsLink(financialDataStatus)
+      contactPreferences <- contactPreferencesFuture
+      returnsAndLinks    <- returnsFuture
+      paymentsAndLinks   <- paymentsFuture
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
@@ -101,9 +105,9 @@ class VPDSummaryService @Inject()(
                 manageContactPreference = manageContactPreferencesLink,
                 completeReturn          = returnsAndLinks.completeReturn,
                 viewReturns             = returnsAndLinks.viewReturns,
-                viewPayments            = viewPaymentsLink,
-                makePayment             = makePayment,
-                claimRepayment          = claimRepayment,
+                viewPayments            = paymentsAndLinks.viewPaymentsLink,
+                makePayment             = paymentsAndLinks.makePaymentLink,
+                claimRepayment          = paymentsAndLinks.claimRepaymentLink,
                 setUpDirectDebit        = setupDirectDebitLink
               )
             }
@@ -124,7 +128,7 @@ class VPDSummaryService @Inject()(
           contactPreference       = contactMethod,
           contactPreferenceStatus = contactPreferenceStatus,
           returns                 = if (isInsolvent) None else returnsAndLinks.returns,
-          payments                = if (isInsolvent) None else Some(payments),
+          payments                = if (isInsolvent) None else Some(paymentsAndLinks.payments),
           links                   = links
         )
       }

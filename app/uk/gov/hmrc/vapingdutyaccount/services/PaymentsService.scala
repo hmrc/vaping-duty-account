@@ -21,12 +21,28 @@ import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.{HasFinancialData, NoFinancialData}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.PaymentsAndLinks
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, PaymentBalance, Payments, ViewPayments}
 
 import javax.inject.Singleton
 
 @Singleton
 class PaymentsService @Inject(config: AppConfig) {
+
+  def buildPaymentsAndLinks(response: UpstreamPaymentsResponse): PaymentsAndLinks = {
+
+    val (payments, financialDataStatus) = toPayments(response)
+    val (makePayment, claimRepayment) = buildPaymentLinks(payments)
+    val viewPaymentsLink = buildViewPaymentsLink(financialDataStatus)
+
+    PaymentsAndLinks(
+      payments = payments,
+      financialDataStatus = financialDataStatus,
+      makePaymentLink = makePayment,
+      claimRepaymentLink = claimRepayment,
+      viewPaymentsLink = viewPaymentsLink
+    )
+  }
 
   def toPayments(response: UpstreamPaymentsResponse): (Payments, FinancialDataStatus) = {
     val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
@@ -52,7 +68,7 @@ class PaymentsService @Inject(config: AppConfig) {
     (payments, financialDataStatus)
   }
 
-  def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
+  private def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
     if (payments.hasPaymentsError)
       (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
     else if (payments.balance.exists(_.amount > 0)) {
@@ -64,7 +80,7 @@ class PaymentsService @Inject(config: AppConfig) {
     else
       (None, None)
 
-  def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
+  private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
     financialDataStatus match {
       case HasFinancialData => Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
       case NoFinancialData => None
