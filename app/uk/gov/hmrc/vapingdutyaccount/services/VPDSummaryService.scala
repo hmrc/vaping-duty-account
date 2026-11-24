@@ -78,7 +78,7 @@ class VPDSummaryService @Inject()(
       returns                         <- returnsFuture
       (completeReturn, viewReturns)    = obligationService.buildReturnLinks(returns)
       (payments, financialDataStatus) <- paymentsFuture
-      (makePayment, claimRepayment)    = buildPaymentLinks(payments)
+      (makePayment, claimRepayment)    = paymentsService.buildPaymentLinks(payments)
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
@@ -146,18 +146,6 @@ class VPDSummaryService @Inject()(
 
   private def setupDirectDebitLink =
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
-
-  private def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
-    if (payments.hasPaymentsError)
-      (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
-    else if (payments.balance.exists(_.amount > 0)) {
-      val singleChargeRef = payments.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
-      (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
-    }
-    else if (payments.balance.exists(_.amount < 0))
-      (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
-      else
-      (None, None)
 
   private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
     financialDataStatus match {

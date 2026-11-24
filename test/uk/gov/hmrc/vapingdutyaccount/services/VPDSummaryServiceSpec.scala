@@ -39,8 +39,8 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   private val mockSubscriptionConnector : SubscriptionConnector = mock[SubscriptionConnector]
   private val mockPaymentsConnector     : PaymentsConnector     = mock[PaymentsConnector]
   private val mockGetObligationsService : GetObligationsService = mock[GetObligationsService]
-  private val paymentsService           : PaymentsService       = PaymentsService()
   private val mockConfig                : AppConfig             = mock[AppConfig]
+  private val paymentsService           : PaymentsService       = PaymentsService(mockConfig)
 
   when(mockConfig.selfHref(any())           ).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
   when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")

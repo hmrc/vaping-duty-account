@@ -16,13 +16,16 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
+import com.google.inject.Inject
+import play.api.http.HttpVerbs
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, PaymentBalance, Payments}
 
 import javax.inject.Singleton
 
 @Singleton
-class PaymentsService {
+class PaymentsService @Inject(config: AppConfig) {
 
   def toPayments(response: UpstreamPaymentsResponse): (Payments, FinancialDataStatus) = {
     val positiveOutstanding  = response.outstanding.filter(_.amountDue > 0)
@@ -47,4 +50,17 @@ class PaymentsService {
     
     (payments, financialDataStatus)
   }
+
+  def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
+    if (payments.hasPaymentsError)
+      (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
+    else if (payments.balance.exists(_.amount > 0)) {
+      val singleChargeRef = payments.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
+      (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
+    }
+    else if (payments.balance.exists(_.amount < 0))
+      (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
+    else
+      (None, None)
+
 }
