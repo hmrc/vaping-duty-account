@@ -22,6 +22,7 @@ import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
@@ -36,7 +37,7 @@ class VPDSummaryService @Inject()(
                                    config                : AppConfig,
                                    subscriptionConnector : SubscriptionConnector,
                                    paymentsConnector     : PaymentsConnector,
-                                   getObligationsService : GetObligationsService,
+                                   obligationsConnector  : ObligationsConnector,
                                    obligationService     : ObligationService,
                                    paymentsService       : PaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
@@ -50,7 +51,7 @@ class VPDSummaryService @Inject()(
       }
 
     val returnsFuture: Future[ReturnsAndLinks] =
-      getObligationsService.getObligationDetails(vpdId)
+      obligationsConnector.getObligations(vpdId)
         .map(obligationService.buildReturnsAndLinks)
         .recover {
           case ex =>
