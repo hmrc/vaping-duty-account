@@ -22,6 +22,7 @@ import play.api.http.HttpVerbs
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
@@ -34,9 +35,10 @@ import scala.util.Failure
 class VPDSummaryService @Inject()(
                                    config                : AppConfig,
                                    subscriptionConnector : SubscriptionConnector,
+                                   paymentsConnector     : PaymentsConnector,
                                    getObligationsService : GetObligationsService,
                                    obligationService     : ObligationService,
-                                   getPaymentsService    : GetPaymentsService
+                                   paymentsService       : PaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
@@ -62,7 +64,14 @@ class VPDSummaryService @Inject()(
             ))
         }
 
-    val paymentsFuture = getPaymentsService.getPayments()
+    val paymentsFuture: Future[(Payments, FinancialDataStatus)] =
+      paymentsConnector.getPayments()
+        .map(paymentsService.toPayments)
+        .recover {
+          case ex =>
+            logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
+            (Payments(hasPaymentsError = true, balance = None), FinancialDataStatus.NoFinancialData)
+        }
 
     for {
       contactPreferences              <- contactPreferencesFuture
@@ -139,15 +148,16 @@ class VPDSummaryService @Inject()(
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
 
   private def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
-      if (payments.hasPaymentsError)
-        (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
-      else if (payments.balance.exists(_.amount > 0))
-        val singleChargeRef = payments.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
-        (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
-      else if (payments.balance.exists(_.amount < 0))
-        (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
+    if (payments.hasPaymentsError)
+      (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
+    else if (payments.balance.exists(_.amount > 0)) {
+      val singleChargeRef = payments.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
+      (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
+    }
+    else if (payments.balance.exists(_.amount < 0))
+      (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
       else
-        (None, None)
+      (None, None)
 
   private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
     financialDataStatus match {

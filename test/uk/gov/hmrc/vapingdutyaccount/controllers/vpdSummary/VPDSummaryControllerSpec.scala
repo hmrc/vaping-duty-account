@@ -31,19 +31,23 @@ import uk.gov.hmrc.http.{InternalServerException, HeaderNames as HmrcHeaderNames
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
+import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.services.{ObligationService, GetObligationsService, GetPaymentsService, VPDSummaryService}
+import uk.gov.hmrc.vapingdutyaccount.services.{GetObligationsService, ObligationService, PaymentsService, VPDSummaryService}
 
+import java.time.LocalDate
 import scala.concurrent.Future
 
 class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockAuthConnector: AuthConnector                 = mock[AuthConnector]
   val mockSubscriptionConnector: SubscriptionConnector = mock[SubscriptionConnector]
   val mockGetObligationsService: GetObligationsService = mock[GetObligationsService]
-  val mockGetPaymentsService: GetPaymentsService       = mock[GetPaymentsService]
+  val mockPaymentsConnector: PaymentsConnector         = mock[PaymentsConnector]
+  val paymentsService: PaymentsService                 = PaymentsService()
   val config: AppConfig                                = mock[AppConfig]
-  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockGetObligationsService, new ObligationService(config), mockGetPaymentsService)
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockPaymentsConnector, mockGetObligationsService, new ObligationService(config), paymentsService)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
@@ -58,14 +62,19 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.viewPaymentsUrl).thenReturn("/vaping-duty-finance/view-payments")
   when(config.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
 
-  when(mockGetPaymentsService.getPayments()(using any()))
-    .thenReturn(Future.successful((
-      Payments(
-        hasPaymentsError = false,
-        balance = Some(PaymentBalance(BigDecimal(0), isMultiplePaymentDue = false, None))
-      ),
-      FinancialDataStatus.HasFinancialData
-    )))
+  when(mockPaymentsConnector.getPayments()(using any()))
+    .thenReturn(Future.successful(
+      PaymentsResponse(
+        outstanding = Seq.empty,
+        paymentOnAccount = Seq.empty,
+        cleared =
+          Seq(ClearedPayment(
+            chargeReference = Some("charge-ref"),
+            amountPaid = BigDecimal(30),
+            clearedDate = Some(LocalDate.of(2026, 1, 31)))),
+        totalAccountBalance = Some(BigDecimal(0))
+      )
+    ))
 
   val fakeRequestWithReqId: FakeRequest[AnyContentAsEmpty.type] = FakeRequest.apply(
     method = "GET",

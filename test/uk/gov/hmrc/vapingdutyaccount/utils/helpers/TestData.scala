@@ -23,7 +23,6 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.*
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.{CredentialId, InternalId, VpdId}
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentOnAccount}
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{PaymentBalance, Payments}
 import uk.gov.hmrc.vapingdutyaccount.utils.generators.ModelGenerators
 
 import java.time.*
@@ -232,11 +231,6 @@ trait TestData extends ModelGenerators {
     iCDateReceived = Some(LocalDate.of(2024, 1, 15)),
     iCDueDate = LocalDate.of(2024, 1, 31),
     periodKey = "23A4"
-  )
-
-  val paymentsWithOutstandingBalance: Payments = Payments(
-    hasPaymentsError = false,
-    balance = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
   )
 
   val clearedPayment: ClearedPayment = ClearedPayment(
