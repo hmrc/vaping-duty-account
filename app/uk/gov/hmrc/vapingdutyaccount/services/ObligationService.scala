@@ -20,6 +20,7 @@ import com.google.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ReturnsAndLinks
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, CurrentReturn, Returns, ViewReturns}
 
 import java.time.LocalDate
@@ -30,6 +31,16 @@ class ObligationService @Inject(config: AppConfig) {
 
   private val STATUS_OPEN      = "O"
   private val STATUS_FULFILLED = "F"
+
+  def buildReturnsAndLinks(obligations: Seq[Obligation]): ReturnsAndLinks = {
+    val returns = processObligations(obligations)
+    val (completeReturn, viewReturns) = buildReturnLinks(returns)
+    ReturnsAndLinks(
+      returns = returns,
+      completeReturn = completeReturn,
+      viewReturns = viewReturns
+    )
+  }
 
   def processObligations(obligations: Seq[Obligation]): Option[Returns] = {
     val today = LocalDate.now()
@@ -72,7 +83,7 @@ class ObligationService @Inject(config: AppConfig) {
     obligation.openOrFulfilledStatus == STATUS_FULFILLED
 
 
-  def buildReturnLinks(returns: Option[Returns]) =
+  private def buildReturnLinks(returns: Option[Returns]): (Option[CompleteReturn], Option[ViewReturns]) =
     returns match {
       case Some(r) =>
         (completeReturnLink(r), viewReturnsLink(r))
