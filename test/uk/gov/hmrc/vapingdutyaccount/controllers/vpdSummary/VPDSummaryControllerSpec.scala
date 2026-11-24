@@ -57,8 +57,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   when(config.makePaymentUrl(any())).thenReturn("/vaping-duty/start-bta-payment")
   when(config.viewPaymentsUrl).thenReturn("/vaping-duty-finance/view-payments")
   when(config.startDirectDebitUrl).thenReturn("/vaping-duty-finance/direct-debit/bta/start")
-  when(config.phase2Enabled).thenReturn(true)
-  when(config.returnsAndPaymentsEnabled).thenReturn(true)
 
   when(mockGetPaymentsService.getPayments()(using any()))
     .thenReturn(Future.successful(Some((
@@ -352,39 +350,6 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
       status(result)        mustBe HttpStatus.OK
       contentAsJson(result) mustBe getExpectedMinimalAPIResponse()
-    }
-
-    "return correct response when returnsAndPaymentsEnabled is false" in {
-      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(config.returnsAndPaymentsEnabled).thenReturn(false)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.successful(contactPreferencesApproved))
-
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
-
-      status(result) mustBe HttpStatus.OK
-      
-      val json = contentAsJson(result)
-      (json \ "access" \ "approvalStatus").as[String] mustBe "APPROVED"
-      (json \ "returns").toOption mustBe None
-      (json \ "payments").toOption mustBe None
-      (json \ "links" \ "setUpDirectDebit" \ "href").as[String] mustBe "/vaping-duty-finance/direct-debit/bta/start"
-      (json \ "links" \ "manageContactPreference" \ "href").as[String] mustBe "/vaping-duty/contact-preferences/how-should-we-contact-you"
-      (json \ "links" \ "viewPayments").toOption mustBe None
-      (json \ "links" \ "makePayment").toOption mustBe None
-      (json \ "links" \ "viewReturns").toOption mustBe None
-      (json \ "links" \ "completeReturn").toOption mustBe None
-    }
-
-    "return correct response when returnsAndPaymentsEnabled is false and subscription fails" in {
-      when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(config.returnsAndPaymentsEnabled).thenReturn(false)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
-        .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
-
-      val result: Future[Result] = controller.getVpdSummary(vpdId)(fakeRequestWithReqId)
-
-      status(result) mustBe HttpStatus.INTERNAL_SERVER_ERROR
     }
   }
 }
