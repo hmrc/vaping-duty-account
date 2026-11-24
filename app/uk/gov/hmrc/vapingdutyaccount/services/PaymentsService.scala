@@ -20,7 +20,8 @@ import com.google.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, PaymentBalance, Payments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.{HasFinancialData, NoFinancialData}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, PaymentBalance, Payments, ViewPayments}
 
 import javax.inject.Singleton
 
@@ -62,5 +63,11 @@ class PaymentsService @Inject(config: AppConfig) {
       (None, Some(ClaimRepayment(config.claimRepaymentUrl, HttpVerbs.GET)))
     else
       (None, None)
+
+  def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
+    financialDataStatus match {
+      case HasFinancialData => Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
+      case NoFinancialData => None
+    }
 
 }

@@ -27,7 +27,6 @@ import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContac
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.*
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -79,6 +78,7 @@ class VPDSummaryService @Inject()(
       (completeReturn, viewReturns)    = obligationService.buildReturnLinks(returns)
       (payments, financialDataStatus) <- paymentsFuture
       (makePayment, claimRepayment)    = paymentsService.buildPaymentLinks(payments)
+      viewPaymentsLink                 = paymentsService.buildViewPaymentsLink(financialDataStatus)
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
@@ -96,7 +96,7 @@ class VPDSummaryService @Inject()(
                 manageContactPreference = manageContactPreferencesLink,
                 completeReturn          = completeReturn,
                 viewReturns             = viewReturns,
-                viewPayments            = buildViewPaymentsLink(financialDataStatus),
+                viewPayments            = viewPaymentsLink,
                 makePayment             = makePayment,
                 claimRepayment          = claimRepayment,
                 setUpDirectDebit        = setupDirectDebitLink
@@ -147,9 +147,4 @@ class VPDSummaryService @Inject()(
   private def setupDirectDebitLink =
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
 
-  private def buildViewPaymentsLink(financialDataStatus: FinancialDataStatus): Option[ViewPayments] =
-    financialDataStatus match {
-      case HasFinancialData => Some(ViewPayments(config.viewPaymentsUrl, HttpVerbs.GET))
-      case NoFinancialData  => None
-    }
 }
