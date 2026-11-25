@@ -53,36 +53,12 @@ class VPDSummaryService @Inject()(
     val returnsFuture: Future[ReturnsAndLinks] =
       obligationsConnector.getObligations(vpdId)
         .map(vpdSummaryReturnsService.buildReturnsAndLinks)
-        .recover {
-          case ex =>
-            logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
-            ReturnsAndLinks(
-              returns = Some(Returns(
-                hasReturnsError = true,
-                currentReturn = None,
-                dueReturnsCount = None,
-                overdueReturnsCount = None,
-                completedReturnsCount = None
-              )),
-              completeReturn = None,
-              viewReturns = None
-            )
-        }
+        .recover { case ex => errorReturnsAndLinks(ex)}
 
     val paymentsFuture: Future[PaymentsAndLinks] =
       paymentsConnector.getPayments()
         .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
-        .recover {
-          case ex =>
-            logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
-            PaymentsAndLinks(
-              payments = Payments(hasPaymentsError = true, balance = None),
-              financialDataStatus = FinancialDataStatus.NoFinancialData,
-              makePaymentLink = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
-              claimRepaymentLink = None,
-              viewPaymentsLink = None 
-            )
-        }
+        .recover { case ex => errorPaymentsAndLinks(ex) }
 
     for {
       contactPreferences <- contactPreferencesFuture
@@ -133,6 +109,32 @@ class VPDSummaryService @Inject()(
         )
       }
     }
+  }
+
+  private def errorReturnsAndLinks(ex: Throwable) = {
+    logger.warn(s"Failed to retrieve obligations ${ex.getMessage}")
+    ReturnsAndLinks(
+      returns = Some(Returns(
+        hasReturnsError = true,
+        currentReturn = None,
+        dueReturnsCount = None,
+        overdueReturnsCount = None,
+        completedReturnsCount = None
+      )),
+      completeReturn = None,
+      viewReturns = None
+    )
+  }
+
+  private def errorPaymentsAndLinks(ex: Throwable) = {
+    logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
+    PaymentsAndLinks(
+      payments = Payments(hasPaymentsError = true, balance = None),
+      financialDataStatus = FinancialDataStatus.NoFinancialData,
+      makePaymentLink = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
+      claimRepaymentLink = None,
+      viewPaymentsLink = None
+    )
   }
 
   private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
