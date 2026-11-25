@@ -9,7 +9,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ContactPreferenc
 
 class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
 
-  def buildContactPreferencesAndLinks(contactPreferences: SubscriptionContactPreferences) = {
+  def buildContactPreferencesAndLinks(contactPreferences: SubscriptionContactPreferences): ContactPreferencesAndLinks = {
     val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
     val isInsolvent = approvalStatus == AccessApprovalStatus.Insolvent
     val access = Some(Access(approvalStatus = Some(approvalStatus)))
@@ -20,7 +20,7 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
       access = access,
       contactMethod = contactMethod,
       contactPreferenceStatus = contactPreferenceStatus,
-      manageContactPreferencesLink = manageContactPreferencesLink()
+      manageContactPreferencesLink = manageContactPreferencesLink(isInsolvent)
     )
   }
 
@@ -44,7 +44,11 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
     else
       None
 
-  private def manageContactPreferencesLink() =
-    Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
+  private def manageContactPreferencesLink(isInsolvent: Boolean) = {
+    if (isInsolvent)
+      None
+    else
+      Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
+  }
 
 }

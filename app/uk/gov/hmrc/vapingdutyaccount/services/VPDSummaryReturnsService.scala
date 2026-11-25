@@ -38,8 +38,8 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
     val (completeReturn, viewReturns) = buildReturnLinks(returns)
     ReturnsAndLinks(
       returns = if (isInsolvent) None else returns,
-      completeReturn = completeReturn,
-      viewReturns = viewReturns
+      completeReturn = if (isInsolvent) None else completeReturn,
+      viewReturns    = if (isInsolvent) None else viewReturns
     )
   }
 

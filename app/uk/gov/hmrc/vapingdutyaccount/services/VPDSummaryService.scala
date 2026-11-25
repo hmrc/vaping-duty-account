@@ -73,22 +73,16 @@ class VPDSummaryService @Inject()(
         val links = {
           val self = selfLink(vpdId)
 
-          if (isInsolvent) {
-            Links(self = self)
-          } else {
-            {
-              Links(
-                self                    = self,
-                manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
-                completeReturn          = returnsAndLinks.completeReturn,
-                viewReturns             = returnsAndLinks.viewReturns,
-                viewPayments            = paymentsAndLinks.viewPaymentsLink,
-                makePayment             = paymentsAndLinks.makePaymentLink,
-                claimRepayment          = paymentsAndLinks.claimRepaymentLink,
-                setUpDirectDebit        = setupDirectDebitLink
-              )
-            }
-          }
+          Links(
+            self                    = self,
+            manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
+            completeReturn          = returnsAndLinks.completeReturn,
+            viewReturns             = returnsAndLinks.viewReturns,
+            viewPayments            = paymentsAndLinks.viewPaymentsLink,
+            makePayment             = paymentsAndLinks.makePaymentLink,
+            claimRepayment          = paymentsAndLinks.claimRepaymentLink,
+            setUpDirectDebit        = setupDirectDebitLink(isInsolvent)
+          )
         }
 
         VPDSummary(
@@ -134,7 +128,11 @@ class VPDSummaryService @Inject()(
   private def selfLink(vpdId: VpdId) =
     Self(config.selfHref(vpdId), HttpVerbs.GET)
 
-  private def setupDirectDebitLink =
-    Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+  private def setupDirectDebitLink(isInsolvent: Boolean) = {
+    if (isInsolvent)
+      None
+    else
+      Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))
+  }
 
 }

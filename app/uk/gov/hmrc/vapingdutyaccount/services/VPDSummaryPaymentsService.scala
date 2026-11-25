@@ -39,9 +39,9 @@ class VPDSummaryPaymentsService @Inject(config: AppConfig) {
     PaymentsAndLinks(
       payments = if (isInsolvent) None else Some(payments),
       financialDataStatus = financialDataStatus,
-      makePaymentLink = makePayment,
-      claimRepaymentLink = claimRepayment,
-      viewPaymentsLink = viewPaymentsLink
+      makePaymentLink     = if (isInsolvent) None else makePayment,
+      claimRepaymentLink  = if (isInsolvent) None else claimRepayment,
+      viewPaymentsLink    = if (isInsolvent) None else viewPaymentsLink
     )
   }
 
