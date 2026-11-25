@@ -51,16 +51,13 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
       }
 
-    val contactPreferencesAndLinksFuture =
-      contactPreferencesFuture
-        .map(contactPreferencesService.buildContactPreferencesAndLinks)
-
     val obligationsFuture = obligationsConnector.getObligations(vpdId)
 
     val paymentsFuture = paymentsConnector.getPayments()
 
     for {
-      contactPreferencesAndLinks <- contactPreferencesAndLinksFuture
+      contactPreferencesAndLinks <- contactPreferencesFuture
+                                      .map(contactPreferencesService.buildContactPreferencesAndLinks)
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
