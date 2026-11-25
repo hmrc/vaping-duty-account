@@ -52,12 +52,11 @@ class VPDSummaryService @Inject()(
       }
 
     val obligationsFuture = obligationsConnector.getObligations(vpdId)
-
     val paymentsFuture = paymentsConnector.getPayments()
 
     for {
-      contactPreferencesAndLinks <- contactPreferencesFuture
-                                      .map(contactPreferencesService.buildContactPreferencesAndLinks)
+      contactPreferences         <- contactPreferencesFuture
+      contactPreferencesAndLinks  = contactPreferencesService.buildContactPreferencesAndLinks(contactPreferences)
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
