@@ -42,8 +42,8 @@ trait TestData extends ModelGenerators {
   val emailAddress          = "john.doe@example.com"
   val correspondenceAddress = "Flat 123\n1 Example Road\nAB1 2CD"
 
-  val contactPreferencesEmailSelected: SubscriptionContactPreferences =
-    SubscriptionContactPreferences(
+  val contactPreferencesEmailSelected: SubscriptionDisplay =
+    SubscriptionDisplay(
       paperlessPreference = true,
       emailAddress = Some(emailAddress),
       verifiedEmail = Some(true),
@@ -57,8 +57,8 @@ trait TestData extends ModelGenerators {
       approvalStatus = SubscriptionApprovalStatus.Approved,
       insolvencyStatus = None
     )
-  val contactPreferencesPostNoEmail: SubscriptionContactPreferences   =
-    SubscriptionContactPreferences(
+  val contactPreferencesPostNoEmail: SubscriptionDisplay   =
+    SubscriptionDisplay(
       paperlessPreference = false,
       emailAddress = None,
       verifiedEmail = None,
@@ -73,17 +73,17 @@ trait TestData extends ModelGenerators {
       insolvencyStatus = None
     )
 
-  val contactPreferencesApproved: SubscriptionContactPreferences        =
+  val contactPreferencesApproved: SubscriptionDisplay        =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("N"))
-  val contactPreferencesDeregistered: SubscriptionContactPreferences    =
+  val contactPreferencesDeregistered: SubscriptionDisplay    =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("N"))
-  val contactPreferencesRevoked: SubscriptionContactPreferences         =
+  val contactPreferencesRevoked: SubscriptionDisplay         =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("N"))
-  val contactPreferencesInsolvent: SubscriptionContactPreferences       =
+  val contactPreferencesInsolvent: SubscriptionDisplay       =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Approved, insolvencyStatus = Some("Y"))
-  val contactPreferencesRevokedInsolvent: SubscriptionContactPreferences =
+  val contactPreferencesRevokedInsolvent: SubscriptionDisplay =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.Revoked, insolvencyStatus = Some("Y"))
-  val contactPreferencesDeregisteredInsolvent: SubscriptionContactPreferences =
+  val contactPreferencesDeregisteredInsolvent: SubscriptionDisplay =
     contactPreferencesEmailSelected.copy(approvalStatus = SubscriptionApprovalStatus.DeRegistered, insolvencyStatus = Some("Y"))
 
   val userAnswers: UserAnswers = UserAnswers(

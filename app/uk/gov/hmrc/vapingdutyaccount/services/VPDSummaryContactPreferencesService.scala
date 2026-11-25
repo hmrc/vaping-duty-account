@@ -19,13 +19,13 @@ package uk.gov.hmrc.vapingdutyaccount.services
 import com.google.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionDisplay
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{Access, AccessApprovalStatus, ContactMethod, ContactPreferenceStatus, ManageContactPreference}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ContactPreferencesAndLinks
 
 class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
 
-  def buildContactPreferencesAndLinks(contactPreferences: SubscriptionContactPreferences): ContactPreferencesAndLinks = {
+  def buildContactPreferencesAndLinks(contactPreferences: SubscriptionDisplay): ContactPreferencesAndLinks = {
     val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
     val isInsolvent    = approvalStatus == AccessApprovalStatus.Insolvent
     val access         = Some(Access(approvalStatus = Some(approvalStatus)))
@@ -40,7 +40,7 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
     )
   }
 
-  private def buildContactPreferences(contactPreferences: SubscriptionContactPreferences, isInsolvent: Boolean) =
+  private def buildContactPreferences(contactPreferences: SubscriptionDisplay, isInsolvent: Boolean) =
     if (isInsolvent)
       (None, None)
     else {
@@ -48,11 +48,11 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
       (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
     }
 
-  private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
+  private def resolveContactMethod(contactPreferences: SubscriptionDisplay): ContactMethod =
     if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
 
   private def resolveContactPreferenceStatus(contactMethod: ContactMethod,
-                                             contactPreferences: SubscriptionContactPreferences
+                                             contactPreferences: SubscriptionDisplay
                                             ): Option[ContactPreferenceStatus] =
     if (contactMethod == ContactMethod.Email)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))

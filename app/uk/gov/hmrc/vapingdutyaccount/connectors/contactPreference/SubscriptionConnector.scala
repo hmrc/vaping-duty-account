@@ -21,7 +21,7 @@ import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.helpers.{HIPHeaders, SubscriptionConnectorLogger, UnprocessableEntityLogging}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionDisplay
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 
 import javax.inject.Inject
@@ -37,7 +37,7 @@ class SubscriptionConnector @Inject() (
     extends HttpReadsInstances
     with UnprocessableEntityLogging {
 
-  def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionContactPreferences] =
+  def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionDisplay] =
     httpClient
       .get(url"${config.getSubscriptionUrl(vpdId)}")
       .setHeader(headers.subscriptionHeaders(): _*)
@@ -48,11 +48,11 @@ class SubscriptionConnector @Inject() (
       }
       .flatMap(response => subscriptionParser(response))
 
-  private def subscriptionParser(response: HttpResponse): Future[SubscriptionContactPreferences] =
+  private def subscriptionParser(response: HttpResponse): Future[SubscriptionDisplay] =
     response.status match {
       case OK =>
         Try {
-          response.json.as[SubscriptionContactPreferences]
+          response.json.as[SubscriptionDisplay]
         } match {
           case Success(contactPreferences) =>
             Future.successful(contactPreferences)

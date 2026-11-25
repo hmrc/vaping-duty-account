@@ -24,7 +24,7 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionDisplay
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.{PaymentsAndLinks, ReturnsAndLinks}

@@ -33,7 +33,7 @@ import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.connectors.contactPreference.SubscriptionConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionDisplay
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.services.{VPDSummaryContactPreferencesService, VPDSummaryPaymentsService, VPDSummaryReturnsService, VPDSummaryService}
@@ -122,7 +122,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   )
   val badVpdId: String                    = "bad-invalid-vpdid"
 
-  private def getContactPreferenceLines(subscription: SubscriptionContactPreferences): String = {
+  private def getContactPreferenceLines(subscription: SubscriptionDisplay): String = {
     val contactMethod = if (subscription.paperlessPreference) "EMAIL" else "POST"
     val statusLine     =
       if (subscription.paperlessPreference) {
@@ -135,7 +135,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     s""""contactPreference" : "$contactMethod"$statusLine"""
   }
 
-  def getExpectedAPIResponse(subscription: SubscriptionContactPreferences, approvalStatus: String = "APPROVED"): JsValue = Json.parse(s"""
+  def getExpectedAPIResponse(subscription: SubscriptionDisplay, approvalStatus: String = "APPROVED"): JsValue = Json.parse(s"""
        |{
        |  "service" : {
        |    "name" : "${config.serviceName}",
