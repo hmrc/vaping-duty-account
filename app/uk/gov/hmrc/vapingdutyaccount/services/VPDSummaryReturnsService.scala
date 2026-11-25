@@ -34,17 +34,18 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
 
   def buildReturnsAndLinks(obligations: Seq[Obligation],
                            isInsolvent: Boolean): ReturnsAndLinks = {
-    val returns = processObligations(obligations)
-    val (completeReturn, viewReturns) = buildReturnLinks(returns)
-    
     if (isInsolvent)
       ReturnsAndLinks(None, None, None)
-    else
+    else {
+      val returns = processObligations(obligations)
+      val (completeReturn, viewReturns) = buildReturnLinks(returns)
+
       ReturnsAndLinks(
-        returns        = returns,
+        returns = returns,
         completeReturn = completeReturn,
-        viewReturns    = viewReturns
+        viewReturns = viewReturns
       )
+    }
   }
 
   def processObligations(obligations: Seq[Obligation]): Option[Returns] = {
