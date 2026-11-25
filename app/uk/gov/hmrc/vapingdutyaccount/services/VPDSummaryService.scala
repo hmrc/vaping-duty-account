@@ -106,7 +106,6 @@ class VPDSummaryService @Inject()(
     logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
     PaymentsAndLinks(
       payments = Some(Payments(hasPaymentsError = true, balance = None)),
-      financialDataStatus = FinancialDataStatus.NoFinancialData,
       makePaymentLink = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
       claimRepaymentLink = None,
       viewPaymentsLink = None
