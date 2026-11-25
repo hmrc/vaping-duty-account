@@ -45,8 +45,8 @@ class VPDSummaryService @Inject()(
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
 
-    val contactPreferencesFuture: Future[SubscriptionContactPreferences] =
-      subscriptionConnector.getSubscriptionContactPreferences(vpdId).andThen {
+    val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+      .andThen {
         case Failure(ex) =>
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
       }
