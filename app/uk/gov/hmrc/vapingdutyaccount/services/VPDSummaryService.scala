@@ -70,6 +70,7 @@ class VPDSummaryService @Inject()(
       paymentsAndLinks   <- paymentsAndLinksFuture
       approvalStatus      = AccessApprovalStatus.fromSubscription(contactPreferences)
       isInsolvent         = approvalStatus == AccessApprovalStatus.Insolvent
+      access              = Some(Access(approvalStatus = Some(approvalStatus)))
       (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
     } yield {
       {
@@ -97,7 +98,7 @@ class VPDSummaryService @Inject()(
         VPDSummary(
           service                 = ServiceInfo(config.serviceName, config.serviceId),
           identifiers             = Identifier(vpdId.toString),
-          access                  = Some(Access(approvalStatus = Some(approvalStatus))),
+          access                  = access,
           contactPreference       = contactMethod,
           contactPreferenceStatus = contactPreferenceStatus,
           returns                 = if (isInsolvent) None else returnsAndLinks.returns,
