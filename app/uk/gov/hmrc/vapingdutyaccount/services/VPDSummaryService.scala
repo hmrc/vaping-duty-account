@@ -50,20 +50,24 @@ class VPDSummaryService @Inject()(
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
       }
 
-    val returnsFuture: Future[ReturnsAndLinks] =
-      obligationsConnector.getObligations(vpdId)
+    val obligationsFuture = obligationsConnector.getObligations(vpdId)
+
+    val returnsAndLinksFuture: Future[ReturnsAndLinks] =
+      obligationsFuture
         .map(vpdSummaryReturnsService.buildReturnsAndLinks)
         .recover { case ex => errorReturnsAndLinks(ex)}
 
-    val paymentsFuture: Future[PaymentsAndLinks] =
-      paymentsConnector.getPayments()
+    val paymentsFuture = paymentsConnector.getPayments()
+
+    val paymentsAndLinksFuture: Future[PaymentsAndLinks] =
+      paymentsFuture
         .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
         .recover { case ex => errorPaymentsAndLinks(ex) }
 
     for {
       contactPreferences <- contactPreferencesFuture
-      returnsAndLinks    <- returnsFuture
-      paymentsAndLinks   <- paymentsFuture
+      returnsAndLinks    <- returnsAndLinksFuture
+      paymentsAndLinks   <- paymentsAndLinksFuture
     } yield {
       {
         val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
