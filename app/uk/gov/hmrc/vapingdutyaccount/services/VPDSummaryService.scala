@@ -38,6 +38,7 @@ class VPDSummaryService @Inject()(
                                    subscriptionConnector     : SubscriptionConnector,
                                    paymentsConnector         : PaymentsConnector,
                                    obligationsConnector      : ObligationsConnector,
+                                   contactPreferencesService : VPDSummaryContactPreferencesService,
                                    vpdSummaryReturnsService  : VPDSummaryReturnsService,
                                    vpdSummaryPaymentsService : VPDSummaryPaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
@@ -66,18 +67,15 @@ class VPDSummaryService @Inject()(
 
     for {
       contactPreferences <- contactPreferencesFuture
+      contactPreferencesAndLinks = contactPreferencesService.buildContactPreferencesAndLinks(contactPreferences)
       returnsAndLinks    <- returnsAndLinksFuture
       paymentsAndLinks   <- paymentsAndLinksFuture
-      approvalStatus      = AccessApprovalStatus.fromSubscription(contactPreferences)
-      isInsolvent         = approvalStatus == AccessApprovalStatus.Insolvent
-      access              = Some(Access(approvalStatus = Some(approvalStatus)))
-      (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
     } yield {
       {
         val links = {
           val self = selfLink(vpdId)
 
-          if (isInsolvent) {
+          if (contactPreferencesAndLinks.isInsolvent) {
             Links(self = self)
           } else {
             {
@@ -98,22 +96,14 @@ class VPDSummaryService @Inject()(
         VPDSummary(
           service                 = ServiceInfo(config.serviceName, config.serviceId),
           identifiers             = Identifier(vpdId.toString),
-          access                  = access,
-          contactPreference       = contactMethod,
-          contactPreferenceStatus = contactPreferenceStatus,
-          returns                 = if (isInsolvent) None else returnsAndLinks.returns,
-          payments                = if (isInsolvent) None else Some(paymentsAndLinks.payments),
+          access                  = contactPreferencesAndLinks.access,
+          contactPreference       = contactPreferencesAndLinks.contactMethod,
+          contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
+          returns                 = if (contactPreferencesAndLinks.isInsolvent) None else returnsAndLinks.returns,
+          payments                = if (contactPreferencesAndLinks.isInsolvent) None else Some(paymentsAndLinks.payments),
           links                   = links
         )
       }
-    }
-  }
-
-  private def buildContactPreferences(contactPreferences: SubscriptionContactPreferences, isInsolvent: Boolean) = {
-    if (isInsolvent) (None, None)
-    else {
-      val cm = resolveContactMethod(contactPreferences)
-      (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
     }
   }
 
@@ -142,18 +132,6 @@ class VPDSummaryService @Inject()(
       viewPaymentsLink = None
     )
   }
-
-  private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
-    if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
-
-  private def resolveContactPreferenceStatus(
-                                              contactMethod: ContactMethod,
-                                              contactPreferences: SubscriptionContactPreferences
-  ): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email)
-      Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
-    else
-      None
 
   private def selfLink(vpdId: VpdId) =
     Self(config.selfHref(vpdId), HttpVerbs.GET)

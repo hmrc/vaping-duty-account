@@ -36,7 +36,7 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{ClearedPayment, PaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
-import uk.gov.hmrc.vapingdutyaccount.services.{VPDSummaryReturnsService, VPDSummaryPaymentsService, VPDSummaryService}
+import uk.gov.hmrc.vapingdutyaccount.services.{VPDSummaryContactPreferencesService, VPDSummaryPaymentsService, VPDSummaryReturnsService, VPDSummaryService}
 
 import java.time.LocalDate
 import scala.concurrent.Future
@@ -48,7 +48,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val mockPaymentsConnector: PaymentsConnector         = mock[PaymentsConnector]
   val config: AppConfig                                = mock[AppConfig]
   val paymentsService: VPDSummaryPaymentsService       = VPDSummaryPaymentsService(config)
-  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, new VPDSummaryReturnsService(config), paymentsService)
+  val mockVPDSummaryService: VPDSummaryService         = new VPDSummaryService(config, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, VPDSummaryContactPreferencesService(), VPDSummaryReturnsService(config), paymentsService)
 
   when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
 
