@@ -57,11 +57,6 @@ class VPDSummaryService @Inject()(
 
     val obligationsFuture = obligationsConnector.getObligations(vpdId)
 
-    val returnsAndLinksFuture: Future[ReturnsAndLinks] =
-      obligationsFuture
-        .map(vpdSummaryReturnsService.buildReturnsAndLinks)
-        .recover { case ex => errorReturnsAndLinks(ex)}
-
     val paymentsFuture = paymentsConnector.getPayments()
 
     val paymentsAndLinksFuture: Future[PaymentsAndLinks] =
@@ -71,7 +66,9 @@ class VPDSummaryService @Inject()(
 
     for {
       contactPreferencesAndLinks <- contactPreferencesAndLinksFuture
-      returnsAndLinks            <- returnsAndLinksFuture
+      returnsAndLinks            <- obligationsFuture
+                                      .map(vpdSummaryReturnsService.buildReturnsAndLinks)
+                                      .recover { case ex => errorReturnsAndLinks(ex)}
       paymentsAndLinks           <- paymentsAndLinksFuture
     } yield {
       {
