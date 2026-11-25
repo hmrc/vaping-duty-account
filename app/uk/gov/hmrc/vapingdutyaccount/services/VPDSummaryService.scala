@@ -66,6 +66,7 @@ class VPDSummaryService @Inject()(
 
     for {
       contactPreferencesAndLinks <- contactPreferencesAndLinksFuture
+      isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks)
                                       .recover { case ex => errorReturnsAndLinks(ex)}
@@ -75,7 +76,7 @@ class VPDSummaryService @Inject()(
         val links = {
           val self = selfLink(vpdId)
 
-          if (contactPreferencesAndLinks.isInsolvent) {
+          if (isInsolvent) {
             Links(self = self)
           } else {
             {
@@ -99,8 +100,8 @@ class VPDSummaryService @Inject()(
           access                  = contactPreferencesAndLinks.access,
           contactPreference       = contactPreferencesAndLinks.contactMethod,
           contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
-          returns                 = if (contactPreferencesAndLinks.isInsolvent) None else returnsAndLinks.returns,
-          payments                = if (contactPreferencesAndLinks.isInsolvent) None else Some(paymentsAndLinks.payments),
+          returns                 = if (isInsolvent) None else returnsAndLinks.returns,
+          payments                = if (isInsolvent) None else Some(paymentsAndLinks.payments),
           links                   = links
         )
       }
