@@ -68,7 +68,7 @@ class VPDSummaryService @Inject()(
       contactPreferencesAndLinks <- contactPreferencesAndLinksFuture
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
-                                      .map(vpdSummaryReturnsService.buildReturnsAndLinks)
+                                      .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorReturnsAndLinks(ex)}
       paymentsAndLinks           <- paymentsAndLinksFuture
     } yield {
@@ -100,7 +100,7 @@ class VPDSummaryService @Inject()(
           access                  = contactPreferencesAndLinks.access,
           contactPreference       = contactPreferencesAndLinks.contactMethod,
           contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
-          returns                 = if (isInsolvent) None else returnsAndLinks.returns,
+          returns                 = returnsAndLinks.returns,
           payments                = if (isInsolvent) None else Some(paymentsAndLinks.payments),
           links                   = links
         )
