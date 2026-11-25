@@ -94,12 +94,7 @@ class VPDSummaryService @Inject()(
           }
         }
 
-        val (contactMethod, contactPreferenceStatus) =
-          if (isInsolvent) (None, None)
-          else {
-            val cm = resolveContactMethod(contactPreferences)
-            (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
-          }
+        val (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
 
         VPDSummary(
           service                 = ServiceInfo(config.serviceName, config.serviceId),
@@ -112,6 +107,14 @@ class VPDSummaryService @Inject()(
           links                   = links
         )
       }
+    }
+  }
+
+  private def buildContactPreferences(contactPreferences: SubscriptionContactPreferences, isInsolvent: Boolean) = {
+    if (isInsolvent) (None, None)
+    else {
+      val cm = resolveContactMethod(contactPreferences)
+      (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
     }
   }
 
