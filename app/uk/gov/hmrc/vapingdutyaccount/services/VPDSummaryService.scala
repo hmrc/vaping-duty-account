@@ -34,12 +34,12 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 class VPDSummaryService @Inject()(
-                                   config                   : AppConfig,
-                                   subscriptionConnector    : SubscriptionConnector,
-                                   paymentsConnector        : PaymentsConnector,
-                                   obligationsConnector     : ObligationsConnector,
-                                   vpdSummaryReturnsService : VPDSummaryReturnsService,
-                                   paymentsService          : PaymentsService
+                                   config                    : AppConfig,
+                                   subscriptionConnector     : SubscriptionConnector,
+                                   paymentsConnector         : PaymentsConnector,
+                                   obligationsConnector      : ObligationsConnector,
+                                   vpdSummaryReturnsService  : VPDSummaryReturnsService,
+                                   vpdSummaryPaymentsService : VPDSummaryPaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
@@ -71,7 +71,7 @@ class VPDSummaryService @Inject()(
 
     val paymentsFuture: Future[PaymentsAndLinks] =
       paymentsConnector.getPayments()
-        .map(paymentsService.buildPaymentsAndLinks)
+        .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
         .recover {
           case ex =>
             logger.warn(s"Failed to retrieve payments ${ex.getMessage}")

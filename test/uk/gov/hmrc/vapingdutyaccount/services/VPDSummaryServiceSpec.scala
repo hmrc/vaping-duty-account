@@ -37,11 +37,11 @@ import scala.concurrent.Future
 
 class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures {
 
-  private val mockSubscriptionConnector : SubscriptionConnector = mock[SubscriptionConnector]
-  private val mockPaymentsConnector     : PaymentsConnector     = mock[PaymentsConnector]
-  private val mockObligationsConnector  : ObligationsConnector  = mock[ObligationsConnector]
-  private val mockConfig                : AppConfig             = mock[AppConfig]
-  private val paymentsService           : PaymentsService       = PaymentsService(mockConfig)
+  private val mockSubscriptionConnector : SubscriptionConnector     = mock[SubscriptionConnector]
+  private val mockPaymentsConnector     : PaymentsConnector         = mock[PaymentsConnector]
+  private val mockObligationsConnector  : ObligationsConnector      = mock[ObligationsConnector]
+  private val mockConfig                : AppConfig                 = mock[AppConfig]
+  private val paymentsService           : VPDSummaryPaymentsService = VPDSummaryPaymentsService(mockConfig)
 
   when(mockConfig.selfHref(any())           ).thenReturn(s"/vaping-duty-account/vpd/summary/$vpdId")
   when(mockConfig.manageContactPreferenceUrl).thenReturn("/vaping-duty/contact-preferences/how-should-we-contact-you")

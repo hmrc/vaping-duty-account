@@ -27,7 +27,7 @@ import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, Financia
 import javax.inject.Singleton
 
 @Singleton
-class PaymentsService @Inject(config: AppConfig) {
+class VPDSummaryPaymentsService @Inject(config: AppConfig) {
 
   def buildPaymentsAndLinks(response: UpstreamPaymentsResponse): PaymentsAndLinks = {
 
