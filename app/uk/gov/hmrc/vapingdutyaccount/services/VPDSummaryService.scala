@@ -59,18 +59,15 @@ class VPDSummaryService @Inject()(
 
     val paymentsFuture = paymentsConnector.getPayments()
 
-    val paymentsAndLinksFuture: Future[PaymentsAndLinks] =
-      paymentsFuture
-        .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
-        .recover { case ex => errorPaymentsAndLinks(ex) }
-
     for {
       contactPreferencesAndLinks <- contactPreferencesAndLinksFuture
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorReturnsAndLinks(ex)}
-      paymentsAndLinks           <- paymentsAndLinksFuture
+      paymentsAndLinks           <- paymentsFuture
+                                      .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
+                                      .recover { case ex => errorPaymentsAndLinks(ex) }
     } yield {
       {
         val links = {
