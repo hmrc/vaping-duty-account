@@ -64,20 +64,21 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
     if (dueCount == 0 && overdueCount == 0 && completedCount == 0) {
       None
     } else {
-      val currentReturn = if (outstandingObligations.length == 1) {
-        outstandingObligations.headOption.map(o => CurrentReturn(periodKey = o.periodKey, dueDate = o.iCDueDate))
-      } else {
-        None
-      }
       Some(Returns(
-        hasReturnsError = false,
-        currentReturn = currentReturn,
-        dueReturnsCount = Some(dueCount),
-        overdueReturnsCount = Some(overdueCount),
+        hasReturnsError       = false,
+        currentReturn         = currentReturn(outstandingObligations),
+        dueReturnsCount       = Some(dueCount),
+        overdueReturnsCount   = Some(overdueCount),
         completedReturnsCount = Some(completedCount)
       ))
     }
   }
+
+  private def currentReturn(outstandingObligations: Seq[Obligation]) =
+    if (outstandingObligations.length == 1)
+      outstandingObligations.headOption.map(o => CurrentReturn(periodKey = o.periodKey, dueDate = o.iCDueDate))
+    else
+      None
 
   def isDue(obligation: Obligation, today: LocalDate): Boolean =
     obligation.openOrFulfilledStatus == STATUS_OPEN && !obligation.iCDueDate.isBefore(today)
