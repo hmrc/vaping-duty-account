@@ -65,33 +65,25 @@ class VPDSummaryService @Inject()(
                                       .map(vpdSummaryPaymentsService.buildPaymentsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorPaymentsAndLinks(ex) }
     } yield {
-      {
-        val links = {
-          val self = selfLink(vpdId)
-
-          Links(
-            self                    = self,
-            manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
-            completeReturn          = returnsAndLinks.completeReturn,
-            viewReturns             = returnsAndLinks.viewReturns,
-            viewPayments            = paymentsAndLinks.viewPaymentsLink,
-            makePayment             = paymentsAndLinks.makePaymentLink,
-            claimRepayment          = paymentsAndLinks.claimRepaymentLink,
-            setUpDirectDebit        = setupDirectDebitLink(isInsolvent)
-          )
-        }
-
-        VPDSummary(
-          service                 = ServiceInfo(config.serviceName, config.serviceId),
-          identifiers             = Identifier(vpdId.toString),
-          access                  = contactPreferencesAndLinks.access,
-          contactPreference       = contactPreferencesAndLinks.contactMethod,
-          contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
-          returns                 = returnsAndLinks.returns,
-          payments                = paymentsAndLinks.payments,
-          links                   = links
+      VPDSummary(
+        service                 = ServiceInfo(config.serviceName, config.serviceId),
+        identifiers             = Identifier(vpdId.toString),
+        access                  = contactPreferencesAndLinks.access,
+        contactPreference       = contactPreferencesAndLinks.contactMethod,
+        contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
+        returns                 = returnsAndLinks.returns,
+        payments                = paymentsAndLinks.payments,
+        links                   = Links(
+          self                    = selfLink(vpdId),
+          manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
+          completeReturn          = returnsAndLinks.completeReturn,
+          viewReturns             = returnsAndLinks.viewReturns,
+          viewPayments            = paymentsAndLinks.viewPaymentsLink,
+          makePayment             = paymentsAndLinks.makePaymentLink,
+          claimRepayment          = paymentsAndLinks.claimRepaymentLink,
+          setUpDirectDebit        = setupDirectDebitLink(isInsolvent)
         )
-      }
+      )
     }
   }
 
