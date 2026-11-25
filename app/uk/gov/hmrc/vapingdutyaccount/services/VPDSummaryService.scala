@@ -68,11 +68,11 @@ class VPDSummaryService @Inject()(
       contactPreferences <- contactPreferencesFuture
       returnsAndLinks    <- returnsAndLinksFuture
       paymentsAndLinks   <- paymentsAndLinksFuture
+      approvalStatus      = AccessApprovalStatus.fromSubscription(contactPreferences)
+      isInsolvent         = approvalStatus == AccessApprovalStatus.Insolvent
+      (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
     } yield {
       {
-        val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
-        val isInsolvent = approvalStatus == AccessApprovalStatus.Insolvent
-
         val links = {
           val self = selfLink(vpdId)
 
@@ -93,8 +93,6 @@ class VPDSummaryService @Inject()(
             }
           }
         }
-
-        val (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
 
         VPDSummary(
           service                 = ServiceInfo(config.serviceName, config.serviceId),
