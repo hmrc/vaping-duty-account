@@ -29,14 +29,15 @@ import javax.inject.Singleton
 @Singleton
 class VPDSummaryPaymentsService @Inject(config: AppConfig) {
 
-  def buildPaymentsAndLinks(response: UpstreamPaymentsResponse): PaymentsAndLinks = {
+  def buildPaymentsAndLinks(response: UpstreamPaymentsResponse,
+                            isInsolvent: Boolean): PaymentsAndLinks = {
 
     val (payments, financialDataStatus) = toPayments(response)
     val (makePayment, claimRepayment) = buildPaymentLinks(payments)
     val viewPaymentsLink = buildViewPaymentsLink(financialDataStatus)
 
     PaymentsAndLinks(
-      payments = payments,
+      payments = if (isInsolvent) None else Some(payments),
       financialDataStatus = financialDataStatus,
       makePaymentLink = makePayment,
       claimRepaymentLink = claimRepayment,

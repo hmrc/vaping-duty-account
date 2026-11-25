@@ -66,7 +66,7 @@ class VPDSummaryService @Inject()(
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorReturnsAndLinks(ex)}
       paymentsAndLinks           <- paymentsFuture
-                                      .map(vpdSummaryPaymentsService.buildPaymentsAndLinks)
+                                      .map(vpdSummaryPaymentsService.buildPaymentsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorPaymentsAndLinks(ex) }
     } yield {
       {
@@ -98,7 +98,7 @@ class VPDSummaryService @Inject()(
           contactPreference       = contactPreferencesAndLinks.contactMethod,
           contactPreferenceStatus = contactPreferencesAndLinks.contactPreferenceStatus,
           returns                 = returnsAndLinks.returns,
-          payments                = if (isInsolvent) None else Some(paymentsAndLinks.payments),
+          payments                = paymentsAndLinks.payments,
           links                   = links
         )
       }
@@ -123,7 +123,7 @@ class VPDSummaryService @Inject()(
   private def errorPaymentsAndLinks(ex: Throwable) = {
     logger.warn(s"Failed to retrieve payments ${ex.getMessage}")
     PaymentsAndLinks(
-      payments = Payments(hasPaymentsError = true, balance = None),
+      payments = Some(Payments(hasPaymentsError = true, balance = None)),
       financialDataStatus = FinancialDataStatus.NoFinancialData,
       makePaymentLink = Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)),
       claimRepaymentLink = None,
