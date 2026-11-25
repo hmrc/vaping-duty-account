@@ -31,17 +31,20 @@ class VPDSummaryPaymentsService @Inject(config: AppConfig) {
 
   def buildPaymentsAndLinks(response: UpstreamPaymentsResponse,
                             isInsolvent: Boolean): PaymentsAndLinks = {
+    if (isInsolvent)
+      PaymentsAndLinks(None, None, None, None)
+    else {
+      val (payments, financialDataStatus) = toPayments(response)
+      val (makePayment, claimRepayment) = buildPaymentLinks(payments)
+      val viewPaymentsLink = buildViewPaymentsLink(financialDataStatus)
 
-    val (payments, financialDataStatus) = toPayments(response)
-    val (makePayment, claimRepayment) = buildPaymentLinks(payments)
-    val viewPaymentsLink = buildViewPaymentsLink(financialDataStatus)
-
-    PaymentsAndLinks(
-      payments = if (isInsolvent) None else Some(payments),
-      makePaymentLink     = if (isInsolvent) None else makePayment,
-      claimRepaymentLink  = if (isInsolvent) None else claimRepayment,
-      viewPaymentsLink    = if (isInsolvent) None else viewPaymentsLink
-    )
+      PaymentsAndLinks(
+        payments           = Some(payments),
+        makePaymentLink    = makePayment,
+        claimRepaymentLink = claimRepayment,
+        viewPaymentsLink   = viewPaymentsLink
+      )
+    }
   }
 
   def toPayments(response: UpstreamPaymentsResponse): (Payments, FinancialDataStatus) = {
