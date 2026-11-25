@@ -44,7 +44,7 @@ class VPDSummaryService @Inject()(
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
 
-    val contactPreferencesFuture = subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+    val subscriptionDisplayFuture = subscriptionConnector.getSubscriptionDisplay(vpdId)
       .andThen {
         case Failure(ex) =>
           logger.warn(s"Failed to retrieve subscription contact preferences ${ex.getMessage}")
@@ -54,8 +54,8 @@ class VPDSummaryService @Inject()(
     val paymentsFuture = paymentsConnector.getPayments()
 
     for {
-      contactPreferences         <- contactPreferencesFuture
-      contactPreferencesAndLinks  = contactPreferencesService.buildContactPreferencesAndLinks(contactPreferences)
+      subscriptionDisplay        <- subscriptionDisplayFuture
+      contactPreferencesAndLinks  = contactPreferencesService.buildContactPreferencesAndLinks(subscriptionDisplay)
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
                                       .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))

@@ -38,7 +38,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
   "SubscriptionConnector must" - {
     "successfully get subscription contact preferences" in new SetUp {
       stubGet(url, OK, Json.toJson(contactPreferencesEmailSelected).toString)
-      whenReady(connector.getSubscriptionContactPreferences(vpdId)) { result =>
+      whenReady(connector.getSubscriptionDisplay(vpdId)) { result =>
         result mustBe contactPreferencesEmailSelected
         verifyGet(url)
         verifyNoMoreInteractions(mockLogger)
@@ -48,7 +48,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if a bad request received" in new SetUp {
       stubGet(url, BAD_REQUEST, "BAD-REQUEST-BODY")
       
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -71,7 +71,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
           |}""".stripMargin
       )
 
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
 
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -84,7 +84,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if a 422 is received with a body that cannot be parsed" in new SetUp {
       stubGet(url, UNPROCESSABLE_ENTITY, "not json")
 
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
 
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -97,7 +97,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if subscription summary data cannot be found" in new SetUp {
       stubGet(url, NOT_FOUND, "")
       
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -110,7 +110,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if the data retrieved cannot be parsed" in new SetUp {
       stubGet(url, OK, "blah")
       
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -123,7 +123,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if an error other than BAD_REQUEST or NOT_FOUND or UNPROCESSABLE_ENTITY is returned" in new SetUp {
       stubGet(url, INTERNAL_SERVER_ERROR, "INTERNAL-SERVER-ERROR-BODY")
       
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe an[Exception]
@@ -136,7 +136,7 @@ class SubscriptionConnectorISpec extends SpecBase with ConnectorTestHelpers {
     "fail with InternalServerException if an exception is thrown when fetching subscription summary" in new SetUp {
       stubGetFault(url)
       
-      val result = connector.getSubscriptionContactPreferences(vpdId)
+      val result = connector.getSubscriptionDisplay(vpdId)
       
       whenReady(result.failed) { exception =>
         exception mustBe a[RemotelyClosedException]

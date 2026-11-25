@@ -93,7 +93,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "26AA"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(dueObligation)))
@@ -115,7 +115,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "25AL"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(overdueObligation)))
@@ -145,7 +145,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "25AL"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(dueObligation, overdueObligation)))
@@ -175,7 +175,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "25AL"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(overdueObligation1, overdueObligation2)))
@@ -196,7 +196,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "25AL"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(fulfilledObligation)))
@@ -233,7 +233,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
             periodKey             = "25AJ"
           )
 
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(dueObligation, overdueObligation, fulfilledObligation)))
@@ -245,7 +245,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return contactPreference Email and contactPreferenceStatus with bouncedEmail false when PaperlessPreference is true" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -257,7 +257,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return contactPreference Email and contactPreferenceStatus with bouncedEmail true when the email has bounced" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected.copy(bouncedEmail = Some(true))))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -269,7 +269,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return contactPreference Post and no contactPreferenceStatus when PaperlessPreference is false" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -281,7 +281,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "propagate a failure when the subscription connector fails" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
@@ -294,7 +294,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return viewPayments link when balance is present" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -307,7 +307,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "not return viewPayments link when payments has error" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -320,7 +320,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "not return viewPayments link when manufacturer is insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
@@ -336,7 +336,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return viewPayments link when balance is zero" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -356,7 +356,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return Some(Returns) with hasReturnsError true and no counts/completeReturn/viewReturns links when the obligations call fails" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.failed(new InternalServerException("Failed to retrieve obligations")))
@@ -375,7 +375,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return an empty Seq when the obligations connector returns none" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -387,7 +387,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return a single charge reference and makePayment link when one charge is outstanding" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -412,7 +412,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return isMultiplePaymentDue true and no charge reference on the makePayment link when multiple charges are outstanding" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -438,7 +438,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
   
         "return a negative balance and claimRepayment link when the account is in credit" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -462,7 +462,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
   
         "return a zero balance and no makePayment or claimRepayment link when nothing is owed" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -486,7 +486,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return hasPaymentsError true and a generic makePayment link when payments are unavailable" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -501,7 +501,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access APPROVED when the subscription is approved and not insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesApproved))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -512,7 +512,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access DEREGISTERED when the subscription is deregistered" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesDeregistered))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -523,7 +523,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access REVOKED when the subscription is revoked" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesRevoked))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq.empty))
@@ -534,7 +534,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
@@ -558,7 +558,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access INSOLVENT and a minimal response when the subscription is revoked but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))
@@ -575,7 +575,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return access INSOLVENT and a minimal response when the subscription is deregistered but insolvent" in {
-          when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(obligationDetails)))

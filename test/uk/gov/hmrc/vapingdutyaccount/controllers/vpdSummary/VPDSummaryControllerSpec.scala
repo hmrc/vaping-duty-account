@@ -204,7 +204,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
   "VPDSummary must " - {
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when request id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -217,7 +217,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -230,7 +230,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is true) and response headers when correlation id & request id were received" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesEmailSelected))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -244,7 +244,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "return data in expected shape when calling the API (PaperlessPreference is false)" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesPostNoEmail))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -257,7 +257,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
     }
 
     "must return a 500 and preserve headers [CorrelationId, RequestId] if we receive an error from ETMP" in {
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.failed(new InternalServerException("")))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -283,7 +283,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access APPROVED when the subscription is approved and not insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesApproved))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -296,7 +296,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access DEREGISTERED when the subscription is deregistered" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesDeregistered))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -309,7 +309,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access REVOKED when the subscription is revoked" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesRevoked))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -322,7 +322,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access INSOLVENT and a minimal response with no sections or action links when the subscription is approved but insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesInsolvent))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -335,7 +335,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access INSOLVENT and a minimal response when the subscription is revoked but insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))
@@ -348,7 +348,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
 
     "return access INSOLVENT and a minimal response when the subscription is deregistered but insolvent" in {
       when(config.vpdSummaryRESTAPIEnabled).thenReturn(true)
-      when(mockSubscriptionConnector.getSubscriptionContactPreferences(eqTo(vpdId))(any()))
+      when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
         .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
       when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
         .thenReturn(Future.successful(Seq.empty))

@@ -37,7 +37,7 @@ class SubscriptionConnector @Inject() (
     extends HttpReadsInstances
     with UnprocessableEntityLogging {
 
-  def getSubscriptionContactPreferences(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionDisplay] =
+  def getSubscriptionDisplay(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[SubscriptionDisplay] =
     httpClient
       .get(url"${config.getSubscriptionUrl(vpdId)}")
       .setHeader(headers.subscriptionHeaders(): _*)
