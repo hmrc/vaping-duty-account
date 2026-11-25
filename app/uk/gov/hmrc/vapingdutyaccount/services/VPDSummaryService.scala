@@ -81,7 +81,7 @@ class VPDSummaryService @Inject()(
             {
               Links(
                 self                    = self,
-                manageContactPreference = manageContactPreferencesLink,
+                manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
                 completeReturn          = returnsAndLinks.completeReturn,
                 viewReturns             = returnsAndLinks.viewReturns,
                 viewPayments            = paymentsAndLinks.viewPaymentsLink,
@@ -135,9 +135,6 @@ class VPDSummaryService @Inject()(
 
   private def selfLink(vpdId: VpdId) =
     Self(config.selfHref(vpdId), HttpVerbs.GET)
-
-  private def manageContactPreferencesLink =
-    Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
 
   private def setupDirectDebitLink =
     Some(SetUpDirectDebit(config.startDirectDebitUrl, HttpVerbs.GET))

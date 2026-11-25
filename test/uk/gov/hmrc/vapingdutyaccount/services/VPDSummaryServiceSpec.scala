@@ -60,7 +60,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.serviceId                 ).thenReturn("VPD")
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, VPDSummaryContactPreferencesService(), VPDSummaryReturnsService(mockConfig), paymentsService)
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, VPDSummaryContactPreferencesService(mockConfig), VPDSummaryReturnsService(mockConfig), paymentsService)
 
   override def beforeEach(): Unit =
     when(mockPaymentsConnector.getPayments()(using any()))

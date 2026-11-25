@@ -1,10 +1,13 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
+import com.google.inject.Inject
+import play.api.http.HttpVerbs
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{Access, AccessApprovalStatus, ContactMethod, ContactPreferenceStatus}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{Access, AccessApprovalStatus, ContactMethod, ContactPreferenceStatus, ManageContactPreference}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ContactPreferencesAndLinks
 
-class VPDSummaryContactPreferencesService {
+class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
 
   def buildContactPreferencesAndLinks(contactPreferences: SubscriptionContactPreferences) = {
     val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
@@ -16,7 +19,8 @@ class VPDSummaryContactPreferencesService {
       isInsolvent = isInsolvent,
       access = access,
       contactMethod = contactMethod,
-      contactPreferenceStatus = contactPreferenceStatus
+      contactPreferenceStatus = contactPreferenceStatus,
+      manageContactPreferencesLink = manageContactPreferencesLink()
     )
   }
 
@@ -39,5 +43,8 @@ class VPDSummaryContactPreferencesService {
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
     else
       None
+
+  private def manageContactPreferencesLink() =
+    Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
 
 }
