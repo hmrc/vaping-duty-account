@@ -19,7 +19,7 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, Returns, ViewReturns}
 
 case class ReturnsAndLinks(
-                            returns: Option[Returns],
-                            completeReturn: Option[CompleteReturn],
-                            viewReturns: Option[ViewReturns]
+                            returns            : Option[Returns],
+                            completeReturnLink : Option[CompleteReturn],
+                            viewReturnsLink    : Option[ViewReturns]
                           )

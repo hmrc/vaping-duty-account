@@ -41,9 +41,9 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
       val (completeReturn, viewReturns) = buildReturnLinks(returns)
 
       ReturnsAndLinks(
-        returns = returns,
-        completeReturn = completeReturn,
-        viewReturns = viewReturns
+        returns            = returns,
+        completeReturnLink = completeReturn,
+        viewReturnsLink    = viewReturns
       )
     }
   }

@@ -26,7 +26,6 @@ import uk.gov.hmrc.vapingdutyaccount.connectors.obligations.ObligationsConnector
 import uk.gov.hmrc.vapingdutyaccount.connectors.payments.PaymentsConnector
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionContactPreferences
 import uk.gov.hmrc.vapingdutyaccount.models.identifiers.VpdId
-import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.*
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.{PaymentsAndLinks, ReturnsAndLinks}
 
@@ -76,8 +75,8 @@ class VPDSummaryService @Inject()(
         links                   = Links(
           self                    = selfLink(vpdId),
           manageContactPreference = contactPreferencesAndLinks.manageContactPreferencesLink,
-          completeReturn          = returnsAndLinks.completeReturn,
-          viewReturns             = returnsAndLinks.viewReturns,
+          completeReturn          = returnsAndLinks.completeReturnLink,
+          viewReturns             = returnsAndLinks.viewReturnsLink,
           viewPayments            = paymentsAndLinks.viewPaymentsLink,
           makePayment             = paymentsAndLinks.makePaymentLink,
           claimRepayment          = paymentsAndLinks.claimRepaymentLink,
@@ -97,8 +96,8 @@ class VPDSummaryService @Inject()(
         overdueReturnsCount = None,
         completedReturnsCount = None
       )),
-      completeReturn = None,
-      viewReturns = None
+      completeReturnLink = None,
+      viewReturnsLink = None
     )
   }
 
