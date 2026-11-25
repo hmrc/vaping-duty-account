@@ -11,8 +11,8 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
 
   def buildContactPreferencesAndLinks(contactPreferences: SubscriptionContactPreferences): ContactPreferencesAndLinks = {
     val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)
-    val isInsolvent = approvalStatus == AccessApprovalStatus.Insolvent
-    val access = Some(Access(approvalStatus = Some(approvalStatus)))
+    val isInsolvent    = approvalStatus == AccessApprovalStatus.Insolvent
+    val access         = Some(Access(approvalStatus = Some(approvalStatus)))
     val (contactMethod, contactPreferenceStatus) = buildContactPreferences(contactPreferences, isInsolvent)
 
     ContactPreferencesAndLinks(
@@ -24,31 +24,29 @@ class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
     )
   }
 
-  private def buildContactPreferences(contactPreferences: SubscriptionContactPreferences, isInsolvent: Boolean) = {
-    if (isInsolvent) (None, None)
+  private def buildContactPreferences(contactPreferences: SubscriptionContactPreferences, isInsolvent: Boolean) =
+    if (isInsolvent)
+      (None, None)
     else {
       val cm = resolveContactMethod(contactPreferences)
       (Some(cm), resolveContactPreferenceStatus(cm, contactPreferences))
     }
-  }
 
   private def resolveContactMethod(contactPreferences: SubscriptionContactPreferences): ContactMethod =
     if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
 
-  private def resolveContactPreferenceStatus(
-                                              contactMethod: ContactMethod,
-                                              contactPreferences: SubscriptionContactPreferences
+  private def resolveContactPreferenceStatus(contactMethod: ContactMethod,
+                                             contactPreferences: SubscriptionContactPreferences
                                             ): Option[ContactPreferenceStatus] =
     if (contactMethod == ContactMethod.Email)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
     else
       None
 
-  private def manageContactPreferencesLink(isInsolvent: Boolean) = {
+  private def manageContactPreferencesLink(isInsolvent: Boolean) =
     if (isInsolvent)
       None
     else
       Some(ManageContactPreference(config.manageContactPreferenceUrl, HttpVerbs.GET))
-  }
 
 }
