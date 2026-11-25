@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal
 
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, Payments, ViewPayments}
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, MakePayment, Payments, ViewPayments}
 
 case class PaymentsAndLinks(payments            : Option[Payments],
                             makePaymentLink     : Option[MakePayment],
