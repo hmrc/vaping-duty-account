@@ -203,22 +203,36 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return correct counts for mixed due, overdue, and completed obligations" in {
-        val result = service.buildReturns(Seq(
-          createObligation("O", LocalDate.now().plusDays(10), "26AA"),
+    "when mixed due, overdue, and completed obligations" - {
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq(
+        createObligation("O", LocalDate.now().plusDays(10), "26AA"),
 
-          createObligation("O", LocalDate.now().minusDays( 5), "25AL"),
-          createObligation("O", LocalDate.now().minusDays(35), "25AK"),
+        createObligation("O", LocalDate.now().minusDays( 5), "25AL"),
+        createObligation("O", LocalDate.now().minusDays(35), "25AK"),
 
-          createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
-          createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
-          createObligation("F", LocalDate.now().minusDays(120), "25AH")
-        )).value
+        createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
+        createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
+        createObligation("F", LocalDate.now().minusDays(120), "25AH")
+      ), false)
 
-        result.dueReturnsCount mustBe Some(1)
-        result.overdueReturnsCount mustBe Some(2)
-        result.completedReturnsCount mustBe Some(3)
+      "returns block" - {
+        val returns = returnsAndLinks.returns.value
+
+        "returns counts" in {
+          returns.dueReturnsCount mustBe Some(1)
+          returns.overdueReturnsCount mustBe Some(2)
+          returns.completedReturnsCount mustBe Some(3)
+        }
+        "current return must be absent" in {
+          returns.currentReturn mustBe None
+        }
+      }
+
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe Some(ViewReturns(viewReturnsUrl, "GET"))
       }
     }
 
