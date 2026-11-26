@@ -37,7 +37,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       periodKey             = periodKey
     )
 
-  "ObligationService" - {
+  "VPDSummaryReturnsService" - {
 
     "buildReturns must" - {
 
