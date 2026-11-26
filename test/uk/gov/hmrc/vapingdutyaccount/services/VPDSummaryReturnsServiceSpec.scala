@@ -88,21 +88,35 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
-        val dueDate = LocalDate.now().minusDays(5)
-        val result = service.buildReturns(
-          Seq(createObligation("O", dueDate, "25AL"))
-        ).value
+    "when single overdue obligation" - {
+      val dueDate = LocalDate.now().minusDays(5)
+      val returnsAndLinks = service.buildReturnsAndLinks(
+        Seq(createObligation("O", dueDate, "25AL")), false
+      )
+      "returns block" - {
+        val returns = returnsAndLinks.returns.value
 
-        result.dueReturnsCount mustBe Some(0)
-        result.overdueReturnsCount mustBe Some(1)
-        result.completedReturnsCount mustBe Some(0)
-        result.currentReturn mustBe defined
-        result.currentReturn.get.periodKey mustBe "25AL"
-        result.currentReturn.get.dueDate mustBe dueDate
+        "returns counts " in {
+          returns.dueReturnsCount mustBe Some(0)
+          returns.overdueReturnsCount mustBe Some(1)
+          returns.completedReturnsCount mustBe Some(0)
+        }
+        "current return" in {
+          returns.currentReturn mustBe defined
+          returns.currentReturn.get.periodKey mustBe "25AL"
+          returns.currentReturn.get.dueDate mustBe dueDate
+        }
       }
 
+      "complete-returns link does show" in {
+        returnsAndLinks.completeReturnLink mustBe Some(CompleteReturn(href = s"$completeReturnUrlPrefix?period=25AL", method = "GET"))
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe None
+      }
+    }
+
+    "buildReturns must" - {
       "return Some(Returns) with no currentReturn when multiple overdue obligations" in {
         val dueDate = LocalDate.now().minusDays(5)
         val result = service.buildReturns(
