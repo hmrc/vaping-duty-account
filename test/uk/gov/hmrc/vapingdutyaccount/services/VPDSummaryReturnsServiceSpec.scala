@@ -148,21 +148,36 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return Some(Returns) with completedCount=2 when 2 completed obligations" in {
-        val result = service.buildReturns(
-          Seq(
-            createObligation("F", LocalDate.now().minusDays(35), "25AK"),
-            createObligation("F", LocalDate.now().minusDays( 5), "25AL")
-          )
-        ).value
+    "when 2 completed obligations" - {
+      val returnsAndLinks = service.buildReturnsAndLinks(
+        Seq(
+          createObligation("F", LocalDate.now().minusDays(35), "25AK"),
+          createObligation("F", LocalDate.now().minusDays(5), "25AL")
+        ), false
+      )
 
-        result.dueReturnsCount mustBe Some(0)
-        result.overdueReturnsCount mustBe Some(0)
-        result.completedReturnsCount mustBe Some(2)
-        result.currentReturn mustBe None
+      "returns block" - {
+        val returns = returnsAndLinks.returns.value
+
+        "returns counts" in {
+          returns.dueReturnsCount mustBe Some(0)
+          returns.overdueReturnsCount mustBe Some(0)
+          returns.completedReturnsCount mustBe Some(2)
+        }
+        "current return must be absent" in {
+          returns.currentReturn mustBe None
+        }
       }
 
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe Some(ViewReturns(viewReturnsUrl, "GET"))
+      }
+    }
+
+    "buildReturns must" - {
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
         val result = service.buildReturns(
           Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
