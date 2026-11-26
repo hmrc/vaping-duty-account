@@ -39,19 +39,19 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   "ObligationService" - {
 
-    "processObligations must" - {
+    "buildReturns must" - {
 
       "return None when obligations list is empty" in {
-        service.processObligations(Seq.empty) mustBe None
+        service.buildReturns(Seq.empty) mustBe None
       }
 
       "return None when all obligations have an unrecognised status" in {
-        service.processObligations(Seq(createObligation("X", LocalDate.now().plusDays(5), "26AA"))) mustBe None
+        service.buildReturns(Seq(createObligation("X", LocalDate.now().plusDays(5), "26AA"))) mustBe None
       }
 
       "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
         val dueDate = LocalDate.now().plusDays(10)
-        val result  = service.processObligations(Seq(createObligation("O", dueDate, "26AA"))).value
+        val result  = service.buildReturns(Seq(createObligation("O", dueDate, "26AA"))).value
 
         result.hasReturnsError mustBe false
         result.dueReturnsCount mustBe Some(1)
@@ -63,7 +63,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with no currentReturn when multiple due obligations" in {
-        val result = service.processObligations(Seq(
+        val result = service.buildReturns(Seq(
           createObligation("O", LocalDate.now().plusDays( 5), "26AA"),
           createObligation("O", LocalDate.now().plusDays(10), "26AB")
         )).value
@@ -74,7 +74,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
       "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
         val dueDate = LocalDate.now().minusDays(5)
-        val result = service.processObligations(
+        val result = service.buildReturns(
           Seq(createObligation("O", dueDate, "25AL"))
         ).value
 
@@ -88,7 +88,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
       "return Some(Returns) with no currentReturn when multiple overdue obligations" in {
         val dueDate = LocalDate.now().minusDays(5)
-        val result = service.processObligations(
+        val result = service.buildReturns(
           Seq(
             createObligation("O", dueDate.minusDays(30), "25AK"),
             createObligation("O", dueDate, "25AL")
@@ -102,7 +102,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with completedCount=2 when 2 completed obligations" in {
-        val result = service.processObligations(
+        val result = service.buildReturns(
           Seq(
             createObligation("F", LocalDate.now().minusDays(35), "25AK"),
             createObligation("F", LocalDate.now().minusDays( 5), "25AL")
@@ -116,7 +116,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
 
       "return Some(Returns) with completedCount=1 when single completed obligation" in {
-        val result = service.processObligations(
+        val result = service.buildReturns(
           Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
         ).value
 
@@ -127,7 +127,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
 
       "return correct counts for mixed due, overdue, and completed obligations" in {
-        val result = service.processObligations(Seq(
+        val result = service.buildReturns(Seq(
           createObligation("O", LocalDate.now().plusDays(10), "26AA"),
 
           createObligation("O", LocalDate.now().minusDays( 5), "25AL"),

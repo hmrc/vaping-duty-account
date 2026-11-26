@@ -37,7 +37,7 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
     if (isInsolvent)
       ReturnsAndLinks(None, None, None)
     else {
-      val returns = processObligations(obligations)
+      val returns = buildReturns(obligations)
       val (completeReturn, viewReturns) = buildReturnLinks(returns)
 
       ReturnsAndLinks(
@@ -48,7 +48,7 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
     }
   }
 
-  def processObligations(obligations: Seq[Obligation]): Option[Returns] = {
+  def buildReturns(obligations: Seq[Obligation]): Option[Returns] = {
     val today = LocalDate.now()
 
     val dueObligations       = obligations.filter(isDue(_, today))
