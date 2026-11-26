@@ -177,18 +177,33 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return Some(Returns) with completedCount=1 when single completed obligation" in {
-        val result = service.buildReturns(
-          Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL"))
-        ).value
+    "when single completed obligation" - {
+      val returnsAndLinks = service.buildReturnsAndLinks(
+        Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL")), false
+      )
 
-        result.dueReturnsCount mustBe Some(0)
-        result.overdueReturnsCount mustBe Some(0)
-        result.completedReturnsCount mustBe Some(1)
-        result.currentReturn mustBe None
+      "returns block" - {
+        val result = returnsAndLinks.returns.value
+
+        "returns counts" in {
+          result.dueReturnsCount mustBe Some(0)
+          result.overdueReturnsCount mustBe Some(0)
+          result.completedReturnsCount mustBe Some(1)
+        }
+        "current return must be absent" in {
+          result.currentReturn mustBe None
+        }
       }
 
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe Some(ViewReturns(viewReturnsUrl, "GET"))
+      }
+    }
+
+    "buildReturns must" - {
       "return correct counts for mixed due, overdue, and completed obligations" in {
         val result = service.buildReturns(Seq(
           createObligation("O", LocalDate.now().plusDays(10), "26AA"),
