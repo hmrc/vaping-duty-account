@@ -72,9 +72,7 @@ class VPDSummaryPaymentsService @Inject(config: AppConfig) {
   }
 
   private def buildPaymentLinks(payments: Payments): (Option[MakePayment], Option[ClaimRepayment]) =
-    if (payments.hasPaymentsError)
-      (Some(MakePayment(config.makePaymentUrl(None), HttpVerbs.GET)), None)
-    else if (payments.balance.exists(_.amount > 0)) {
+    if (payments.balance.exists(_.amount > 0)) {
       val singleChargeRef = payments.balance.filterNot(_.isMultiplePaymentDue).flatMap(_.chargeReference)
       (Some(MakePayment(config.makePaymentUrl(singleChargeRef), HttpVerbs.GET)), None)
     }
