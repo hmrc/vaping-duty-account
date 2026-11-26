@@ -82,7 +82,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
   "VPDSummaryService" - {
     "getVPDSummary" - {
-      "must" - {
+      "Return section must" - {
         "return VPDSummary with single due return and completeReturn link" in {
           val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
@@ -243,7 +243,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.completeReturn mustBe None
           result.links.viewReturns mustBe defined
         }
+      }
 
+      "Contact preference section must" - {
         "return contactPreference Email and contactPreferenceStatus with bouncedEmail false when PaperlessPreference is true" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesEmailSelected))
@@ -279,7 +281,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.contactPreference mustBe Some(ContactMethod.Post)
           result.contactPreferenceStatus mustBe None
         }
+      }
 
+      "Failure must" - {
         "propagate a failure when the subscription connector fails" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
@@ -292,7 +296,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           result mustBe a[InternalServerException]
         }
+      }
 
+      "Payments section must" - {
         "return viewPayments link when balance is present" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
@@ -354,7 +360,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
 
         }
+      }
 
+      "API failures must" - {
         "return Some(Returns) with hasReturnsError true and no counts/completeReturn/viewReturns links when the obligations call fails" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
@@ -385,7 +393,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.completeReturn mustBe None
           result.links.viewReturns mustBe None
         }
+      }
 
+      "Payment behaviour must" - {
         "return a single charge reference and makePayment link when one charge is outstanding" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
@@ -499,7 +509,9 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.makePayment mustBe Some(MakePayment("/vaping-duty/start-bta-payment", "GET"))
           result.links.setUpDirectDebit mustBe Some(SetUpDirectDebit("/vaping-duty-finance/direct-debit/bta/start", "GET"))
         }
+      }
 
+      "Access section must" - {
         "return access APPROVED when the subscription is approved and not insolvent" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesApproved))
