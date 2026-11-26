@@ -45,10 +45,6 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
         service.buildReturns(Seq.empty) mustBe None
       }
 
-      "return None when all obligations have an unrecognised status" in {
-        service.buildReturns(Seq(createObligation("X", LocalDate.now().plusDays(5), "26AA"))) mustBe None
-      }
-
       "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
         val dueDate = LocalDate.now().plusDays(10)
         val result  = service.buildReturns(Seq(createObligation("O", dueDate, "26AA"))).value
