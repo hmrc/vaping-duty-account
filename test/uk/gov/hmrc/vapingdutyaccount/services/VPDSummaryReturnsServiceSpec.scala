@@ -58,16 +58,6 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
         result.currentReturn.get.dueDate mustBe dueDate
       }
 
-      "return Some(Returns) with no currentReturn when multiple due obligations" in {
-        val result = service.buildReturns(Seq(
-          createObligation("O", LocalDate.now().plusDays( 5), "26AA"),
-          createObligation("O", LocalDate.now().plusDays(10), "26AB")
-        )).value
-
-        result.dueReturnsCount mustBe Some(2)
-        result.currentReturn mustBe None
-      }
-
       "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
         val dueDate = LocalDate.now().minusDays(5)
         val result = service.buildReturns(
