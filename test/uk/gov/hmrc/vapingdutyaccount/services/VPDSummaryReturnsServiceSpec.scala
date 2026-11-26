@@ -20,7 +20,7 @@ import org.mockito.Mockito.when
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.CompleteReturn
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, ViewReturns}
 
 import java.time.LocalDate
 
@@ -30,6 +30,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
   val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config)
 
   private val completeReturnUrlPrefix = "complete-return-url-prefix"
+  private val viewReturnsUrl = "view-returns-url"
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): Obligation =
     Obligation(
@@ -43,6 +44,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   "VPDSummaryReturnsService" - {
     when(config.completeReturnUrlPrefix).thenReturn(completeReturnUrlPrefix)
+    when(config.viewReturnsUrl).thenReturn(viewReturnsUrl)
 
     "when no obligations" - {
       val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, false)
@@ -116,22 +118,37 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return Some(Returns) with no currentReturn when multiple overdue obligations" in {
-        val dueDate = LocalDate.now().minusDays(5)
-        val result = service.buildReturns(
-          Seq(
-            createObligation("O", dueDate.minusDays(30), "25AK"),
-            createObligation("O", dueDate, "25AL")
-          )
-        ).value
+    "when multiple overdue obligations" - {
+      val dueDate = LocalDate.now().minusDays(5)
+      val returnsAndLinks = service.buildReturnsAndLinks(
+        Seq(
+          createObligation("O", dueDate.minusDays(30), "25AK"),
+          createObligation("O", dueDate, "25AL")
+        ), false
+      )
 
-        result.dueReturnsCount mustBe Some(0)
-        result.overdueReturnsCount mustBe Some(2)
-        result.completedReturnsCount mustBe Some(0)
-        result.currentReturn mustBe None
+      "returns block" - {
+        val returns = returnsAndLinks.returns.value
+
+        "returns counts" in {
+          returns.dueReturnsCount mustBe Some(0)
+          returns.overdueReturnsCount mustBe Some(2)
+          returns.completedReturnsCount mustBe Some(0)
+        }
+        "current return must be absent" in {
+          returns.currentReturn mustBe None
+        }
       }
 
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe Some(ViewReturns(viewReturnsUrl, "GET"))
+      }
+    }
+
+    "buildReturns must" - {
       "return Some(Returns) with completedCount=2 when 2 completed obligations" in {
         val result = service.buildReturns(
           Seq(
