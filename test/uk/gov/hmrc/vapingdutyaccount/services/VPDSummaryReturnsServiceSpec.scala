@@ -48,6 +48,20 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
     when(config.completeReturnUrlPrefix).thenReturn(completeReturnUrlPrefix)
     when(config.viewReturnsUrl).thenReturn(viewReturnsUrl)
 
+    "when insolvent" - {
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, INSOLVENT)
+
+      "returns section is absent" in {
+        returnsAndLinks.returns mustBe None
+      }
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe None
+      }
+    }
+
     "when no obligations" - {
       val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, SOLVENT)
 
