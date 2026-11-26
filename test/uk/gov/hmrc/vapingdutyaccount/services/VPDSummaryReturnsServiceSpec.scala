@@ -31,6 +31,8 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   private val completeReturnUrlPrefix = "complete-return-url-prefix"
   private val viewReturnsUrl = "view-returns-url"
+  private val SOLVENT = false
+  private val INSOLVENT = true
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): Obligation =
     Obligation(
@@ -47,7 +49,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
     when(config.viewReturnsUrl).thenReturn(viewReturnsUrl)
 
     "when no obligations" - {
-      val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, false)
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, SOLVENT)
 
       "returns section is absent" in {
         returnsAndLinks.returns mustBe None
@@ -62,7 +64,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
     "when single due obligation" - {
       val dueDate = LocalDate.now().plusDays(10)
-      val returnsAndLinks = service.buildReturnsAndLinks(Seq(createObligation("O", dueDate, "26AA")), false)
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq(createObligation("O", dueDate, "26AA")), SOLVENT)
 
       " returns block " - {
         val returns = returnsAndLinks.returns.value
@@ -93,7 +95,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
     "when single overdue obligation" - {
       val dueDate = LocalDate.now().minusDays(5)
       val returnsAndLinks = service.buildReturnsAndLinks(
-        Seq(createObligation("O", dueDate, "25AL")), false
+        Seq(createObligation("O", dueDate, "25AL")), SOLVENT
       )
       "returns block" - {
         val returns = returnsAndLinks.returns.value
@@ -124,7 +126,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
         Seq(
           createObligation("O", dueDate.minusDays(30), "25AK"),
           createObligation("O", dueDate, "25AL")
-        ), false
+        ), SOLVENT
       )
 
       "returns block" - {
@@ -153,7 +155,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
         Seq(
           createObligation("F", LocalDate.now().minusDays(35), "25AK"),
           createObligation("F", LocalDate.now().minusDays(5), "25AL")
-        ), false
+        ), SOLVENT
       )
 
       "returns block" - {
@@ -179,7 +181,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
     "when single completed obligation" - {
       val returnsAndLinks = service.buildReturnsAndLinks(
-        Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL")), false
+        Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL")), SOLVENT
       )
 
       "returns block" - {
@@ -213,7 +215,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
         createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
         createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
         createObligation("F", LocalDate.now().minusDays(120), "25AH")
-      ), false)
+      ), SOLVENT)
 
       "returns block" - {
         val returns = returnsAndLinks.returns.value
