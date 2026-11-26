@@ -38,8 +38,8 @@ class VPDSummaryService @Inject()(
                                    paymentsConnector         : PaymentsConnector,
                                    obligationsConnector      : ObligationsConnector,
                                    contactPreferencesService : VPDSummaryContactPreferencesService,
-                                   vpdSummaryReturnsService  : VPDSummaryReturnsService,
-                                   vpdSummaryPaymentsService : VPDSummaryPaymentsService
+                                   returnsService            : VPDSummaryReturnsService,
+                                   paymentsService           : VPDSummaryPaymentsService
 )(implicit ec: ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
@@ -58,10 +58,10 @@ class VPDSummaryService @Inject()(
       contactPreferencesAndLinks  = contactPreferencesService.buildContactPreferencesAndLinks(subscriptionDisplay)
       isInsolvent                 = contactPreferencesAndLinks.isInsolvent
       returnsAndLinks            <- obligationsFuture
-                                      .map(vpdSummaryReturnsService.buildReturnsAndLinks(_, isInsolvent))
+                                      .map(returnsService.buildReturnsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorReturnsAndLinks(ex)}
       paymentsAndLinks           <- paymentsFuture
-                                      .map(vpdSummaryPaymentsService.buildPaymentsAndLinks(_, isInsolvent))
+                                      .map(paymentsService.buildPaymentsAndLinks(_, isInsolvent))
                                       .recover { case ex => errorPaymentsAndLinks(ex) }
     } yield {
       VPDSummary(
