@@ -16,9 +16,11 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
+import org.mockito.Mockito.when
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.CompleteReturn
 
 import java.time.LocalDate
 
@@ -26,6 +28,8 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   val config: AppConfig = mock[AppConfig]
   val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config)
+
+  private val completeReturnUrlPrefix = "complete-return-url-prefix"
 
   private def createObligation(status: String, dueDate: LocalDate, periodKey: String): Obligation =
     Obligation(
@@ -38,6 +42,7 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
     )
 
   "VPDSummaryReturnsService" - {
+    when(config.completeReturnUrlPrefix).thenReturn(completeReturnUrlPrefix)
 
     "when no obligations" - {
       val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, false)
@@ -53,20 +58,37 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
       }
     }
 
-    "buildReturns must" - {
-      "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
-        val dueDate = LocalDate.now().plusDays(10)
-        val result  = service.buildReturns(Seq(createObligation("O", dueDate, "26AA"))).value
+    "when single due obligation" - {
+      val dueDate = LocalDate.now().plusDays(10)
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq(createObligation("O", dueDate, "26AA")), false)
 
-        result.hasReturnsError mustBe false
-        result.dueReturnsCount mustBe Some(1)
-        result.overdueReturnsCount mustBe Some(0)
-        result.completedReturnsCount mustBe Some(0)
-        result.currentReturn mustBe defined
-        result.currentReturn.get.periodKey mustBe "26AA"
-        result.currentReturn.get.dueDate mustBe dueDate
+      " returns block " - {
+        val returns = returnsAndLinks.returns.value
+
+        "returns counts " in {
+          returns.hasReturnsError mustBe false
+          returns.dueReturnsCount mustBe Some(1)
+          returns.overdueReturnsCount mustBe Some(0)
+          returns.completedReturnsCount mustBe Some(0)
+        }
+        "current return" in {
+          val currentReturn = returns.currentReturn
+
+          currentReturn mustBe defined
+          currentReturn.get.periodKey mustBe "26AA"
+          currentReturn.get.dueDate mustBe dueDate
+        }
       }
 
+      "complete-returns link does show" in {
+        returnsAndLinks.completeReturnLink mustBe Some(CompleteReturn(href = s"$completeReturnUrlPrefix?period=26AA", method = "GET"))
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe None
+      }
+    }
+
+    "buildReturns must" - {
       "return Some(Returns) with overdueCount=1 and currentReturn when single overdue obligation" in {
         val dueDate = LocalDate.now().minusDays(5)
         val result = service.buildReturns(
