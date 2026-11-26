@@ -39,12 +39,21 @@ class VPDSummaryReturnsServiceSpec extends SpecBase {
 
   "VPDSummaryReturnsService" - {
 
-    "buildReturns must" - {
+    "when no obligations" - {
+      val returnsAndLinks = service.buildReturnsAndLinks(Seq.empty, false)
 
-      "return None when obligations list is empty" in {
-        service.buildReturns(Seq.empty) mustBe None
+      "returns section is absent" in {
+        returnsAndLinks.returns mustBe None
       }
+      "complete-returns link does not show" in {
+        returnsAndLinks.completeReturnLink mustBe None 
+      }
+      "view-returns link does not show" in {
+        returnsAndLinks.viewReturnsLink mustBe None 
+      }
+    }
 
+    "buildReturns must" - {
       "return Some(Returns) with dueCount=1 and currentReturn when single due obligation" in {
         val dueDate = LocalDate.now().plusDays(10)
         val result  = service.buildReturns(Seq(createObligation("O", dueDate, "26AA"))).value
