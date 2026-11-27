@@ -27,7 +27,19 @@ final case class Obligation(
   iCDateReceived: Option[LocalDate],
   iCDueDate: LocalDate,
   periodKey: String
-)
+) {
+  private val STATUS_OPEN      = "O"
+  private val STATUS_FULFILLED = "F"
+
+  def isDue(today: LocalDate): Boolean =
+    openOrFulfilledStatus == STATUS_OPEN && !iCDueDate.isBefore(today)
+
+  def isOverdue(today: LocalDate): Boolean =
+    openOrFulfilledStatus == STATUS_OPEN && iCDueDate.isBefore(today)
+
+  def isCompleted: Boolean =
+    openOrFulfilledStatus == STATUS_FULFILLED
+}
 
 object Obligation {
   implicit val format: OFormat[Obligation] = Json.format[Obligation]

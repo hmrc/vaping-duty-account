@@ -29,9 +29,6 @@ import javax.inject.Singleton
 @Singleton
 class VPDSummaryReturnsService @Inject(config: AppConfig) {
 
-  private val STATUS_OPEN      = "O"
-  private val STATUS_FULFILLED = "F"
-
   def buildReturnsAndLinks(obligations: Seq[Obligation],
                            isInsolvent: Boolean): ReturnsAndLinks = {
     if (isInsolvent)
@@ -51,9 +48,9 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
   def buildReturns(obligations: Seq[Obligation]): Option[Returns] = {
     val today = LocalDate.now()
 
-    val dueObligations       = obligations.filter(isDue(_, today))
-    val overdueObligations   = obligations.filter(isOverdue(_, today))
-    val completedObligations = obligations.filter(isCompleted)
+    val dueObligations       = obligations.filter(_.isDue(today))
+    val overdueObligations   = obligations.filter(_.isOverdue(today))
+    val completedObligations = obligations.filter(_.isCompleted)
 
     val outstandingObligations = dueObligations ++ overdueObligations
 
@@ -79,15 +76,6 @@ class VPDSummaryReturnsService @Inject(config: AppConfig) {
       outstandingObligations.headOption.map(o => CurrentReturn(periodKey = o.periodKey, dueDate = o.iCDueDate))
     else
       None
-
-  def isDue(obligation: Obligation, today: LocalDate): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_OPEN && !obligation.iCDueDate.isBefore(today)
-
-  def isOverdue(obligation: Obligation, today: LocalDate): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_OPEN && obligation.iCDueDate.isBefore(today)
-
-  def isCompleted(obligation: Obligation): Boolean =
-    obligation.openOrFulfilledStatus == STATUS_FULFILLED
 
 
   private def buildReturnLinks(returns: Option[Returns]): (Option[CompleteReturn], Option[ViewReturns]) =
