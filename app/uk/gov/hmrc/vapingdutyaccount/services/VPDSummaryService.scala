@@ -40,7 +40,7 @@ class VPDSummaryService @Inject()(
                                    contactPreferencesService : VPDSummaryContactPreferencesService,
                                    returnsService            : VPDSummaryReturnsService,
                                    paymentsService           : VPDSummaryPaymentsService
-)(implicit ec: ExecutionContext) extends Logging {
+)(using ExecutionContext) extends Logging {
 
   def getVPDSummary(vpdId: VpdId)(implicit hc: HeaderCarrier): Future[VPDSummary] = {
 
