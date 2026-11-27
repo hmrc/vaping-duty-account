@@ -17,14 +17,18 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import org.mockito.Mockito.when
-import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import org.scalatest.OptionValues
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
+import org.scalatestplus.mockito.MockitoSugar
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, ViewReturns}
+import uk.gov.hmrc.vapingdutyaccount.utils.helpers.TestData
 
 import java.time.LocalDate
 
-class VPDSummaryReturnsServiceSpec extends SpecBase {
+class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Matchers with MockitoSugar with TestData {
 
   val config: AppConfig = mock[AppConfig]
   val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config)
