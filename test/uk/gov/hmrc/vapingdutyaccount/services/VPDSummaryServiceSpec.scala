@@ -331,10 +331,12 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
             .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
-            .thenReturn(Future.successful((Payments(
-              hasPaymentsError = false,
-              balance          = Some(PaymentBalance(BigDecimal(100), isMultiplePaymentDue = false, Some("XVP123")))
-            ), FinancialDataStatus.HasFinancialData)))
+            .thenReturn(Future.successful(PaymentsResponse(
+              outstanding         = Seq.empty,
+              paymentOnAccount    = Seq.empty,
+              cleared             = Seq.empty,
+              totalAccountBalance = Some(BigDecimal(0))
+            )))
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
