@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import com.google.inject.Inject
+import javax.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
