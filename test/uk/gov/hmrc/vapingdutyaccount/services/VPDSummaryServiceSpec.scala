@@ -341,6 +341,24 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           result.links.viewPayments mustBe None
         }
 
+        "not return viewPayments link when there is no financial data to show" in {
+          when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
+            .thenReturn(Future.successful(contactPreferencesPostNoEmail))
+          when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
+            .thenReturn(Future.successful(Seq(openObligation)))
+          when(mockPaymentsConnector.getPayments()(using any()))
+            .thenReturn(Future.successful(PaymentsResponse(
+              outstanding         = Seq.empty,
+              paymentOnAccount    = Seq.empty,
+              cleared             = Seq.empty,
+              totalAccountBalance = Some(BigDecimal(0))
+            )))
+
+          val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
+
+          result.links.viewPayments mustBe None
+        }
+
         "return viewPayments link when balance is zero" in {
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesPostNoEmail))
@@ -358,7 +376,6 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
           result.links.viewPayments mustBe Some(ViewPayments("/vaping-duty/view-payments", "GET"))
-
         }
       }
 
