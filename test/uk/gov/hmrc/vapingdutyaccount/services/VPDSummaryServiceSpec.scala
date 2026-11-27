@@ -288,7 +288,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.failed(new InternalServerException("Subscription service error")))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
+            .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
             .thenReturn(Future.successful(paymentsWithOutstandingBalance))
 
@@ -329,7 +329,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
+            .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
             .thenReturn(Future.successful((Payments(
               hasPaymentsError = false,
@@ -549,7 +549,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
+            .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
             .thenReturn(Future.successful(paymentsWithOutstandingBalance))
 
@@ -573,7 +573,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesRevokedInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
+            .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
             .thenReturn(Future.successful(paymentsWithOutstandingBalance))
 
@@ -590,7 +590,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
           when(mockSubscriptionConnector.getSubscriptionDisplay(eqTo(vpdId))(any()))
             .thenReturn(Future.successful(contactPreferencesDeregisteredInsolvent))
           when(mockObligationsConnector.getObligations(eqTo(vpdId))(using any()))
-            .thenReturn(Future.successful(Seq(obligationDetails)))
+            .thenReturn(Future.successful(Seq(openObligation)))
           when(mockPaymentsConnector.getPayments()(using any()))
             .thenReturn(Future.successful(paymentsWithOutstandingBalance))
 

@@ -215,7 +215,7 @@ trait TestData extends ModelGenerators {
   val unprocessable       = DownstreamErrorDetails("422", "Unprocessable", "id")
   val internalServerError = DownstreamErrorDetails("500", "Computer says No!", "id")
 
-  val obligationDetails: Obligation = Obligation(
+  val openObligation: Obligation = Obligation(
     openOrFulfilledStatus = "O",
     iCFromDate = LocalDate.of(2024, 1, 1),
     iCToDate = LocalDate.of(2024, 3, 31),
@@ -224,7 +224,7 @@ trait TestData extends ModelGenerators {
     periodKey = "24A1"
   )
 
-  val obligationDetailsCompleted: Obligation = Obligation(
+  val fulfilledObligation: Obligation = Obligation(
     openOrFulfilledStatus = "F",
     iCFromDate = LocalDate.of(2023, 10, 1),
     iCToDate = LocalDate.of(2023, 12, 31),

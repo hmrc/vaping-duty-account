@@ -15,51 +15,51 @@ class ObligationSpec extends AnyFreeSpec with Matchers with TestData {
   "isDue must" - {
 
     "return true when status is Open and due date is today" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today).isDue(today) mustBe true
+      openObligation.copy(iCDueDate = today).isDue(today) mustBe true
     }
 
     "return true when status is Open and due date is in the future" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = tomorrow).isDue(today) mustBe true
+      openObligation.copy(iCDueDate = tomorrow).isDue(today) mustBe true
     }
 
     "return false when status is Open and due date is in the past" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = yesterday).isDue(today) mustBe false
+      openObligation.copy(iCDueDate = yesterday).isDue(today) mustBe false
     }
 
     "return false when status is Fulfilled regardless of due date" in {
-      obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = tomorrow).isDue(today) mustBe false
-      obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = yesterday).isDue(today) mustBe false
+      fulfilledObligation.copy(iCDueDate = tomorrow).isDue(today) mustBe false
+      fulfilledObligation.copy(iCDueDate = yesterday).isDue(today) mustBe false
     }
   }
 
   "isOverdue must" - {
 
     "return true when status is Open and due date is in the past" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = yesterday).isOverdue(today) mustBe true
+      openObligation.copy(iCDueDate = yesterday).isOverdue(today) mustBe true
     }
 
     "return false when status is Open and due date is today" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = today).isOverdue(today) mustBe false
+      openObligation.copy(iCDueDate = today).isOverdue(today) mustBe false
     }
 
     "return false when status is Open and due date is in the future" in {
-      obligationDetails.copy(openOrFulfilledStatus = "O", iCDueDate = tomorrow).isOverdue(today) mustBe false
+      openObligation.copy(iCDueDate = tomorrow).isOverdue(today) mustBe false
     }
 
     "return false when status is Fulfilled regardless of due date" in {
-      obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = yesterday).isOverdue(today) mustBe false
-      obligationDetails.copy(openOrFulfilledStatus = "F", iCDueDate = tomorrow).isOverdue(today) mustBe false
+      fulfilledObligation.copy(iCDueDate = yesterday).isOverdue(today) mustBe false
+      fulfilledObligation.copy(iCDueDate = tomorrow).isOverdue(today) mustBe false
     }
   }
 
   "isCompleted must" - {
 
     "return true when status is Fulfilled" in {
-      obligationDetailsCompleted.isCompleted mustBe true
+      fulfilledObligation.isCompleted mustBe true
     }
 
     "return false when status is Open" in {
-      obligationDetails.isCompleted mustBe false
+      openObligation.isCompleted mustBe false
     }
   }
 }
