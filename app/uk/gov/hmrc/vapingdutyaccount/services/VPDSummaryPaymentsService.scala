@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import javax.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.PaymentsResponse as UpstreamPaymentsResponse
@@ -24,10 +23,9 @@ import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.FinancialDataStatus.{HasF
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.PaymentsAndLinks
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{ClaimRepayment, FinancialDataStatus, MakePayment, PaymentBalance, Payments, ViewPayments}
 
-import javax.inject.Singleton
+import javax.inject.Inject
 
-@Singleton
-class VPDSummaryPaymentsService @Inject(config: AppConfig) {
+class VPDSummaryPaymentsService @Inject (config: AppConfig) {
 
   def buildPaymentsAndLinks(response: UpstreamPaymentsResponse,
                             isInsolvent: Boolean): PaymentsAndLinks = {

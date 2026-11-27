@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import javax.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.SubscriptionDisplay
-import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{Access, AccessApprovalStatus, ContactMethod, ContactPreferenceStatus, ManageContactPreference}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ContactPreferencesAndLinks
+import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{Access, AccessApprovalStatus, ContactMethod, ContactPreferenceStatus, ManageContactPreference}
 
-class VPDSummaryContactPreferencesService @Inject(config: AppConfig) {
+import javax.inject.Inject
+
+class VPDSummaryContactPreferencesService @Inject (config: AppConfig) {
 
   def buildContactPreferencesAndLinks(contactPreferences: SubscriptionDisplay): ContactPreferencesAndLinks = {
     val approvalStatus = AccessApprovalStatus.fromSubscription(contactPreferences)

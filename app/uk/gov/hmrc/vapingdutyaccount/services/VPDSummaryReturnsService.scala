@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.vapingdutyaccount.services
 
-import javax.inject.Inject
 import play.api.http.HttpVerbs
 import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
@@ -24,10 +23,9 @@ import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ReturnsAndLinks
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, CurrentReturn, Returns, ViewReturns}
 
 import java.time.LocalDate
-import javax.inject.Singleton
+import javax.inject.Inject
 
-@Singleton
-class VPDSummaryReturnsService @Inject(config: AppConfig) {
+class VPDSummaryReturnsService @Inject (config: AppConfig) {
 
   def buildReturnsAndLinks(obligations: Seq[Obligation],
                            isInsolvent: Boolean): ReturnsAndLinks = {
