@@ -50,12 +50,12 @@ class VPDSummaryContactPreferencesService @Inject (config: AppConfig) {
     }
 
   private def resolveContactMethod(contactPreferences: SubscriptionDisplay): ContactMethod =
-    if (contactPreferences.paperlessPreference) ContactMethod.Email else ContactMethod.Post
+    if (contactPreferences.paperlessPreference) ContactMethod.EMAIL else ContactMethod.POST
 
   private def resolveContactPreferenceStatus(contactMethod: ContactMethod,
                                              contactPreferences: SubscriptionDisplay
                                             ): Option[ContactPreferenceStatus] =
-    if (contactMethod == ContactMethod.Email)
+    if (contactMethod == ContactMethod.EMAIL)
       Some(ContactPreferenceStatus(contactPreferences.bouncedEmail.getOrElse(false)))
     else
       None

@@ -123,7 +123,7 @@ class VPDSummaryControllerSpec extends SpecBase with MockitoSugar {
   val badVpdId: String                    = "bad-invalid-vpdid"
 
   private def getContactPreferenceLines(subscription: SubscriptionDisplay): String = {
-    val contactMethod = if (subscription.paperlessPreference) "EMAIL" else "POST"
+    val contactMethod: ContactMethod = if (subscription.paperlessPreference) ContactMethod.EMAIL else ContactMethod.POST
     val statusLine     =
       if (subscription.paperlessPreference) {
         val bounced = subscription.bouncedEmail.getOrElse(false)

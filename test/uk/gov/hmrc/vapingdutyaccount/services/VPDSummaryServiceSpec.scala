@@ -260,7 +260,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.contactPreference mustBe Some(ContactMethod.Email)
+          result.contactPreference mustBe Some(ContactMethod.EMAIL)
           result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(false))
         }
 
@@ -272,7 +272,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.contactPreference mustBe Some(ContactMethod.Email)
+          result.contactPreference mustBe Some(ContactMethod.EMAIL)
           result.contactPreferenceStatus mustBe Some(ContactPreferenceStatus(true))
         }
 
@@ -284,7 +284,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
 
           val result = vpdSummaryService.getVPDSummary(vpdId)(hc).futureValue
 
-          result.contactPreference mustBe Some(ContactMethod.Post)
+          result.contactPreference mustBe Some(ContactMethod.POST)
           result.contactPreferenceStatus mustBe None
         }
       }
