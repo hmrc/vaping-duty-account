@@ -60,7 +60,7 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
   when(mockConfig.serviceId                 ).thenReturn("VPD")
 
   val vpdSummaryService: VPDSummaryService =
-    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, VPDSummaryContactPreferencesService(mockConfig), VPDSummaryReturnsService(mockConfig), paymentsService)
+    new VPDSummaryService(mockConfig, mockSubscriptionConnector, mockPaymentsConnector, mockObligationsConnector, VPDSummaryContactPreferencesService(mockConfig), VPDSummaryReturnsService(mockConfig, clock), paymentsService)
 
   override def beforeEach(): Unit =
     when(mockPaymentsConnector.getPayments()(using any()))
@@ -84,12 +84,13 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
     "getVPDSummary" - {
       "Return section must" - {
         "return VPDSummary with single due return and completeReturn link" in {
+          val now = LocalDate.now(clock)
           val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
+            iCFromDate            = now.minusMonths(1),
+            iCToDate              = now,
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
+            iCDueDate             = now.plusDays(10),
             periodKey             = "26AA"
           )
 
@@ -106,12 +107,13 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with single overdue return and completeReturn link" in {
+          val now = LocalDate.now(clock)
           val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
+            iCFromDate            = now.minusMonths(2),
+            iCToDate              = now.minusMonths(1),
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
+            iCDueDate             = now.minusDays(5),
             periodKey             = "25AL"
           )
 
@@ -128,20 +130,21 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with due and overdue returns and viewReturns link" in {
+          val now = LocalDate.now(clock)
           val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
+            iCFromDate            = now.minusMonths(1),
+            iCToDate              = now,
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
+            iCDueDate             = now.plusDays(10),
             periodKey             = "26AA"
           )
           val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
+            iCFromDate            = now.minusMonths(2),
+            iCToDate              = now.minusMonths(1),
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
+            iCDueDate             = now.minusDays(5),
             periodKey             = "25AL"
           )
 
@@ -158,20 +161,21 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with multiple overdue returns and viewReturns link" in {
+          val now = LocalDate.now(clock)
           val overdueObligation1 = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(3),
-            iCToDate              = LocalDate.now().minusMonths(2),
+            iCFromDate            = now.minusMonths(3),
+            iCToDate              = now.minusMonths(2),
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(30),
+            iCDueDate             = now.minusDays(30),
             periodKey             = "25AK"
           )
           val overdueObligation2 = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
+            iCFromDate            = now.minusMonths(2),
+            iCToDate              = now.minusMonths(1),
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(5),
+            iCDueDate             = now.minusDays(5),
             periodKey             = "25AL"
           )
 
@@ -187,12 +191,13 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with completed returns only and viewReturns link" in {
+          val now = LocalDate.now(clock)
           val fulfilledObligation = Obligation(
             openOrFulfilledStatus = "F",
-            iCFromDate            = LocalDate.now().minusMonths(2),
-            iCToDate              = LocalDate.now().minusMonths(1),
-            iCDateReceived        = Some(LocalDate.now().minusDays(10)),
-            iCDueDate             = LocalDate.now().minusDays(5),
+            iCFromDate            = now.minusMonths(2),
+            iCToDate              = now.minusMonths(1),
+            iCDateReceived        = Some(now.minusDays(10)),
+            iCDueDate             = now.minusDays(5),
             periodKey             = "25AL"
           )
 
@@ -208,28 +213,29 @@ class VPDSummaryServiceSpec extends SpecBase with MockitoSugar with ScalaFutures
         }
 
         "return VPDSummary with mixed returns and viewReturns link" in {
+          val now = LocalDate.now(clock)
           val dueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(1),
-            iCToDate              = LocalDate.now(),
+            iCFromDate            = now.minusMonths(1),
+            iCToDate              = now,
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().plusDays(10),
+            iCDueDate             = now.plusDays(10),
             periodKey             = "26AA"
           )
           val overdueObligation = Obligation(
             openOrFulfilledStatus = "O",
-            iCFromDate            = LocalDate.now().minusMonths(3),
-            iCToDate              = LocalDate.now().minusMonths(2),
+            iCFromDate            = now.minusMonths(3),
+            iCToDate              = now.minusMonths(2),
             iCDateReceived        = None,
-            iCDueDate             = LocalDate.now().minusDays(30),
+            iCDueDate             = now.minusDays(30),
             periodKey             = "25AK"
           )
           val fulfilledObligation = Obligation(
             openOrFulfilledStatus = "F",
-            iCFromDate            = LocalDate.now().minusMonths(4),
-            iCToDate              = LocalDate.now().minusMonths(3),
-            iCDateReceived        = Some(LocalDate.now().minusDays(60)),
-            iCDueDate             = LocalDate.now().minusDays(55),
+            iCFromDate            = now.minusMonths(4),
+            iCToDate              = now.minusMonths(3),
+            iCDateReceived        = Some(now.minusDays(60)),
+            iCDueDate             = now.minusDays(55),
             periodKey             = "25AJ"
           )
 

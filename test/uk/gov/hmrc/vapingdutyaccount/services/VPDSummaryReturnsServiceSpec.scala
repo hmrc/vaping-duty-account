@@ -31,7 +31,7 @@ import java.time.LocalDate
 class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Matchers with MockitoSugar with TestData {
 
   val config: AppConfig = mock[AppConfig]
-  val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config)
+  val service: VPDSummaryReturnsService = new VPDSummaryReturnsService(config, clock)
 
   private val completeReturnUrlPrefix = "complete-return-url-prefix"
   private val viewReturnsUrl = "view-returns-url"
@@ -81,7 +81,7 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
     }
 
     "when single due obligation" - {
-      val dueDate = LocalDate.now().plusDays(10)
+      val dueDate = LocalDate.now(clock).plusDays(10)
       val returnsAndLinks = service.buildReturnsAndLinks(Seq(createObligation("O", dueDate, "26AA")), SOLVENT)
 
       " returns block " - {
@@ -111,7 +111,7 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
     }
 
     "when single overdue obligation" - {
-      val dueDate = LocalDate.now().minusDays(5)
+      val dueDate = LocalDate.now(clock).minusDays(5)
       val returnsAndLinks = service.buildReturnsAndLinks(
         Seq(createObligation("O", dueDate, "25AL")), SOLVENT
       )
@@ -139,7 +139,7 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
     }
 
     "when multiple overdue obligations" - {
-      val dueDate = LocalDate.now().minusDays(5)
+      val dueDate = LocalDate.now(clock).minusDays(5)
       val returnsAndLinks = service.buildReturnsAndLinks(
         Seq(
           createObligation("O", dueDate.minusDays(30), "25AK"),
@@ -171,8 +171,8 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
     "when 2 completed obligations" - {
       val returnsAndLinks = service.buildReturnsAndLinks(
         Seq(
-          createObligation("F", LocalDate.now().minusDays(35), "25AK"),
-          createObligation("F", LocalDate.now().minusDays(5), "25AL")
+          createObligation("F", LocalDate.now(clock).minusDays(35), "25AK"),
+          createObligation("F", LocalDate.now(clock).minusDays(5), "25AL")
         ), SOLVENT
       )
 
@@ -199,7 +199,7 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
 
     "when single completed obligation" - {
       val returnsAndLinks = service.buildReturnsAndLinks(
-        Seq(createObligation("F", LocalDate.now().minusDays(5), "25AL")), SOLVENT
+        Seq(createObligation("F", LocalDate.now(clock).minusDays(5), "25AL")), SOLVENT
       )
 
       "returns block" - {
@@ -224,15 +224,16 @@ class VPDSummaryReturnsServiceSpec extends AnyFreeSpec with OptionValues with Ma
     }
 
     "when mixed due, overdue, and completed obligations" - {
+      val now = LocalDate.now(clock)
       val returnsAndLinks = service.buildReturnsAndLinks(Seq(
-        createObligation("O", LocalDate.now().plusDays(10), "26AA"),
+        createObligation("O", now.plusDays(10), "26AA"),
 
-        createObligation("O", LocalDate.now().minusDays( 5), "25AL"),
-        createObligation("O", LocalDate.now().minusDays(35), "25AK"),
+        createObligation("O", now.minusDays( 5), "25AL"),
+        createObligation("O", now.minusDays(35), "25AK"),
 
-        createObligation("F", LocalDate.now().minusDays( 65), "25AJ"),
-        createObligation("F", LocalDate.now().minusDays( 95), "25AI"),
-        createObligation("F", LocalDate.now().minusDays(120), "25AH")
+        createObligation("F", now.minusDays( 65), "25AJ"),
+        createObligation("F", now.minusDays( 95), "25AI"),
+        createObligation("F", now.minusDays(120), "25AH")
       ), SOLVENT)
 
       "returns block" - {

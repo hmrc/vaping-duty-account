@@ -24,7 +24,7 @@ import java.time.LocalDate
 
 class ObligationSpec extends AnyFreeSpec with Matchers with TestData {
 
-  private val today = LocalDate.now()
+  private val today = LocalDate.now(clock)
   private val yesterday = today.minusDays(1)
   private val tomorrow = today.plusDays(1)
 

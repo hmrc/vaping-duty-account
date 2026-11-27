@@ -22,10 +22,11 @@ import uk.gov.hmrc.vapingdutyaccount.models.obligations.Obligation
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.internal.ReturnsAndLinks
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{CompleteReturn, CurrentReturn, Returns, ViewReturns}
 
-import java.time.LocalDate
+import java.time.{Clock, LocalDate}
 import javax.inject.Inject
 
-class VPDSummaryReturnsService @Inject (config: AppConfig) {
+class VPDSummaryReturnsService @Inject (config: AppConfig,
+                                        clock: Clock) {
 
   def buildReturnsAndLinks(obligations: Seq[Obligation],
                            isInsolvent: Boolean): ReturnsAndLinks = {
@@ -44,7 +45,7 @@ class VPDSummaryReturnsService @Inject (config: AppConfig) {
   }
 
   def buildReturns(obligations: Seq[Obligation]): Option[Returns] = {
-    val today = LocalDate.now()
+    val today = LocalDate.now(clock)
 
     val dueObligations       = obligations.filter(_.isDue(today))
     val overdueObligations   = obligations.filter(_.isOverdue(today))
