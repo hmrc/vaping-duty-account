@@ -27,11 +27,11 @@ enum ContactMethod {
 
   /** PaperlessPreference.Digital, ContactMethod: True/1
     */
-  case Email
+  case EMAIL
 
   /** PaperlessPreference.Postal, ContactMethod: False/0
     */
-  case Post
+  case POST
 }
 
 object ContactMethod {

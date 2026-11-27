@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.vapingdutyaccount.controllers.vpdSummary
 
-import com.google.inject.Inject
+import javax.inject.Inject
 import play.api.Logging
 import play.api.http.ContentTypes
 import play.api.libs.json.*

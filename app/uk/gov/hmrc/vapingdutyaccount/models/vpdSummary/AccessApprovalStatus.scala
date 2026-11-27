@@ -17,7 +17,7 @@
 package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import play.api.libs.json.{JsString, Writes}
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionContactPreferences}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionDisplay}
 
 /** Access status exposed in the VPD Summary API `access` block, derived from the upstream
   * subscription's approval status and insolvency flag.
@@ -35,7 +35,7 @@ object AccessApprovalStatus {
     case Insolvent    => JsString("INSOLVENT")
   }
 
-  def fromSubscription(contactPreferences: SubscriptionContactPreferences): AccessApprovalStatus =
+  def fromSubscription(contactPreferences: SubscriptionDisplay): AccessApprovalStatus =
     if (contactPreferences.isInsolvent) Insolvent
     else
       contactPreferences.approvalStatus match {

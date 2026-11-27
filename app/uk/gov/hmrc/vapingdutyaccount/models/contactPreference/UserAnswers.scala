@@ -78,9 +78,9 @@ case class UserAnswers(vpdId: String,
 
 object UserAnswers {
   def createUserAnswers(
-    userDetails: UserDetails,
-    contactPreferences: SubscriptionContactPreferences,
-    clock: Clock
+                         userDetails: UserDetails,
+                         contactPreferences: SubscriptionDisplay,
+                         clock: Clock
   ): UserAnswers = {
     val existingEmail: Option[SensitiveString] = contactPreferences.emailAddress.map(SensitiveString.apply)
 

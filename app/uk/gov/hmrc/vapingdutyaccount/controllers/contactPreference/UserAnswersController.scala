@@ -48,7 +48,7 @@ class UserAnswersController @Inject()(
       checkVpdId(vpdId).invokeBlock[JsValue](
         request,
         { implicit request =>
-          subscriptionConnector.getSubscriptionContactPreferences(vpdId)
+          subscriptionConnector.getSubscriptionDisplay(vpdId)
             .flatMap { contactPreferences =>
               val userAnswers: UserAnswers = UserAnswers.createUserAnswers(
                 userDetails = userDetails,

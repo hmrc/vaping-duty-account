@@ -18,12 +18,12 @@ package uk.gov.hmrc.vapingdutyaccount.models.vpdSummary
 
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionContactPreferences}
+import uk.gov.hmrc.vapingdutyaccount.models.contactPreference.{SubscriptionApprovalStatus, SubscriptionDisplay}
 
 class AccessApprovalStatusSpec extends AnyFreeSpec with Matchers {
 
   private def contactPreferences(approvalStatus: SubscriptionApprovalStatus, insolvencyStatus: Option[String]) =
-    SubscriptionContactPreferences(
+    SubscriptionDisplay(
       paperlessPreference = true,
       emailAddress = None,
       verifiedEmail = None,

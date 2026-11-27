@@ -17,12 +17,14 @@
 package uk.gov.hmrc.vapingdutyaccount.services
 
 import uk.gov.hmrc.vapingdutyaccount.base.SpecBase
+import uk.gov.hmrc.vapingdutyaccount.config.AppConfig
 import uk.gov.hmrc.vapingdutyaccount.models.payments.{OutstandingPayment, PaymentsResponse as UpstreamPaymentsResponse}
 import uk.gov.hmrc.vapingdutyaccount.models.vpdSummary.{FinancialDataStatus, PaymentBalance, Payments}
 
-class PaymentsServiceSpec extends SpecBase {
+class VPDSummaryPaymentsServiceSpec extends SpecBase {
 
-  val service: PaymentsService = new PaymentsService()
+  val config: AppConfig = mock[AppConfig]
+  val service: VPDSummaryPaymentsService = new VPDSummaryPaymentsService(config)
 
   "PaymentsService" - {
 
